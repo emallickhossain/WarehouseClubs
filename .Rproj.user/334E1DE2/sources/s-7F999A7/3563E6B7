@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1537397280785.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "3563E6B7",
+    "lastKnownWriteTime" : 1537469793,
+    "last_content_update" : 1537469793469,
+    "path" : "~/Desktop/Research/OnlineShopping/WarehouseClubs/code/4_analyzeData/expenditureLumpiness.R",
+    "project_path" : "code/4_analyzeData/expenditureLumpiness.R",
+    "properties" : {
+        "cursorPosition" : "118,0",
+        "scrollLine" : "97",
+        "tempName" : "Untitled1"
+    },
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

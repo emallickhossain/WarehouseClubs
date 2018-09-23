@@ -1,0 +1,220 @@
+---
+title: "Big Box: Warehouse Clubs, Bulk Buying, and Inequality"
+author: "E. Mallick Hossain"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    number_sections: yes
+bibliography: reference.bib
+fig_caption: true
+citation_package: natbib
+fontsize: 12pt
+geometry: margin=1in
+header-includes:
+  - \usepackage{setspace}
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{amssymb}
+  - \usepackage{amsmath}
+  - \usepackage{bbm}
+  - \usepackage[multiple]{footmisc}
+  - \usepackage[nolists, noheads]{endfloat}
+  - \onehalfspacing
+  - \renewcommand{\efloatseparator}{\mbox{}}
+  - \usepackage{caption}
+  - \captionsetup[figure]{labelsep=space}
+  - \captionsetup{font=small,skip=0pt}
+  - \usepackage{lscape}
+  - \usepackage{multirow}
+---
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\begin{abstract}
+Bulk buying and warehouse clubs have grown dramatically in recent years. However, due to high transportation costs and liquidity constraints, savings from these channels are not shared equally with nearly all of the benefits accruing to the top income quartiles. Using panel data on household spending, I document this growing gap and estimate a model of consumer choice that incorporates transportation costs and liquidity constraints. I find that transportation costs account for 80\% of the difference in buying behavior, even for low-income households located within 5 miles of a warehouse club. The large transportation costs suggest that even if locations were close and membership fees were eliminated, transporting bulk goods is prohibitively expensive for low-income households, likely due to the limited availability of personal vehicles. These findings suggest that lowering unit costs would deliver \$500 of savings per year and that increasing options for home delivery may substantially improve spending inequality. Using this model, I also estimate that the decision to accept welfare benefits by warehouse clubs in 2008-2009 increased consumer welfare by \$100 per household per year and welfare could further by improved by \$400 per household per year if online retailers were to accept welfare benefits. Finally, I find that high per-unit costs have accounted for 15\% more spending by welfare programs that what could be obtained if bulk purchases were made.
+\end{abstract}
+
+\blfootnote{I wish to thank my wonderful advisers, Aviv Nevo, Holger Sieg, Katja Seim, and Sarah Moshary for their sound advice, constructive criticism, and immense patience throughout this writing process. They are prized mentors. I would also like to thank Emek Basker and Ishan Ghosh for their comments, questions, and extensive discussions on this topic which have helped to significantly improve this paper.  Researcher(s) own analyses calculated (or derived) based in part on data from The Nielsen Company (US), LLC and marketing databases provided through the Nielsen Datasets at the Kilts Center for Marketing Data Center at The University of Chicago Booth School of Business. The conclusions drawn from the Nielsen data are those of the researcher(s) and do not reflect the views of Nielsen. Nielsen is not responsible for, had no role in, and was not involved in analyzing and preparing the results reported herein.}
+
+# Introduction
+Households pay vastly different prices for the essential household goods, such as detergent, water, and toilet paper. This variation persists even within brands and stores. Given that by definition, there is little room for adjustment in consumption since these are essential household goods and consumption is predictable and frequent, then this presents a puzzle. Even given brand and store preferences, why do households pay different prices for the same goods? Common explanations would include different uptake of sales, coupons, or bulk purchases. An essential follow-up question is what contributes to brand and store preferences? Do different households shop at different stores simply due to idiocyncratic preferences, or is it a matter of access and transportation costs? 
+
+This paper provides extensive documentation of price variation among different household goods as well as a decomposition of price variation into sales, coupon, bulk, brand, and store factors. With this motivation, this paper then focuses on the growth of warehouse club stores to elucidate how important transportation costs and liquidity constraints are. These facts are then used to estimate a model of consumer demand that incorporates these factors. This will then be used to evaluate the welfare of warehouse clubs' decision to accept food stamps in 2008-2009.^[See https://www.oregonlive.com/business/index.ssf/2009/10/costco_joins_big_boxes_accepti.html] Furthermore, estimating transportation costs will help evaluate potential welfare benefits of being able to use food stamps online.^[See https://www.businessinsider.com/amazon-food-stamps-online-grocers-2017-1] This can also be used to estimate inefficiencies and losses in current welfare programs that result from purchasing household essentials at high per-unit costs.
+
+Warehouse clubs, discount stores, and online shopping have made obtaining basic household staples easier, more convenient, and more affordable. However, are these benefits being shared across all groups? While online shopping and warehouse clubs have been expanding, so have budget-friendly dollar stores, which while affordable, tend to offer lower-quality goods in smaller quantities for higher unit prices than might be obtained at larger big-box stores. 
+
+In aggregate, Figure \ref{fig:ARTSRetail} shows that warehouse clubs and supercenters have composed an ever-growing share of retail sales, which as only recently been surpassed by non-store retailers.^[Given that the non-store category also includes catalog sales, a conservative modification would entail level-shifting this curve down by the amount of non-store retail in the 1990s since that would have almost all been catalog retail instead of online. With this modification, online only surpassed warehouse club and supercenter sales in late 2017.] This has primarily been driven by the fact that growth has stalled for clubs and supercenters while online and mail-order sales have continued to grow. Another less-noticed trend is that "Other General Merchandise" stores have grown by about 30\% and this growth started picking up after the recession, when warehouse club and supercenter growth stalled. This category includes budget stores like Dollar General and Family Dollar. In particular, Dollar General appears to have accelerated its growth from opening an average of 2 stores per day in 2010 to 3 stores per day by 2017.^[See Dollar General Annual Reports. Adding in Family Dollar and Dollar Tree boosts this overall rate to about 4-5 stores per day in this general category.] 
+
+```{r, eval=FALSE, echo=FALSE}
+source("../4_analyzeData/ARTSRetailChart.R")
+```
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/ARTSRetailChart.png}
+\caption{}
+\label{fig:ARTSRetail}
+\end{figure}
+
+In order to understand these aggregate trends, we must investigate what consumer behavior patterns are underlying this. I use Nielsen's Consumer Panel to estimate a model of consumer demand that explains these aggregate trends and I find that the most plausible explanation is a combination of liquidity constraints and transportation costs. Middle- and high-income households have both the liquidity and means to smooth over lumpy bulk expenditures as well as transport and store large quantities of household items. Because of this, they are able to take advantage of the savings offered by warehouse clubs and supercenters. Low-income households are not able to do this and due to high transportation costs and liquidity constraints, they prefer to shop at dollar and discount stores where they can ensure a more smooth expenditure pattern, even if that smoothness comes at a higher per-unit cost. Intuitively, if transportation costs are high enough, low-income households should be able to benefit from the home delivery services offered by online retailers, but I find this is not the case empirically, as uptake of home delivery services is mostly concentrated among high-income households.  
+
+I also document some stylized facts from the Nielsen data that support this bifurcation. The number of monthly shopping trips has declined by about 20\% across all households (the only difference being a level shift down for richer households). Furthermore, real expenditures have slightly declined by about 4\%, but these spending declines are not shared equally across households, with households making over \$100k saving about 10\% and households making less than \$25k seeing no change. As a result, per-trip expenditures have increased. 
+
+```{r, eval=FALSE, echo=FALSE}
+source("../4_analyzeData/nielsenShoppingTrips.R")
+```
+
+However, there are different shopping patterns across store types. One particularly surprising fact is that levels of average real expenditures at "discount stores" (which includes mass merchandisers like Target and Wal-Mart) and "dollar stores" are about the same across income levels.^[This includes 0-dollar spending for households that may not shop at particular types of stores. I compute average spending conditional on shopping at a particular channel later.] Gaps in spending levels primarily manifest through grocery and warehouse club shopping. Households making above \$100k spend about 50\% more at grocery stores and 4-6 times more at warehouse clubs than households making less than \$25k. In terms of shopping trips, all households make the same number of trips to grocery stores, but high-income households make about 1 fewer trips per month to "discount stores" and "dollar stores" compared to low-income households while making about 0.5 more trips per month to "warehouse club" stores.
+
+Furthermore, when looking at shares of monthly expenditures, I find that even though there are differences in expenditure levels at grocery stores between different income households, as a share of monthly expenditures, they are almost equal across households, accounting for about 40-50\% of monthly expenditures on household non-durables. However, this relationship is different for discount and dollar stores in that while spending levels were similar between all households, since monthly spending differs, this means that high-income households spend about 5-10\% less of their budget at these stores compared to low-income households. Finally, this means that the gap remains persistent for the remaining category of warehouse clubs in that both levels and shares of expenditures are higher for high-income households compared to low-income households at these stores.
+
+```{r, eval=FALSE, echo=FALSE}
+# See nielsenChannelPropensitiesTripLevels.png
+# See nielsenChannelPropensitiesSpendLevels.png
+# See nielsenChannelPropensitiesSpendShares.png
+
+source("../4_analyzeData/nielsenChannelPropensitiesUnconditional.R")
+```
+
+Finally, in terms of overall likelihood to shop at particular channels, this is where some substantial gaps open up. Over the course of a year, almost all households visit a grocery store and discount store (recall, Walmart, Target, etc.). However, rich households are twice as likely to visit a warehouse club as poor households (2/3 of rich households visited a warehouse club compared to only 1/3 of poor households). This ratio is flipped for dollar stores in that poor households are about 55\% more likely to visit one compared to their rich counterparts (75\% of poor households visited a dollar store compared to 50\% of rich households). The gap in dollar store shopping has narrowed over time primarily because more richer households have shopped at these stores instead of due to poor households shopping less.
+
+# Literature Review
+This paper contributes to the growing literature on spending inequality and consumer purchasing behavior. First, it builds on the literature examining inflation inequality. Most recently, @coibion2017 document that declining shopping frequency and bulk buying mechanically generate a large amount of spending inequality on an aggregate level. This paper builds on this by providing evidence that these opportunities are not shared equally and there are still large inqualities being generated. Other related papers have documented underlying sources of inflation inequality and price dispersion, such as customer segmentation, variety customization, and product innovation (See @kaplan2017, @jaravel2016, @handbury2013, @kaplan2016)
+
+Second, it complements @orhun2018 by highlighting the importance of transportation costs in addition to liquidity constraints are differentially affecting low-income households. In particular, even if some liquidity constrants were relaxed (e.g. eliminating club membership fees), the transportation costs would still substantially inhibit access to warehouse clubs and bulk purchasing.
+
+Other papers such as @talukdar2008 document that prices for similar goods in low-income areas tend to be higher than in high-income neighborhoods. @kaplan2015 provide empirical evidence using the Nielsen data to demonstrate that while a large amount of price dispersion is generated by within store sales, the chief contributor to dispersion in household-level price indexes is between different stores. As a result, for households searching for lower prices, their findings suggest that searching additional stores instead of searching the same store more frequently will provide a higher payoff. This provides a solid underpinning for my main thesis that there may be substantial costs preventing households from expanding the variety of stores that they can search and in some cases, some of the most valuable stores may be completely inaccessible. 
+
+This is part of a larger literature on the cost of being poor and the purchasing decisions that low-income households make. @nevo2009 show that low-income households are more likely to buy cheaper brands and bulk quantities of items. @nevo2018 provides evidence that value-shopping behavior (e.g. using coupons, buying bulk, buying generics, etc.) increased during the Great Recession because households more easily substituted between market expenditures and non-market work compared to non-recessionary periods.
+
+# Data
+In order to assess consumer spending over time, I use the Nielsen Consumer Panel data, made available by the Kilts Center for Marketing at The University of Chicago Booth School of Business. This data covers 2004-2016 and covers about 40,000 households between 2004-06 and about 60,000 from 2007-2016. Over this sample period, the mean and median tenure of a panelist household are 4 and 3 years, respectively. 
+
+The Nielsen Consumer Panel is a high-quality, longitudinal panel which collects data on household purchases. Panelists use in-home scanners to record all of their purchases "intended for personal, in-home use." Generally, this refers to grocery, health, and household items, which Nielsen estimates to account for about 30\% of overall household expenditures. The panel is geographically dispersed and demographically balanced and can be projected to a variety of aggregations.^[Per Nielsen: The sample is balanced based on household size, household income, head of household age, head of household education, presence of children, race, Hispanic, and occupation.] For each shopping trip, panelists provide the store visited and products purchased, including UPC, quantity, price paid, and coupon value (if applicable). 
+
+Households are randomly recruited through direct mail and internet recruiting. Nielsen provides incentives to encourage participation, but they are not designed to be biasing. Incentives include points, prize drawings, and sweepstakes as well as maintaining ongoing communication with panelists to improve retention rates. To ensure data quality, Nielsen also uses a variety of filters to remove households that are are not active or participate infrequently. 
+
+For my analysis, I remove any households where the head of household is in the military to avoid instances where store choice may be limited (e.g. all shopping is on a military base) or students where shopping choices may be different than a typical household (e.g. a meal plan and dormitory housing with various amenities). I also remove all "Magnet" products, which are variable-weight items that generally do not have a UPC (e.g. produce, deli/seafood counter items, etc.). Finally, I drop any purchases where the price paid was 0 or the coupon value was more than 90\% of the purchase price.^[Some of these are valid purchases, such as free item offers, but I remove these to better focus on "typical" prices and sales.]
+
+In order to examine effects related to the value of bulk purchasing that is separate from immediate consumption, this analysis focuses on products that are storable, non-perishable, and almost universal in consumption. Of products that over 75\% of households purchase in a given year, the products that fit these criteria are items like toilet paper, cereal, laundry detergent, soft drinks, and water.^[Other items include candy (both chocolate and non-chocolate), soup, chips, paper towels, tooth brushes, batteries, and deodorant.]
+
+Furthermore, to simplify the household decision, I only consider grocery stores, discount stores, dollar stores, and warehouse clubs, which capture about 85\% of household spending on household non-durables.
+
+```{r, eval=FALSE, echo=FALSE}
+source("../4_analyzeData/popularChannels.R")
+```
+
+
+# Descriptive Evidence
+
+XX REDO THIS SECTION XX
+Below, I document 3 stylized facts based on the Nielsen Homescan data. First, I find that households are making fewer monthly shopping trips. As shown in Figure \ref{fig:nielsenShoppingTrips}, monthly shopping trips have declined from about 16 per month in 2004 to 14 per month in 2016 across all income groups. Surprisingly, real spending has also declined, but to substantially different degrees across income groups. Since 2004, real monthly expenditures have declined by only 9\% for low income households compared to 22\% for high income households.^[Even more starkly, this is before doing any kind of adjustment for product quality.] As Figure \ref{fig:nielsenShoppingSpending}, real monthly expenditures have declined by about \$20 for low income households, \$50 for middle income households, and \$90 for high income households.^[While overall real retail spending has grown, Nielsen captures about 30\% of household spending, primarily in groceries, household items, health and personal care, and some general merchandise. The decline in real Nielsen expenditures is likely offset by increases in spending in non-Nielsen categories such as apparel and electronics.]
+
+In short, average spending has been falling in line with the reduction in shopping trips for low-income households because their per-trip expenditures have been flat. On the other hand, expenditures have been falling faster than the number of trips for middle- and high-income households meaning that per-trip expenditures have been falling over time (See Figure \ref{fig:nielsenShoppingPerTrip}). 
+
+```{r, eval=FALSE, echo=FALSE}
+source("../4_analyzeData/nielsenShoppingTrips.R")
+```
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/nielsenShoppingTripsIncome.png}
+\caption{}
+\label{fig:nielsenShoppingTrips}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/nielsenShoppingSpendIncome.png}
+\caption{}
+\label{fig:nielsenShoppingSpending}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/nielsenShoppingPerTripIncome.png}
+\caption{}
+\label{fig:nielsenShoppingPerTrip}
+\end{figure}
+
+Second, I document that while overall real spending has been declining, the shares of spending happening at various channels is changing over time and across income groups. 
+
+
+spending at warehouse clubs and discount stores has remained relatively constant. Figures \ref{fig:nielsenShoppingChannelSpend} and \ref{fig:nielsenShoppingChannelTrip} demonstrate that spending at grocery stores has been slightly declining over this period.
+
+```{r, eval = FALSE, echo=FALSE}
+source("../4_analyzeData/nielsenChannelPropensitiesUnconditional.R")
+```
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/nielsenChannelPropensitiesSpendLevels.png}
+\caption{}
+\label{fig:nielsenShoppingChannelSpend}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics{../5_figures/nielsenChannelPropensitiesTripLevels.png}
+\caption{}
+\label{fig:nielsenShoppingTrip}
+\end{figure}
+
+# Motivation
+To motivate my analysis of bulk purchasing behavior, I first document evidence that there are differences in unit costs being paid by different households. Bulk purchases are most common for storable, non-perishable items.^[One can also make bulk purchases of perishable, grocery items like milk and other food items, but due to the short shelf-life, these bulk purchases are less likely to be made as a way of shifting purchases in time while maintaining the same flow consumption.] In order to do this, I focus on narrowly defined "product modules", such as bottled water, detergent, tissues, etc. for which each product is substitutable within a module, but likely not substitutable across modules. For each product module, I compute the unit costs paid for products and then regress these costs on household observables as well as brand fixed effects to control for quality differences as well as purchasing behavior that may be induced by different household sizes (i.e. larger households will naturally purchase larger quantities).
+
+Unsurprisingly, there is heterogeneity across items as to the drivers of the differences in unit costs and this is different across different items. As documented in @kaplan2015 and @kaplan2016, price dispersion can be decomposed into differences in price between stores, between goods in the same store, and between purchase times for the same good in the same store (i.e. sales). In my regressions, I can directly control for differences between stores through store fixed effects and differences between goods through brand fixed effects. By adjusting these margins, I can better isolate the sources of cost differences between different households. Below is the regression table for bottled water, which I will use to illustrate. Column (1) is a basic regression of unit cost on income and we see that unit costs are positively correlated with income, which means that on average, richer households pay more for bottled water than poorer households with the top income quartile paying about 15\% more than the bottom quartile. To better isolate the relationship between costs and income, column (2) control for a wide variety of other household characteristics including household size, marital status, race, hispanic origin and age as well as a year fixed effect. The coefficients change slightly, but the positive relationship is still significant. Another explanation for this patter is that richer households buy more expensive water, namely, more expensive brands. To control for this factor, column (3) adds in a brand fixed effect and the sign of the relationship changes. This indicates that for a given brand of water, richer households pay less than poorer households. This reveals 2 important factors, first, that richer households tend to buy more expensive brands and second that for a given brand, richer households are able to attain a lower unit price. What could be the source of this? Another possible factor behind this difference is that different income households may shop at different stores and these stores may sell the same good for different prices. In column (4), I control for the retail chain and, while attenuated, the effect still persists. This means that even after controlling for a household purchasing the same brand of water and shopping at the same retail chain, richer households are still able to obtain a lower unit price for the same product. Intuitively, the few remaining possibilities for these differences are rooted in discounts, which could either be time-based (i.e. temporary sales) or volume-based (i.e. bulk purchases). @kaplan2015 provides evidence that temporary sale are not a large contributing factor to relative price differences between households and @orhun2018 provide evidence that while liquidity constraints can inhibit lower income household's ability of taking advantage of sales, when those factors are relaxed, they also take full advantage of sales, but remain limited in their ability to buy in bulk. 
+
+To see if bulk purchasing could be driven by just overall higher consumption of richer households, I run the same set of regressions, but on the quantities purchased. I find that while richer households tend to purchase more water, the additional amount lessens after controlling for demographics, brand, and store fixed effects. These households are buying more quantities, but after making similar adjustments, the quantities are not substantially greater and for households making \$50-\$100k, they are not purchasing significantly more water, but they are paying a significantly lower unit cost. This does not determine whether the driving force is the ability to take advantage of sales or the ability to buy in bulk, but it is unlikely that richer households are buying substantially greater quantities overall. 
+
+\input{./tables/water.tex}
+
+\input{./tables/waterQ.tex}
+
+\input{./tables/detergentPackaged.tex}
+
+\input{./tables/detergentPackagedQ.tex}
+
+\input{./tables/detergentLight.tex}
+
+\input{./tables/detergentLightQ.tex}
+
+\input{./tables/tissue.tex}
+
+\input{./tables/tissueQ.tex}
+
+\input{./tables/tampon.tex}
+
+\input{./tables/tamponQ.tex}
+
+\input{./tables/diaper.tex}
+
+\input{./tables/diaperQ.tex}
+
+\input{./tables/tp.tex}
+
+\input{./tables/tpQ.tex}
+
+## Transportation Costs
+In order to motivate and estimate transportation costs, I start by estimating a difference-in-differences model of the propensity to shop at a warehouse club when a new one opens up. Using the opening dates, geocoded store locations, and geocoded zip codes of households, I compute the distance changes and am able to estimate how much more likely households are to shop at a warehouse club when a new one opens up closer.
+
+I estimate the following model:
+\[
+Y_{it} = \beta_0 + \beta_1 * d_{it} + \lambda_t + \lambda_i + \epsilon_{it}
+\]
+
+Where $Y_{it}$ is an indicator for whether or not household $i$ makes a purchase at a warehouse club in year $t$. $d_{it}$ is the minimum distance to the closest warehouse club and $\lambda$ are household and year fixed effects. As a result, $\beta_1$ is estimated off of distance changes for a particular household. Since the mean and median tenure of a panelist household are 4 and 3 years, respectively, this is feasible.
+
+# Model
+
+# Counterfactuals
+
+# Conclusion and Future Research
+
+# References
+
+# Appendix

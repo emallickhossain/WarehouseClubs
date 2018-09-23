@@ -1,0 +1,83 @@
+---
+title: "Bulk Buying and Inequality"
+author: "E. Mallick Hossain"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    number_sections: no
+bibliography: reference.bib
+fig_caption: true
+citation_package: natbib
+fontsize: 12pt
+geometry: margin=1in
+header-includes:
+- \usepackage{setspace}
+- \usepackage[utf8]{inputenc}
+- \usepackage{amssymb}
+- \usepackage{amsmath}
+- \usepackage{bbm}
+- \onehalfspacing
+- \usepackage{caption}
+- \captionsetup[figure]{labelsep=space}
+- \captionsetup{font=small,skip=0pt}
+---
+
+# Motivation
+For household necessities like toilet paper, consumption is relatively fixed and predictable. However, smooth consumption does not require smooth expenditures. Using expenditure data, I find that low-income households (making less than \$25k) are more likely to smooth their expenditures by purchasing smaller sizes more frequently while high-income households (making more than \$100k) exhibit "lumpier" expenditures by purchasing larger sizes less frequently.^[The vast majority of households only purchase one package per trip. Households seldom purchase multiple packages of any given size. Households likely realize the value of bulk, so they will purchase one 8-pack instead of two 4-packs.] Figure 1 illustrates that low-income households have lower, narrower per-trip expenditures compared to high-income households. Over a year, while high- and low-income households purchase about the same quantity of toilet paper, high-income households make about 20\% fewer trips than average, which is offset by increased per-trip quantities.^[I find that high-income households purchase about 4\% more toilet paper, but this is small in relative terms and is likely due to the fact that some preferences may map into slightly larger or smaller amounts of my "standardized" rolls of toilet paper, which may differ from the actual rolls contained in the package.]
+
+```{r, eval=FALSE, echo=FALSE}
+source("../4_analyzeData/sizeDistribution.R")
+```
+
+
+# Question
+What factors are generating these systematic differences in spending for high- and low-income households? In particular, why do low-income households buy small sizes? How important are transportation costs related to moving bulky items and liquidity constraints to preventing bulk purchasing? Does purchasing small sizes increase costs for poorer households and how large are these differences?
+
+\begin{figure}
+\centering
+\includegraphics[width=0.75\textwidth]{../5_figures/tpSpendingDensity.png}
+\caption{}
+\end{figure}
+
+## Why Is This Important?
+Bulk buying is a commonly accepted way of saving money. Because the marginal dollar is more valuable to a low-income household than a high-income household, it is puzzling that high-income households take advantage of this money-saving technology at higher rates than low-income households. Quantifying these expenditure differences will highlight less visible areas of inequality. Furthermore, quantifying the relative contribution of transportation, storage, and liquidity constraints will help guide policy solutions to address this inequality. If liquidity constraints are a driving factor, this study will identify and quantify the associated "poverty penalty".
+
+## How to Answer
+To estimate transportation and storage costs, I can compare the purchasing of toilet paper with another storable, non-perishable household necessity that does not have substantial transportation and storage costs, such as toothpaste. This will provide some suggestion of how large this effect might be. However, pinning down each of these factors will take more work and I have not yet identified the best way of doing this.
+
+## Why Toilet Paper?
+Toilet paper is a storable, non-perishable item for which consumption is relatively predictable. Furthermore, it is unlikely that larger purchase quantities imply increased consumption, especially compared to other consumables like soft drinks, chips, or candy. It is offered in a variety of sizes, is available at a range of locations, and has limited dimensions of differentiation (mainly ply, sheet count, and softness).
+
+# Follow-Up Question
+Does improved access to bulk sizes increase bulk purchasing? 
+
+## Why Is This Important?
+Warehouse club stores like Costco and Sam's Club have increased their footprint over the past decade. Their bulk sizes provide hefty discounts on a per-unit basis for common household items. High-income households are substantially more likely to shop at a warehouse club compared to low-income households (in a given year, about 70\% of high-income households visit a warehouse club compared to about 30\% of low-income households). If access is an important factor preventing low-income households from purchasing in bulk, tracking spending before and after a club opening will provide an estimate of how sensitive household spending is when access to this new "technology" becomes available. 
+
+## How to Answer
+Using data on the location and opening dates of warehouse club stores, I can use a linear probability model to estimate how distance ($d$) affects a household's likelihood of shopping at a warehouse club ($Y$) after controlling for household ($i$), market ($m$), and time ($t$) fixed effects.
+
+\[
+Y_{imt} = \beta_0 + \beta_1 d_{imt} + \lambda_i + \lambda_m + \lambda_t + \epsilon_{imt}
+\]
+
+Furthermore, since Nielsen records all spending on household nondurables, I would be able to estimate the elasticity of substitution between warehouse clubs and other shopping channels such as grocery stores, discount retailers (like Walmart and Target), and dollar stores. 
+
+# Data Appendix
+## Data Source
+For this analysis, I use the Nielsen Consumer Panel dataset from 2004-2016 and covers about 40,000 households between 2004-06 and about 60,000 from 2007-2016. Over this sample period, the mean and median tenure of a panelist household are 4 and 3 years, respectively. 
+
+## Data Organization
+In order to focus on households for which these purchasing decisions are most salient, I remove households which have a student or member of the armed forces as the head of household because university/military base amenities such as meal plans and housing may affect the set of goods that are purchased relative to a household that does not have these amenities. Furthermore, in the case of a military household, their shopping choices may be limited to stores and products available on-base, which may differ substantially from normal civilian households.
+
+Additionally, I remove households that report an income of less than \$10k. I compute a household's "age" as either the age of the head of household (if only 1 is recorded) or the average of the two head's ages. Finally, I record a household as having a college education if at least one head of household reports having a college education. 
+
+I keep households that have made purchases in 10 months out of the year. I remove any purchases for which a price of \$0 is recorded as well as any purchases for which the value of the coupon is greater than 90\% of the item price. Because Nielsen's "data year" does not perfectly line up with the calendar year, I remove purchases that happen outside of the calendar year, which only affects purchases made in the last week of a calendar year. I remove any variable-weight items without barcodes ("magnet" products in Nielsen's parlance).
+
+### Toilet Paper Purchases
+In order to focus on price and size and ensure a high quality data sample, I restrict my sample to packages which have less than 96 rolls of toilet paper because packs higher than that are likely to be coding errors and this only affects 15 out of 7453 toilet paper products. I also limit purchase channels to Grocery stores, Discount stores (like Target and Walmart), Warehouse clubs (like Costco), and Dollar stores (like Dollar General), which capture about 85\% of household spending on household non-durables. 
+
+I restrict purchases to 1 or 2 packages, which make up over 95\% of toilet paper purchases. I also conservatively restrict my sample to households that purchase between 6 and 365 rolls over the course of a year, which allows for households to use between 1 roll every 2 months to 1 roll per day. Finally, I restrict per-roll costs to be between 20 cents and \$2 per roll which removes any remaining outliers that could result from miscoding. Finally, I remove any "to-go" items that are likely used for traveling instead of home use. 
+
+Because there is heterogeneity across roll types (variation in ply and sheets per roll), I define a "standard" roll to be a 250-sheet 2-ply roll and express all purchases in those units (following Orhun and Palazzolo 2018). For example, a 500-sheet single-ply roll and a 250-sheet 2-ply roll will both be 1 "standard" roll. 
+

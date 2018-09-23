@@ -1,0 +1,70 @@
+---
+title: "Warehouse Clubs, Bulk Buying, and Inequality"
+author: "Mallick Hossain"
+date: NULL
+output:
+  beamer_presentation:
+    slide_level: 3
+    fig_caption: false
+keep_tex: false
+header-includes:
+  - \usetheme[numbering = fraction, progressbar = none, background = light, 
+              sectionpage = progressbar]{metropolis}
+  - \usepackage{amsmath}
+  - \usepackage{bbm}
+fontsize: 10pt
+---
+
+### Motivation
+* Households are shopping less
+![](../code/5_figures/nielsenShoppingTripsIncome.png)
+
+### Motivation
+* Households are shopping at fewer unique stores
+![](../code/5_figures/uniqueRetailersIncome.png)
+
+### Motivation
+* Propensities differ across store types
+![](../code/5_figures/nielsenChannelPropensitiesVisit.png)
+
+### Linear Probability Regression
+\tiny
+\input{../code/6_paper/tables/channelPropensity.tex}
+
+### Channel Correlation 
+\input{../code/6_paper/tables/channelCor.tex}
+
+### Research Questions
+1. Why do households shop at different stores? 
+    + How important are transportation costs? Is it something else?
+    
+2. What are the consequences of different shopping patterns?
+    + Do households pay different unit prices? 
+
+### Unit Price Heterogeneity (Water)
+\tiny
+\input{../code/6_paper/tables/water.tex}
+
+### Unit Price Heterogeneity (Tissue)
+\tiny
+\input{../code/6_paper/tables/tissue.tex}
+
+### Unit Price Heterogeneity (Diapers)
+\tiny
+\input{../code/6_paper/tables/diaper.tex}
+
+### Unit Price Heterogeneity (Toilet Paper)
+\tiny
+\input{../code/6_paper/tables/tp.tex}
+
+### Generics
+![](../code/5_figures/genericByChannel.png)
+
+
+### Next Steps
+* Schedule proposal defense. What are expectations for defense?
+* Send "Value of Variety" paper. 
+    + Only found Quan and Williams (2018) and Brynjolffson, Hu, and Smith (2003)
+* Estimate linear probability model incorporating Costco openings
+    + Provides a baseline for the importance of distance
+* Get distributions of sizes purchased per trip and within stores
