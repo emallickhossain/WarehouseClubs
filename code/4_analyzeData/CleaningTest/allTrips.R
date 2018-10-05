@@ -4,45 +4,36 @@ library(lubridate)
 library(plotly)
 library(fredr)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 fredr_set_key(fredAPI)
 yr <- 2004:2016
-path <- "/home/mallick/Desktop/Nielsen/Data/Consumer_Panel_Data_2004-2016/nielsen_extracts/HMS/"
+path <- "/home/mallick/Desktop/Nielsen/Data/Clean/"
 
 # Get PCE
 pce <- setDT(fredr("PCEPI", observation_start = as.Date("2004-01-01")))[, "series_id" := NULL]
 pce[, "date" := as.POSIXct(date)]
 
+panel <- fread(paste0(path, "fullPanel.csv"))
+
 ################## RECREATING TRIPS CHART (Chart 1) ############################
 getChart1 <- function(yr) {
-  print(yr)
   # Getting shopping trips by household-month
-  trips <- fread(paste0(path, yr, "/Annual_Files/trips_", yr, ".tsv"),
+  trips <- fread(paste0(path, "Trips/trips", yr, ".csv"),
                  select = c("household_code", "panel_year", "purchase_date", "total_spent"))
   trips[, "purchase_date" := parse_date_time2(paste0(substr(purchase_date, 1, 8), "01"), "%Y-%m-%d")]
   setnames(trips, "purchase_date", "date")
-  trips <- trips[, .(monthlySpend = sum(total_spent)),
-                 by = .(household_code, panel_year, date)]
-  trips <- trips[year(date) == panel_year]
-
-  # Getting panel
-  panel <- fread(paste0(path, yr, "/Annual_Files/panelists_", yr, ".tsv"),
-                 select = c("Household_Cd", "Panel_Year", "Household_Income", "Projection_Factor"),
-                 col.names = c("household_code", "panel_year", "household_income", "projection_factor"))
-  panel[, "household_income" := cut(household_income, c(0, 13, 19, 26, 30),
-                                    labels = c("<25k", "25-50k", "50-100k", ">100k"),
-                                    ordered_result = TRUE)]
-
-  # Merging to get demographics
-  trips <- merge(trips, panel, by = c("household_code", "panel_year"))
-
-  # Getting weighted average monthly spending by month-income group
-  graphData1 <- trips[, .(monthlySpend = weighted.mean(monthlySpend, w = projection_factor)),
-                      by = .(date, household_income)]
-  graphData1 <- merge(graphData1, pce, by = "date")
-  graphData1[, "monthlySpendReal" := monthlySpend / value * 100]
-  return(graphData1)
+  trips <- trips[, .(monthlySpend = sum(total_spent)), by = .(household_code, panel_year, date)]
+  return(trips)
 }
-graphData1 <- rbindlist(map(yr, getChart1))
+graphData1 <- rbindlist(future_map(yr, getChart1))
+
+# Adding demographics and getting real expenditures
+graphData1 <- merge(graphData1, panel, by = c("household_code", "panel_year"))
+graphData1 <- graphData1[, .(monthlySpend = weighted.mean(monthlySpend, w = projection_factor)),
+                         by = .(date, household_income)]
+graphData1 <- merge(graphData1, pce, by = "date")
+graphData1[, "monthlySpendReal" := monthlySpend / value * 100]
 setkey(graphData1, household_income, date)
 graphData1[, "rollSpend" := zoo::rollmean(monthlySpendReal, 12,
                                           fill = c(NA, NULL, NA), align = "right"),

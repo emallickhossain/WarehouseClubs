@@ -23,7 +23,6 @@ getPurch <- function(yr) {
   purch <- purch[coupon_value < 0.9 * total_price_paid]
   purch <- merge(purch, prod, by = c("upc", "upc_ver_uc"))
   purch <- merge(purch, trips, by = "trip_code_uc")
-  purch[, c("deal_flag_uc") := NULL]
   purch[, "month" := as.integer(substr(purchase_date, 6, 7))]
   purch[, "shopMonths" := uniqueN(month), by = .(household_code, panel_year)]
   purch <- purch[shopMonths >= 10]

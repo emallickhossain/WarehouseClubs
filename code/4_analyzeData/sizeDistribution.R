@@ -63,24 +63,26 @@ prod[, "sizeUnadj" := multi * size1_amount]
 prod <- prod[sizeUnadj <= sizeUnadjLim]
 
 retailers <- fread(paste0(path, "retailers.tsv"))[channel_type %in% stores]
-panel <- fread(paste0(path, "fullPanel.csv"))[household_income %in% c("<25k", ">100k")]
+panel <- fread(paste0(path, "fullPanel.csv"))
 
-runReg <- function(spec, brand, store, title, data) {
+runReg <- function(spec, brand, store, title, data, regressors, type, file, order) {
   fullData <- data
   reg <- list()
   for (i in 1:length(spec)) {
     reg[[i]] <- felm(data = fullData, as.formula(spec[i]), weights = fullData$projection_factor)
   }
-  stargazer(reg, type = "text",
+  stargazer(reg, type = type,
             add.lines = list(c("Brand FE", brand),
                              c("Store FE", store)),
             single.row = FALSE, no.space = FALSE,
             dep.var.labels.include = FALSE,
             dep.var.caption = paste(title),
-            covariate.labels = c("units"),
+            covariate.labels = regressors,
             notes.align = "l",
             omit.stat = c("ser", "rsq"),
-            digits = 3)
+            order = order,
+            digits = 3,
+            out = file)
 }
 
 getSize <- function(yr) {
@@ -284,7 +286,8 @@ annualUnits <- unique(fullData[, .(household_code, panel_year, annualUnits,
 
 runReg(c("log(annualUnits) ~ household_income + college | panel_year + market +
               household_size + marital_status + race + hispanic_origin + age | 0 | market"),
-       store = "NA", brand = "NA", title = "Annual Units", data = annualUnits)
+       store = "NA", brand = "NA", title = "Annual Units", data = annualUnits,
+       type = "text", file = NULL, regressors = c("household_income", "college"))
 
 # Getting annual spending
 annualSpend <- unique(fullData[, .(household_code, panel_year, annualRealSpend,
@@ -308,7 +311,9 @@ runReg(c("log(unitCost) ~ household_income + college | panel_year + market +
               retailer_code +
               brand_code_uc +
               household_size + marital_status + race + hispanic_origin + age | 0 | market"),
-       store = c("N", "Y", "N", "Y"), brand = c("N", "N", "Y", "Y"), title = "Log Unit Cost", data = fullData)
+       store = c("N", "Y", "N", "Y"), brand = c("N", "N", "Y", "Y"), title = "Log Unit Cost",
+       data = fullData, regressors = c("25-50k", "50-100k", ">100k", "college"), type = "text",
+       file = "./code/6_paper/tables/tpUnitCost.tex", order = c(2, 3, 1, 4))
 
 # Bulk Discount
 runReg(c("log(unitCost) ~ log(units) | panel_year + market | 0 | market",
@@ -316,4 +321,25 @@ runReg(c("log(unitCost) ~ log(units) | panel_year + market | 0 | market",
          "log(unitCost) ~ log(units) | panel_year + market + retailer_code | 0 | market",
          "log(unitCost) ~ log(units) | panel_year + market + retailer_code + brand_code_uc | 0 | market"),
        brand = c("N", "Y", "N", "Y"), store = c("N", "N", "Y", "Y"),
-       title = "Log Unit Costs", data = fullData)
+       title = "Log Unit Costs", data = fullData, regressors = c("Log(units)"), type = "latex",
+       file = "./code/6_paper/tables/tpBulkDiscount.tex")
+
+# Looking at number of unique brands and/or stores visited
+brandShares <- fullData[, .(units = sum(units),
+                            realSpend = sum(realSpend),
+                            annualUnits = mean(annualUnits)),
+                        by = .(household_code, panel_year, brand_code_uc, projection_factor, household_income)]
+brandShares[, "share" := units / annualUnits * 100]
+oneBrand <- brandShares[share >= 100]
+oneBrand <- oneBrand[, .(freq = sum(projection_factor)), by = .(household_income, brand_code_uc)]
+oneBrand[, "tot" := sum(freq), by = household_income]
+oneBrand[, "share" := freq / tot * 100]
+
+
+# Getting brand-specific unit costs
+oneBrandHH <- brandShares[share >= 100, .(household_code, panel_year)]
+oneBrandHH <- merge(fullData, oneBrandHH, by = c("household_code", "panel_year"))
+reg <- felm(data = oneBrandHH, log(unitCost) ~ log(units) | as.factor(brand_code_uc) | 0 | market,
+            weights = oneBrandHH$projection_factor)
+reg <- felm(data = oneBrandHH, log(units) ~ household_income + household_size | as.factor(panel_year) + market | 0 | market,
+            weights = oneBrandHH$projection_factor)

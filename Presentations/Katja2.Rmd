@@ -35,10 +35,10 @@ fontsize: 10pt
 ![](../code/5_figures/onlyNielsenPurchasesPost2007.png)
 
 ### Unconditional Shopping Behavior (Adjusted)
-![](../code/5_figures/nielsenChannelPropensitiesSpend.png)
+![](../code/5_figures/nielsenChannelPropensitiesSpendShares.png)
 
 ### Conditional Shopping Behavior (Adjusted)
-![](../code/5_figures/nielsenChannelPropensitiesSpendConditional.png)
+![](../code/5_figures/nielsenChannelPropensitiesSpendSharesConditional.png)
 
 ### Price Index (Kaplan and Menzio 2014 / Aguiar and Hurst 2007)
 * Different households may pay different prices for the same "good"
@@ -70,7 +70,7 @@ p_{it} &= \frac{X_{it}}{\bar{X}_{it}}
 
 ### Relationship Between Index and Shopping Behavior
 
-\input{../code/5_figures/tables/table8Menzio.tex}
+<!-- \input{../code/5_figures/tables/table8Menzio.tex} -->
 
 ### Relationship by Income
 

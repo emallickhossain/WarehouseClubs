@@ -4,42 +4,34 @@ library(lubridate)
 library(plotly)
 library(fredr)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 fredr_set_key(fredAPI)
 yr <- 2004:2016
-path <- "/home/mallick/Desktop/Nielsen/Data/Consumer_Panel_Data_2004-2016/nielsen_extracts/HMS/"
+path <- "/home/mallick/Desktop/Nielsen/Data/Clean/"
 
 # Get PCE
 pce <- setDT(fredr("PCEPI", observation_start = as.Date("2004-01-01")))[, "series_id" := NULL]
 pce[, "date" := as.POSIXct(date)]
 
 # Get products
-prod <- fread(paste0(path, "Master_Files/Latest/products.tsv"), quote = "",
-              select = c("upc", "upc_ver_uc", "department_code"))
+prod <- fread(paste0(path, "prod.csv"), select = c("upc", "upc_ver_uc", "department_code"))
+panel <- fread(paste0(path, "fullPanel.csv"))
 
 # Getting data for only Nielsen coded trips
 getChart34 <- function(yr) {
-  print(yr)
-  # Getting panel
-  panel <- fread(paste0(path, yr, "/Annual_Files/panelists_", yr, ".tsv"),
-                 select = c("Household_Cd", "Panel_Year", "Household_Income", "Projection_Factor"),
-                 col.names = c("household_code", "panel_year", "household_income", "projection_factor"))
-  panel[, "household_income" := cut(household_income, c(0, 13, 19, 26, 30),
-                                    labels = c("<25k", "25-50k", "50-100k", ">100k"),
-                                    ordered_result = TRUE)]
 
   # Getting Nielsen purchases by department and trip
-  purch <- fread(paste0(path, yr, "/Annual_Files/purchases_", yr, ".tsv"),
+  purch <- fread(paste0(path, "Purchases/purchase", yr, ".csv"),
                  select = c("trip_code_uc", "upc", "upc_ver_uc", "total_price_paid"))
   purch <- merge(purch, prod, by = c("upc", "upc_ver_uc"))
-  purch <- purch[, .(total_price_paid = sum(total_price_paid)),
-                 by = .(trip_code_uc, department_code)]
+  purch <- purch[, .(total_price_paid = sum(total_price_paid)), by = .(trip_code_uc, department_code)]
 
   # Getting trip data
-  trips <- fread(paste0(path, yr, "/Annual_Files/trips_", yr, ".tsv"),
+  trips <- fread(paste0(path, "Trips/trips", yr, ".csv"),
                  select = c("trip_code_uc", "household_code", "panel_year", "purchase_date"))
   trips[, "purchase_date" := parse_date_time2(paste0(substr(purchase_date, 1, 8), "01"), "%Y-%m-%d")]
   setnames(trips, "purchase_date", "date")
-  trips <- trips[year(date) == panel_year]
 
   # Getting full data
   fullData <- merge(trips, purch, by = "trip_code_uc")
@@ -47,12 +39,10 @@ getChart34 <- function(yr) {
   # Getting monthly spending by department and household
   fullData <- fullData[, .(monthlySpend = sum(total_price_paid)),
                        by = .(household_code, panel_year, date, department_code)]
-
-  # Merging to get demographics
-  fullData <- merge(fullData, panel, by = c("household_code", "panel_year"))
   return(fullData)
 }
-graphData34 <- rbindlist(map(yr, getChart34))
+graphData34 <- rbindlist(future_map(yr, getChart34))
+graphData34 <- merge(graphData34, panel, by = c("household_code", "panel_year"))
 
 # Constructing chart 3 (only Nielsen purchases)
 graphData3 <- graphData34[, .(monthlySpend = sum(monthlySpend)),

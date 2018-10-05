@@ -5,6 +5,7 @@ library(plotly)
 library(fredr)
 library(Hmisc)
 library(lfe)
+library(stargazer)
 fredr_set_key(fredAPI)
 plan(multiprocess)
 path <- "/home/mallick/Desktop/Nielsen/Data/Clean/"
@@ -24,7 +25,6 @@ retailers <- fread(paste0(path, "retailers.tsv"))
 retailers <- retailers[channel_type %in% stores]
 
 panel <- fread(paste0(path, "fullPanel.csv"))
-panel <- panel[household_income %in% c("<25k", ">100k")]
 
 # Getting panel demographic data
 getData <- function(yr) {
@@ -38,7 +38,8 @@ getData <- function(yr) {
 
   # Getting trips
   trips <- fread(paste0(path, "Trips/trips", yr, ".csv"),
-                 select = c("trip_code_uc", "household_code", "retailer_code", "panel_year"))
+                 select = c("trip_code_uc", "household_code", "retailer_code",
+                            "panel_year", "purchase_date"))
 
   # Merging with purchases and channels
   trips <- merge(trips, purch, by = "trip_code_uc")
@@ -52,10 +53,59 @@ fullData <- merge(fullData, pce, by = "panel_year")
 fullData[, "realSpend" := total_price_paid / value * 100]
 fullData <- fullData[realSpend >= spendLow & realSpend <= spendLim]
 fullData[, "annualSpend" := sum(realSpend), by = .(household_code, panel_year)]
+fullData[, ':=' (month = as.integer(substr(purchase_date, 6, 7)))]
 
-# Monthly Trip regression
-monthlyTrips <- fullData[, .(trips = uniqueN(trip_code_uc) / 12),
-                         by = .(household_code, panel_year, household_income,
+# Monthly Trip regression (aggregate)
+monthlyTrips <- fullData[, .(trips = uniqueN(trip_code_uc),
+                             tripSpend = mean(realSpend),
+                             monthlySpend = sum(realSpend)),
+                         by = .(household_code, panel_year, month, household_income,
+                                projection_factor, household_size, marital_status,
+                                race, hispanic_origin, market, age, college)]
+
+reg1 <- felm(data = monthlyTrips, log(trips) ~ household_income + log(monthlySpend) | as.factor(panel_year) +
+               household_size + as.factor(marital_status) + as.factor(race) +
+               as.factor(hispanic_origin) + as.factor(age) + as.factor(college) +
+               market | 0 | market,
+             weights = monthlyTrips$projection_factor)
+reg2 <- felm(data = monthlyTrips, log(tripSpend) ~ household_income + log(monthlySpend) | as.factor(panel_year) +
+               household_size + as.factor(marital_status) + as.factor(race) +
+               as.factor(hispanic_origin) + as.factor(age) + as.factor(college) +
+               market | 0 | market,
+             weights = monthlyTrips$projection_factor)
+
+# CV from Coibion
+cv <- monthlyTrips[, .(cv = sd(monthlySpend) / mean(monthlySpend)),
+                   by = .(household_code, panel_year, household_income,
+                          projection_factor, household_size, marital_status,
+                          race, hispanic_origin, market, age, college)]
+aggCV <- cv[, .(cv = weighted.mean(cv, w = projection_factor, na.rm = TRUE)),
+            by = .(panel_year, household_income)]
+plot_ly(data = aggCV, x = ~panel_year) %>%
+  add_lines(y = ~cv, split = ~household_income)
+reg3 <- felm(data = cv, log(cv + 1) ~ household_income | as.factor(panel_year) +
+              household_size + as.factor(marital_status) + as.factor(race) +
+              as.factor(hispanic_origin) + as.factor(age) + as.factor(college) +
+              market | 0 | market,
+            weights = cv$projection_factor)
+
+stargazer(reg1, reg2, reg3, type = "latex",
+          add.lines = list(c("Demographics", "Y", "Y", "Y"),
+                           c("Year FE", "Y", "Y", "Y"),
+                           c("MSA FE", "Y", "Y", "Y")),
+          single.row = FALSE, no.space = FALSE,
+          dep.var.labels.include = TRUE,
+          dep.var.labels = c("Log(Trips)", "Log(Trip Spending)", "Log(CV + 1)"),
+          covariate.labels = c("25-50k", "50-100k", ">100k", "Log(MonthTotal)"),
+          notes.align = "l",
+          omit.stat = c("ser", "rsq"),
+          order = c(2, 3, 1, 4),
+          digits = 3,
+          out = "./code/6_paper/tables/tripChanges.tex")
+
+# Monthly Trip regression  by Channel
+monthlyTrips <- fullData[, .(trips = uniqueN(trip_code_uc)),
+                         by = .(household_code, panel_year, month, household_income,
                                 projection_factor, household_size, marital_status,
                                 race, hispanic_origin, market, age, college, channel_type)]
 

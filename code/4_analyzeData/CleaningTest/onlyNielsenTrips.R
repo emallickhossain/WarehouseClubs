@@ -4,31 +4,25 @@ library(lubridate)
 library(plotly)
 library(fredr)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 fredr_set_key(fredAPI)
 yr <- 2004:2016
-path <- "/home/mallick/Desktop/Nielsen/Data/Consumer_Panel_Data_2004-2016/nielsen_extracts/HMS/"
+path <- "/home/mallick/Desktop/Nielsen/Data/Clean/"
 
 # Get PCE
 pce <- setDT(fredr("PCEPI", observation_start = as.Date("2004-01-01")))[, "series_id" := NULL]
 pce[, "date" := as.POSIXct(date)]
 
+panel <- fread(paste0(path, "fullPanel.csv"))
+
 # Getting data for only Nielsen coded trips
 getChart2 <- function(yr) {
-  print(yr)
-  # Getting panel
-  panel <- fread(paste0(path, yr, "/Annual_Files/panelists_", yr, ".tsv"),
-                 select = c("Household_Cd", "Panel_Year", "Household_Income", "Projection_Factor"),
-                 col.names = c("household_code", "panel_year", "household_income", "projection_factor"))
-  panel[, "household_income" := cut(household_income, c(0, 13, 19, 26, 30),
-                                    labels = c("<25k", "25-50k", "50-100k", ">100k"),
-                                    ordered_result = TRUE)]
-
   # Getting unique trips with Nielsen purchases
-  purch <- unique(fread(paste0(path, yr, "/Annual_Files/purchases_", yr, ".tsv"),
-                        select = "trip_code_uc"))
+  purch <- unique(fread(paste0(path, "Purchases/purchase", yr, ".csv"), select = "trip_code_uc"))
 
   # Getting trips and only getting the ones that were Nielsen coded
-  trips <- fread(paste0(path, yr, "/Annual_Files/trips_", yr, ".tsv"),
+  trips <- fread(paste0(path, "Trips/trips", yr, ".csv"),
                  select = c("trip_code_uc", "household_code", "panel_year",
                             "purchase_date", "total_spent"))
   trips <- trips[trip_code_uc %in% purch$trip_code_uc]
@@ -37,21 +31,17 @@ getChart2 <- function(yr) {
   setnames(trips, "purchase_date", "date")
 
   # Get monthly spending per household-month
-  trips <- trips[, .(monthlySpend = sum(total_spent)),
-                 by = .(household_code, panel_year, date)]
-  trips <- trips[year(date) == panel_year]
-
-  # Merging to get demographics
-  fullData <- merge(trips, panel, by = c("household_code", "panel_year"))
-
-  # Getting average monthly spending by month-income group
-  fullData <- fullData[, .(monthlySpend = weighted.mean(monthlySpend, w = projection_factor)),
-                       by = .(date, household_income)]
-  fullData <- merge(fullData, pce, by = "date")
-  fullData[, "monthlySpendReal" := monthlySpend / value * 100]
+  fullData <- trips[, .(monthlySpend = sum(total_spent)), by = .(household_code, panel_year, date)]
   return(fullData)
 }
-graphData2 <- rbindlist(map(yr, getChart2))
+graphData2 <- rbindlist(future_map(yr, getChart2))
+
+# Adding demographics and deflating
+graphData2 <- merge(graphData2, panel, by = c("household_code", "panel_year"))
+graphData2 <- graphData2[, .(monthlySpend = weighted.mean(monthlySpend, w = projection_factor)),
+                         by = .(date, household_income)]
+graphData2 <- merge(graphData2, pce, by = "date")
+graphData2[, "monthlySpendReal" := monthlySpend / value * 100]
 setkey(graphData2, household_income, date)
 graphData2[, "rollSpend" := zoo::rollmean(monthlySpendReal, 12,
                                           fill = c(NA, NULL, NA), align = "right"),
