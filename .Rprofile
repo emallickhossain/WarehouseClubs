@@ -6,3 +6,7 @@ censusAPI <- "c8b436007c1507dc5709fa1e7a54c116d113cc4a"
 
 # -------------- FRED API -------------------------------------------------------
 fredAPI <- "e2b57235e981bb9db50b789104012b3b"
+
+#system("tar -xvzf /home/upenn/hossaine/Nielsen/Purchases.tar.gz -C /scratch/upenn/hossaine")
+#system("tar -xvzf /home/upenn/hossaine/Nielsen/Trips.tar.gz -C /scratch/upenn/hossaine")
+#system("cp /home/upenn/hossaine/Nielsen/*.*sv /scratch/upenn/hossaine")

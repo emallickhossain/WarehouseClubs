@@ -1,0 +1,323 @@
+---
+title: "Bulk Buying and Inequality"
+author: "E. Mallick Hossain"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  pdf_document:
+    number_sections: yes
+bibliography: reference.bib
+fig_caption: true
+citation_package: natbib
+fontsize: 12pt
+geometry: margin=1.5in
+header-includes:
+  - \usepackage{setspace}
+  - \onehalfspace
+  - \usepackage[utf8]{inputenc}
+  - \usepackage{amssymb}
+  - \usepackage{amsmath}
+  - \usepackage{bbm}
+  - \usepackage[multiple]{footmisc}
+  - \usepackage[nolists, noheads]{endfloat}
+  - \renewcommand{\efloatseparator}{\mbox{}}
+  - \usepackage{caption}
+  - \captionsetup[figure]{labelsep=space}
+  - \captionsetup{font=small,skip=0pt}
+  - \usepackage{multirow}
+---
+ 
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}
+
+\begin{abstract}
+\singlespace
+Buying in bulk is a common way to save money, especially for storable items like toilet paper. Using granular household shopping data, I find that households making over \$100k buy 25\% larger packages than households making less than \$25k. Furthermore, the relationship between quantity purchased and income is monotonically increasing. I estimate that low-income households spend 6\% more for the same annual quantity than they would if they made larger per-trip purchases. This pattern persists even after controlling for storage costs, transportation costs, brand, and store preferences. I then develop a model that rationalizes this behavior through budget constraints and find that consumers are more likely to take advantage of these discounts when the discount is "steeper" than when it is spread out across a spectrum of package sizes. I also provide supporting evidence that uniform unit pricing laws help consumers take advantage of these discounts. This research implies that absent budget constraints, smooth consumption may be achieved at a lower cost by spiking expenditures instead of smoothing expenditures. Budget-constrained households cannot spike their expenditures and therefore maintain smoother, but more costly, expenditure paths. 
+\end{abstract}
+
+\blfootnote{I wish to thank my wonderful advisers, Aviv Nevo, Holger Sieg, Katja Seim, and Sarah Moshary for their sound advice, constructive criticism, and immense patience throughout this writing process. They are prized mentors. I would also like to thank Emek Basker, Frank DiTraglia, Ishan Ghosh, and Paolo Martellini for their comments, questions, and extensive discussions on this topic which have helped to significantly improve this paper.  Researcher(s) own analyses calculated (or derived) based in part on data from The Nielsen Company (US), LLC and marketing databases provided through the Nielsen Datasets at the Kilts Center for Marketing Data Center at The University of Chicago Booth School of Business. The conclusions drawn from the Nielsen data are those of the researcher(s) and do not reflect the views of Nielsen. Nielsen is not responsible for, had no role in, and was not involved in analyzing and preparing the results reported herein.}
+
+# Introduction
+Economic theory posits that risk-averse households prefer smooth consumption paths. However, smooth consumption does *not* imply smooth expenditures. Indeed, households may accelerate their spending to take advantage of coupons, sales, and other discounts, generating a "spike" in expenditures. For storable items, this expenditure spike does not have to correspond to a consumption spike. The ability to spike one's expenditure is directly related to her income. Since this is a savings behavior, but it depends on income, it may likely be the case that low-income households are too budget-constrained to spike their expenditures and realize these savings. In some cases, these accumulated accelerations may be enough to reduce shopping, generating time and travel savings as well. 
+
+This paper find that high-income households are more likely to spike their expenditures and take advantage of bulk discounts compared to similar low-income households. For toilet paper purchases, households making over \$100k purchase 24\% larger packages compared to households making below \$25k. As a result, these high-income households realize a 6\% savings over their low-income counterparts simply as a result of buying in bulk. 
+
+Previous research has documented that this "spikiness" has strong implications for measuring consumption inequality [@coibion2017]. Other research has specifically analyzed various money-saving strategies as well as documented and modeled the differences in a household's propensity to substitute between brands and take advantage of sales [@argente2017, @erdem2003, @hendel2006a, @hendel2006b, @hendel2013, @pesendorfer2002]. @nevo2018 explore how the propensity to take advantage of these savings changed during the Great Recession. However, most research assumes that unit costs are uniform for a particular product and households choose quantities given a fixed unit price. In reality, this is not true because unit costs differ with package size and larger packages offer lower unit costs. Aside from @nevo2009 and @nevo2018, few papers have looked specifically at bulk discounts as a money-saving technique.
+
+The closest paper to this one is @orhun2018 which documents differences in purchase behavior between high- and low-income households and uses within month purchasing variation to establish that low-income households can better spike their spending when they have more money (i.e. at the start of the month). However, they are only able to spike to take advantage of sales and they cannot take advantage of bulk purchases even when they have more money. For these households it is likely the case that they need more room in their budget to allow for the size of a spike necessary to buy in bulk. 
+
+This paper contributes to the literature by allowing for heterogeneous unit costs and explicitly addressing how budget constraints may affect household's ability to achieve lower unit costs and minimize expenditures. 
+
+This paper documents three stylized facts:
+
+1. Households making over \$100k purchase 24\% larger packages of toilet paper compared to households making less than \$25k. 
+2. The relationship between household income and package size purchased is monotonically increasing in income.
+3. Due to bulk discounts, households making over \$100k save 6\% annually compared to frequently buying small packages like low-income households do. 
+
+Not only can high-income households reduce expenditures, there is evidence that this behavior accumulates and actually reduces shopping frequencies, resulting in additional time and travel cost savings. 
+
+Overall, this paper quantifies the "poverty penalty" paid by poor households that results from them being unable to take advantage of the same discounts that rich households can. This is particularly stark when examining necessity goods for which total consumption is fixed and relatively predictable. Over the course of a year, rich and poor households purchase the same amount of toilet paper, but have significantly different expenditure paths, which ends up costing low-income households more. This paper provides evidence and analysis to explain these patterns.
+
+# Data
+I use the Nielsen Consumer Panel Dataset from 2006--2016 available through the Kilts Center for Marketing at the University of Chicago Booth School of Business. This data is a longitudinal panel of between 40,000-60,000 households which record all purchases from any outlet intended for personal, in-home use. Products can be characterized as household non-durables such as groceries, cleaning supplies, health/personal care items, and basic general merchandise. The dataset is estimated to contain about 30\% of consumer expenditures. About 1.5 million unique items (defined by UPC code) are present in the data. The panel is based on a stratified, proportionate sample designed to be projectable to the United States population. It is balanced on demographic characteristics including household size, income, education, children, race, and occupation. 
+
+Households are provided a scanner with which they scan all items that they purchase, input quantities and prices (if necessary), date of purchase, and store purchased from. Households are incentivized to stay active in the panel by monthly prize drawings, points for data transmission, and sweepstakes as well as ongoing communication from Nielsen to ensure cooperation and address any problems. Nielsen retains about 80% of its panel from year to year with the mean and median tenure of a household being 4 and 3 years, respectively. To further ensure data quality, Nielsen institutes a minimum purchase threshold based on household size that must be met to be deemed "active".
+
+For my analysis, I remove any households where the head of household is in the military to avoid instances where store choice may be limited (e.g. all shopping is on a military base) or students where shopping choices may be different than a typical household (e.g. a meal plan and dormitory housing with various amenities). I also remove all "Magnet" products, which are variable-weight items that generally do not have a UPC (e.g. produce, deli/seafood counter items, etc.). Finally, I drop any purchases where the price paid was 0 or the coupon value was more than 90\% of the purchase price.^[Some of these are valid purchases, such as free item offers, but I remove these to better focus on "typical" prices and sales.]
+
+In order to examine effects related to the value of bulk purchasing that is separate from immediate consumption, this analysis focuses on a product that is storable, non-perishable, and universal in consumption, namely, toilet paper. While this research focuses on toilet paper consumption, its conclusions are generalizable to overall household consumption, toilet paper provides the cleanest product by which to conduct this analysis.^[That is, before it is used. Pun intended.] All of the analysis that follows is done on the subset of toilet paper purchases in my Nielsen data. 
+
+# Descriptive Evidence
+Before introducing my 2 key facts, I must establish one intuitive, but critical fact: After controlling for various household characteristics like household size,  age, and race, annual toilet paper consumption does not significantly differ based on household income. In short, high- and low-income households have similar annual purchase requirements given their other household characteristics. Therefore, their primary purchase decision is over their path of expenditures. See Appendix for further discussion of this finding.
+
+I document 2 stylized facts to motivate my analysis:
+
+1. Households making over \$100k purchase 25\% larger packages than households making under \$25k.
+2. Quantity discount savings are significant and substantial, a 10\% increase in package size reduces the unit price by 2.5\%.
+
+Combining these facts together, I calculate that low-income households spend 6\% more over the course of a year because they do not take advantage of bulk discounts at the same rate as high-income households even though they purchase about the same quantity of toilet paper annually.^[The strongest predictors of annual toilet paper purchases are household size and age. Income is insignificant after controlling for many other household characteristics. See Appendix for further discussion.]
+
+## Package Sizes
+I find that high-income households purchase larger package sizes than low-income households by estimating the following regression:
+
+\begin{equation}
+\label{eq:size}
+Y_{ikrbmt} = \beta Inc_{imt} + \gamma X_{imt} + \lambda_r + \lambda_b + \lambda_m + \lambda_t + \epsilon_{imt}, 
+\end{equation}
+
+where $Y$ is the log standardized package size purchased made by household $i$ on shopping trip $k$ at retailer $r$ of brand $b$ in market $m$ at time $t$.^[Packages are standardized to be in units of 275 sheet 2-ply rolls. Because private-label products have the same brand code in the Nielsen data, I recode the private label brand to correspond to a brand-retailer to better control for potential quality differences. As an illustration, this ensures that Great Value (Walmart brand) is distinct from Kirkland Signature (Costco brand).] $Inc$ is the household income quantile and $X$ is a vector of other household characteristics including household size, type of residence, marital status, race, ethnicity, age, and education. $\lambda$ are fixed effects.
+
+Column 1 of Table \ref{tab:packageSizeFullTP} shows that high-income households (those making over \$100k) purchase packages that are about 25\% larger than those purchased by the lowest-income households (those making under \$25k), even after accounting for household demographics. This number decreases substantially after accounting for retailer identity (Column 2), but is still substantial and significant at 7\%. Furthermore, package size is still increasing in household income. Column 3 adds brand fixed effects, and the coefficients increase slightly to 9\%. As households become richer, they are more likely to buy larger packages. Somewhat surprisingly, Figure \ref{fig:coefficients} shows that even at finer income gradations, this pattern is monotonically increasing. Overall, these patterns suggest that there are multiple contributing factors to the decision to buy in bulk. I focus on the aspects of consumer choice that are directly related to income and abstract away from store choice in this paper. 
+
+\input{./tables/packageSizeFullTp.tex} 
+
+\begin{figure}
+\centering
+\includegraphics{../5_figures/tpCoefficients.png}
+\caption{}
+\label{fig:coefficients}
+\end{figure}
+
+## Bulk Discounts
+After establishing this stark difference in package size choice, I estimate the magnitude of bulk discounts using the following regression:
+
+\begin{equation}
+\label{eq:discount}
+log(P)_{krbmt} = \beta log(Q)_{krbmt} + \lambda_r + \lambda_b + \lambda_m + \lambda_t + \epsilon_{krbmt}, 
+\end{equation}
+
+where $P$ is the unit price paid on shopping trip $k$ at retailer $r$ of brand $b$ in market $m$ at time $t$.^[Packages are standardized to be in units of 275 sheet 2-ply rolls.] $\lambda$ are fixed effects.
+
+Table \ref{tab:bulkDiscountUnitCost} shows that overall, the bulk discount is such that a 1\% increase in the package size decreases the unit cost by 0.25\%. After accounting for brand differences, the bulk discount is lessened, but still substantial at 0.18\%. Columns 4-6 break this out by retailer type and this estimate is quite stable with the exception of warehouse clubs, at which the bulk discount appears to be much larger. However, these stores tend to already offer large sizes and only a limited selection of varieties within each product category, compared to discount stores (like Wal-Mart and Target) or grocery stores.
+
+\input{./tables/bulkDiscountUnitCost.tex} 
+
+## Estimated Savings
+Combining together the differences in package sizes purchased and the estimated bulk discounts, we calculate that low-income households could reduce their unit costs and therefore their overall expenditures by about 6\%. 
+
+## Paycheck Frequency
+A common test of liquidity constraints leverages the time of the month in which the purchase is made [@orhun2018, @pires2015, @stephens2003, @stephens2006, @hastings2010]. The clearest links are often with Social Security or the Supplemental Nutrition Assistance Program because these disbursements are made regularly on a predictable monthly schedule. Therefore, it is a reasonable assumption that budget constraints are more relaxed at the start of the month, when these funds are first available compared to the end of the month, when a large share may have already been spent. However, other papers generally assume this feature without explicitly knowing the timing of a household's paycheck. Weekly or biweekly pay frequencies are especially popular among firms with almost 90\% of businesses paying their workers at least twice a month.^[According to March 2013 BLS data (@bls2014), only 11.3\% of firms paid monthly. 32.4\% paid weekly, 36.5\% paid biweekly, and 19.8\% paid semimonthly.] With these higher frequency paychecks, the difference in liquidity between the start and the end of the month may be less clean than desired. 
+
+Another confounding effect is that payment frequency is correlated with hourly earnings with weekly paychecks giving an average of \$18 per hour compared to \$28 per hour for monthly paychecks. 
+
+One argument to be made is that most recurring bills (utilities, rent, etc.) are on a monthly frequency, so a household is more likely to pay the bill from one of their paychecks or at the very least, less likely to precisely allocate the expense across both paychecks. This is especially true for variable bills like electricity and gas where even if a household planned well, an expense shock is more likely to come from the nearest paycheck instead of being allocated across both. 
+
+# Model
+
+## Random Coefficients Model
+As a baseline model, I estimate a discrete-choice mixed logit (random coefficients) model. The advantage of using a mixed logit model is that I can take advantage of the panel structure of my data and allow for individual heterogeneity in preferences across various product characteristics. For example, different households may have different preferences over price or package size. A standard discrete choice logit model restricts these preferences to be the same across all households. Furthermore, a mixed logit model also does not place restrictions on the kinds of substitution patterns that may be present. 
+
+Let $U_{hj}$ represent the utility that household $h$ gets from product $j$. We can decompose this utility into a "deterministic" part that relates the utility $U$ to observable factors and an unobservable portion $\epsilon_{hj}$. 
+
+\begin{equation}
+U_{hj} = V_{hj} + \epsilon_{hj}
+\end{equation}
+
+Letting $V$ be represented as a linear function of observables $X_{hj}$, we get the following equation:
+
+\begin{equation}
+U_{hj} = \beta_h' X_{hj} + \epsilon_{hj}
+\end{equation}
+
+where $\beta$ is allowed to be different for each household $h$. For most of the individual elements of $\beta$, I will assume a normal distribution except for the price coefficient which I will assume to be lognormal in order to ensure that it is negative. The elements of $x$ are product characteristics that will include ply, brand, package size, standardized unit cost, and total cost.
+
+With this representation and assuming that $\epsilon$ follows a Type 1 extreme value distribution, we can write the choice probabilities as:
+
+\begin{equation}
+P_{hi} = \int \frac{\exp(\beta_h' x_{hi})}{\sum_j \exp(\beta_h' x_{hj})} f(\beta) d\beta
+\end{equation}
+
+The key parameters of interest are the mean and variance of the distribution of each $\beta$. These estimates will illustrate the heterogeneity in preferences for various product features, with my focus being on preferences for package size and costs. 
+
+The next step is to relate this heterogeneity in individual-level preferences to demographic characteristics. Because of the panel structure of the data, we can obtain estimates of the individual-level preference parameters. Combining that with the richness of the demogrphic data will allow us to relate preference heterogeneity with demographics. For example, if there is substantial heterogeneity in package size preferences, but that preference is strongly correlated with housing, then this would suggest that these preferences are being driven by storage costs. Similarly, if preference heterogeneity in total price was strongly correlated with income, this would suggest preferences are being driven by budget considerations. 
+
+## EOQ Model
+In order to build a model of consumer spending under bulk discounting, I use a common workhorse model of supply chain management (SCM) that has roots in @baumol1952 and has been used in a variety of shopping settings including @agarwal2018. Bulk discounting is a common practice in SCM and they have developed workhorse models for these situations.^[In SCM jargon, I am estimating the economic order quantity given an all-unit bulk discount.]
+
+I begin by outlining the general model that centers on expenditure minimization. Consumers know their annual demand $D$ for a given product and must choose their average per-trip quantity, $q$, to purchase. Therefore, the number of shopping trips is simply $D / q$, so given shopping costs $S$, total shopping costs are $S * D / q$. Given per-unit storage costs, $h$, their total storage costs will be $hq / 2$.^[$q/2$ is the average inventory held.] This model allows for shopping costs ($S$) and inventory holding costs, $h$, in addition to expenditures. Finally, since there are bulk discounts, the unit-pricing function is given as $P(q)$ where $P' < 0$ and $P'' > 0$. The model also allows for constraints on shopping frequency ($1/q$), size limits ($q$), unit price limits, and budget constraints. Given annual demand, $D$, households must choose a regular purchase quantity, $q$, that minimizes the following expression subject to $C$ constraints:
+
+\begin{equation}
+\label{eq:expMin}
+\begin{aligned}
+\min_q \quad \overbrace{S \frac{D}{q}}^{Shopping} + \overbrace{h \frac{q}{2}}^{Inventory} &+ \overbrace{D * P(q)}^{Expenditure}
+\\
+\\
+\text{s.t.} \quad \underbrace{\frac{\alpha_c}{q}}_{Trip Freq.} + \underbrace{\beta_c q}_{Quantity Limit} + \underbrace{\gamma_c P(q)}_{Unit Price Limit} &+ \underbrace{\delta_c P(q) q}_{Budget} \leq b_c
+\end{aligned}
+\end{equation}
+
+In my model, I only consider the monthly budget constraint $\frac{D}{12q}P(q) q \leq b$.^[$\frac{D}{12q}$ is the number of trips taken each month and $b$ is the monthly budget allocation.]
+
+Solving the first-order condition gives the following equation:
+\begin{equation}
+D = \frac{q^2}{S - P'(q) q^2} \left( \frac{h}{2} - \lambda (P(q) + P'(q) q) \right)
+\end{equation}
+
+### Case 1: Non-Binding Budget Constraint
+If the budget constraint does not bind, then $\lambda = 0$ and we rewrite Equation 2 as 
+\begin{equation}
+D = \frac{hq^2}{2 * (S - P'(q) q^2)}
+\end{equation}
+
+This generates the following comparative static results^[I am assuming that at least 1 unit is purchased which ensures that $q^2 > q$. Without this, depending on $P$, there may be values of $q$ for which Equation 3 actually decreasing in $q$. As long as $q \geq 1$, this function is increasing.]:
+
+* As annual demand, $D$, increases, average purchase size, $q$ increases
+* As inventory costs, $h$, increase, average purchase size $q$ decreases
+* As shopping costs, $S$, increase, average purchase size $q$ increases
+* As bulk discounts become "steeper", average purchase size, $q$ decreases
+
+The final point may require more explanation. By "steeper," I am referring to a pricing function that concentrates most of the bulk discount among the smaller sizes, after which, unit costs are almost linear. The economic intuition is that bulk discounts incentivize larger purchase sizes. Flattening the price curve makes larger sizes more attractive while steepening it makes larger sizes less attractive. Mathematically, this means that the "steeper" price function $P^*$ has the following properties: $P^{*'} > P'$ and $P^{*''} < P''$. 
+
+### Case 2: Binding Budget Constraint
+When there is a binding budget constraint, then $\lambda > 0$ and the comparative statics become more difficult. The multiplicative term is increasing in $q$, but since $P' < 0$ and $P'' > 0$, the direction of the second term is ambiguous without knowing more about the curvature of $P$. 
+
+For now, assume that the pricing function takes an exponential form, $P(q) = ae^{-cq}$. Then, Equation 2 will be increasing in $q$. With this property, the implications of the non-binding case carry through as well.
+
+One interesting feature is that depending on the exact functional form of the pricing function, there could be contradictory implications between household with binding constraints and those without. Using the exponential pricing function and depending on the value of $c$, this implies (more intuitively) that households with binding budget constraints will purchase less than their unconstrainted counterparts.^[Even though $\lambda > 0$, because of the exponential form, the second term will likely be positive, hence increasing the value of the whole expression.] However, this may not be guaranteed for all functional forms or even all exponential pricing functions. More research will be required into this particular aspect.
+
+### Comparison with No Bulk Discount
+In order to assess whether or not to use my proposed bulk discount model, we must compare it with the model without bulk discounts. This amounts to solving the following problem:
+
+\begin{equation}
+\begin{aligned}
+\min_q \quad \overbrace{S \frac{D}{q}}^{Shopping} + \overbrace{h \frac{q}{2}}^{Inventory} &+ \overbrace{D * P}^{Expenditure}
+\\
+\\
+\text{s.t.} \quad Pq &\leq b
+\end{aligned}
+\end{equation}
+
+This yields the following solution
+
+\begin{equation}
+q = \sqrt{\frac{SD}{h / 2 - \lambda P}}
+\end{equation}
+
+As we can see, this actually yields the same implications as what I proposed earlier, so more work will need to be done to identify implications that differ between the two models.
+
+One difference between the two models does have to do with the relationship between constrained and unconstrained households. Counterintuitively, households that are constrained ($\lambda > 0$) would like to buy larger quantities than their unconstrained counterparts, but must purchase $b/P$ since they are constrained.^[To Joao, this sounds weird. I am probably making a mistake here.]
+
+### Quantity Discount Function
+Following @schotanus2009, I estimate a quantity discount pricing function of the form:
+
+\begin{equation}
+P(q) = p_m + \frac{T}{q^{\eta}}
+\end{equation}
+
+where $p_m$ is the theoretical minimum price that the seller would offer, $T$ is a scaling parameter, and $\eta$ controls the "steepness" of the quantity discount. For illustration, if there is a small, medium, and large size package, as $\eta$ increases, most savings can be obtained by switching from the small to the medium size, with little extra savings gained from switching to the large size. In order to ensure that the unit price is decreasing in $q$ and positive, I assume that $p_m$, $T$, and $\eta$ are all positive. 
+
+Putting this into Equation \ref{eq:expMin} yields the following FOC:
+
+\begin{equation}
+D * (S + \eta T q^{1 - \eta} (1 - \frac{\lambda}{12})) = \frac{hq^2}{2}
+\end{equation}
+
+For households that do not have a binding budget constraint, they choose $q$ that satisfies the following:
+\begin{equation}
+D * (S + \eta T q^{1 - \eta}) = \frac{hq^2}{2}
+\end{equation}
+
+For households with a binding budget constraint, they will choose the following:
+
+\begin{equation}
+q = \left( \frac{DT}{12b - Dp_m} \right) ^\frac{1}{\eta}
+\end{equation}
+
+# Equilibrium Pricing
+
+# Counterfactuals
+## No Bulk Discounts
+
+# Robustness
+
+## Credit Access
+If budget constraints are preventing low-income households from buying in bulk, then having access to a credit card may help them better smooth their expenditures over short time horizons. If budget constraints are binding over longer time periods, which could be due to seasonal employment, income volatility, or other unexpected income shocks, then credit cards would not provide the short-term liquidity because the interest rate would effectively cancel out potential bulk discount savings. 
+
+In order to test this hypothesis, I add an indicator for whether or not the household has a credit card. Most interestingly, the regression results in Table \ref{tab:packageSizeFullTpLiq} suggest that credit access does not differentially affect households based on their income, but that having a credit card is associated with purchasing larger package sizes, regardless of income.^[This subsample is only available after 2013. As a further check, I rerun the original analysis on this subsample and the positive relationship between package size and income still holds.] For the poorest households, this effect is large enough to overcome the difference in purchasing with high-income households. 
+
+\input{./tables/packageSizeFullTpLiq.tex}
+
+## Transportation Costs
+Another factor that could be generating this pattern is transportation costs. Low-income households may more heavily rely upon public transport or have less access to cars than high-income households. In order to address this concern, I directly control for car ownership rates from the ACS. The regression results in Table \ref{tab:packageSizeFullTpCar} suggest that transportation may be an important factor in package sizes purchased, but the variation that is being captured by car ownership does not affect the income coefficients. 
+
+\input{./tables/packageSizeFullTpCar.tex}
+
+## Storage Costs
+One competing explanation is that storage costs are driving differences between high- and low-income households. Equation \ref{eq:size} directly controls for the type of residence the household lives in (single-family home, apartment, or mobile home). However, there may be other storage aspects I am missing. High-income households likely have larger homes and therefore lower storage costs for large quantities of items like bulk toilet paper. In order to test this explanation, I redo the above analysis for tampons. Tampons are storable, non-substitutable, and demand is relatively predictable and fixed. However, storage costs are substantially lower for tampons because their packages are smaller. As an approximation, a 2-3 month supply of tampons (~50 units) takes up about 158 cubic inches of space while a 2-3 month supply of toilet paper takes up 5 times as much space.^[Volume calculations based on [Playtex Sport 50-unit package](https://www.walmart.com/ip/Playtex-Sport-Tampons-Unscented-Multi-Pack-25-Regular-Absorbency-And-25-Super-Absorbency-50-Count/24287691) and [Cottonelle Ultra ComfortCare 12-unit package](https://www.amazon.com/Cottonelle-ComfortCare-Toilet-Biodegradable-Septic-Safe/dp/B07C9JYF2W/ref=sr_1_15_a_it?ie=UTF8&qid=1546024137&sr=8-15&keywords=toilet+paper).]
+
+Estimating Equations \ref{eq:size} and \ref{eq:discount} gives qualitatively similar results to my toilet paper analysis. Quantitatively, the results are smaller overall, with slightly flatter bulk discounts (-0.22 instead of -0.25) and less differences in package size purchases (10\% difference instead of 24\%). However, some of the package size differences could be due to the usage of pads. That analysis is not done here. The main takeaway is that the positive correlation between income and package size remains even when storage costs are substantially reduced. 
+
+For completeness, these size choices are likely not due to brand preferences because most brands offer a similar range of sizes (see Figure 2).
+
+\input{./tables/packageSizeFullTampon.tex}
+
+## Brand Preferences
+One alternative explanation for this bulk purchasing pattern could be brand and quality preferences. Maybe cheap brands are offered in small sizes while expensive brands are larger. Therefore, what looks to be bulk purchasing could be brand preference. Figure \ref{fig:brandDist} plots the package size distribution of the top 10 most popular brands. There is substantial overlap in the size distributions (with the exception of warehouse club private labels), so this pattern is unlikely to be driven by brand and quality preferences.^[The top 10 brands account for over 80\% of all purchases, so for clarity I plot only the distributions of these top 10 brands.]
+
+\begin{figure}
+\centering
+\includegraphics{../5_figures/tpSizeDist.png}
+\caption{}
+\label{fig:brandDist}
+\end{figure}
+
+## Salience and Consumer Awareness
+Following @chetty2009, this could be a case of salience and consumer awareness in that consumers are not aware of the bulk discount because it is not presented to them or they do not compute unit prices when making purchases. To test this, I leverage state-level variation in laws about displaying unit-costs. 18 states have some form of law regulating the display of unit prices, 5 have guidelines, and 27 have neither guidelines or regulations. As my measure of unit-pricing laws, I use the information compiled in the National Institute of Standards and Technology (NIST) Handbook 130. This handbook is published annually following the National Conference on Weights and Measures and consists of numerous laws and regulations that are recommended for states to adopt in order to "achieve, to the maxiumum extent possible, uniformity in weights and measures laws and regulations among the various states and local jurisdictions in order to ... provide uniform and sufficient protection to all consumers in commercial weights and measures practices" [@nist130]. Every year, NIST publishes a summary of which states have adopted unit pricing laws. I use their classification to indicate whether a state has no laws, guidelines, or laws around unit pricing. Since 2004, very few states have changes their status, so the coefficients on unit pricing stringency is primarily being identified off of cross-sectional variation as opposed to longitudinal variation. 
+
+Table \ref{tab:unitPriceLawTp} provides evidence that laws and guidelines are associated with larger package size purchases. Whether the adopted policies are laws or guidelines does not appear to have a substantial difference, but there is a significant difference between having and not having any rules on posting unit prices. However, in the context of bulk buying inequality, incorporating this measure does not affect the coefficient estimates on income, so it is unlikely that information or education is the driving factor behind the positive relationship between income and package size purchases.
+
+\input{./tables/unitPriceLawTp.tex}
+
+# Conclusion and Future Research
+Put conclusion here
+
+# References
+
+<div id="refs"></div>
+
+# Appendix
+
+## Annual Consumption Analysis (OLS and Lasso)
+In order to establish that annual consumption does not substantially depend on income, I first run a basic OLS regression to establish correlations between household covariates and annual purchases. Table \ref{tab:annualTP} provides the OLS results which suggests that other household covariates such as household size, age, and race are more predictive of annual toilet paper consumption than income. As a further check, I use a cross-validated Lasso regression to select the most predictive covariates and it does not select many income covariates.^[Lasso results are available upon request.]
+
+\input{./tables/annualTP.tex} 
+
+## Comparison with Sales and Coupons
+Sales, couponing, and brand choice have gotten considerably more attention in the literature than bulk purchasing. Generally, unit costs are treated as fixed across sizes and consumers choose the quantity to purchase. Sales, coupons, and brands affect the expenditures through the unit price. I have already demonstrated the prevalence of bulk discounts. In order to compare the size of bulk discounting against other savings avenues, I estimate the following regression:
+
+\begin{equation}
+log(P)_{krbmt} = \beta_1 log(Q)_{krbmt} + \beta_2 Coupon_{krbmt} + \beta_3 Sale_{krbmt} + \lambda_r + \lambda_b + \lambda_m + \lambda_t + \epsilon_{krbmt}, 
+\end{equation}
+
+where $P$ is the unit price paid on shopping trip $k$ at retailer $r$ of brand $b$ in market $m$ at time $t$. $Q$ is the package size and $\lambda$ are fixed effects. $Coupon$ and $Sale$ are indicators for whether a coupon was used or the product was on sale. 
+
+Table 5 shows that even after controlling for brand and store fixed effects, sales tend to only decrease unit costs by about 5\%. In comparison, the same savings could be realized by purchasing a 33\% larger package (e.g. purchasing an 8-pack instead of a 6-pack of toilet paper). Coupons offer slightly larger savings than bulk purchasing, but can still be reasonably outstripped by bulk purchasing. In the case of toilet paper, with common sizes ranging from 4 to 48 units, having a choice over 2, 3, or 4 times larger packages is within most consumer's choice set. In fact, this is likely to be a more available savings method considering that in the Nielsen data, almost 70\% of purchases were done without a coupon or sale. 
+
+Similar findings hold for tampons, which are shown in Table 6 for completeness.
+
+\input{./tables/bulkDiscountSale.tex}
+
+Furthermore, using the Nielsen Retail Scanner Data, when looking at the movement and prices of individual products, sales and price changes are relatively infrequent. Prices are flat over the course of a year with few, short sales, but sales are not a frequent event as they are in the soft drink category (@hendel2013). Most importantly, even with sales, this often does not change the bulk discounting pattern that larger packages offer lower unit costs. 

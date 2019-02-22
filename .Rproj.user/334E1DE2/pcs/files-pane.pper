@@ -1,9 +1,13 @@
 {
-    "path" : "~/Dropbox/Research/RTemplates",
+    "path" : "~/Desktop/Research/OnlineShopping/WarehouseClubs/code/1_getData",
     "sortOrder" : [
         {
             "ascending" : true,
             "columnIndex" : 2
+        },
+        {
+            "ascending" : false,
+            "columnIndex" : 4
         }
     ]
 }

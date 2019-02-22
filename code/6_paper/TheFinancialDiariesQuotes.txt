@@ -1,0 +1,11 @@
+p.2 "Having a full-time job did not mean having a steady income"
+p.6 "In 2014, Pew Charitable Trusts [found] 92% of respondents chose stability over mobility"
+p.10 "Researchers found a 30% increase in year-to-year income volatility between 1971 and 2008 (Dynan, Elmendorf, Sichel 2012)"
+p.12 "A fundamental financial challenge for ... many other American families--regardless of their income level--is coping with moments when expenses must be paid but income is not yet in hand"
+p.32 "55% saw a month-to-month volatility change in total income of 30% or more"
+p.33 "Predictability and volatility are different things"
+p.34 "While predictability may make it easier to cope with volatility, it still doesn't make it easy"
+p.69 "Families' attempt to 'smooth' are usually accompanied by--and complicated by--the need to sometimes od the exact opposite: to put together big, lumpy amounts, like Christmas gifts or for a car down payment. The overarching goal is to get hold of the right money at the right time. In other words, it is about managing liquidity"
+p.72 Expenditures tend to be slightly insulated from income shocks, but still volatile
+p.103 "People were more wiling to use accounts that gave them the freedome to withdraw for urgen needs if they arose. If savings were truly untouchable, people were inclined to put aside less."
+p.159 "SIPP shows that nearly 90 million people, nearly 1/3 of all Americans, experienced poverty for 2 months or more between 2009 and 2011".

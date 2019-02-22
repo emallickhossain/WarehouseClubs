@@ -1,0 +1,263 @@
+\begin{table}[!htbp] \centering
+  \caption{Toilet Paper Package Size Purchases Increase in Household Income}
+  \label{tab:packageSizeFullTP}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
+  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
+  25-50k & 0.05$^{***}$ (0.01) & 0.01$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y \\
+Retailer FE & N & Y & Y \\
+Brand FE & N & N & Y \\
+Observations & 3,372,291 & 3,372,291 & 3,372,291 \\
+Adjusted R$^{2}$ & 0.08 & 0.35 & 0.46 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{3}{l}{and education.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Bulk Discounts Generate Substantial Savings}
+  \label{tab:bulkDiscountUnitCost}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Unit Cost)} \\
+\cline{2-4}
+ & \multicolumn{3}{c}{Full Sample} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ Log(Size) & $-$0.25$^{***}$ & $-$0.18$^{***}$ & $-$0.19$^{***}$ \\
+  & (0.004) & (0.003) & (0.003) \\
+ \hline \\[-1.8ex]
+Year/MSA FE & Y & Y & Y \\
+Brand FE & N & Y & Y \\
+Retailer FE & N & N & Y \\
+Observations & 3,372,291 & 3,372,291 & 3,372,291 \\
+Adjusted R$^{2}$ & 0.19 & 0.75 & 0.76 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at} \\
+ & \multicolumn{3}{l}{the market level.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Credit Access May Help Low-Income Households Buy In Bulk}
+  \label{tab:packageSizeFullTpLiq}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ >100k & 0.19$^{***}$ (0.02) & 0.03$^{**}$ (0.01) & 0.05$^{***}$ (0.01) \\
+  50-100k & 0.09$^{***}$ (0.01) & 0.01 (0.01) & 0.02 (0.01) \\
+  25-50k & 0.03$^{**}$ (0.01) & $-$0.002 (0.01) & 0.001 (0.01) \\
+  Credit & 0.17$^{***}$ (0.01) & 0.05$^{***}$ (0.01) & 0.06$^{***}$ (0.01) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y \\
+Retailer FE & N & Y & Y \\
+Brand FE & N & N & Y \\
+Observations & 513,866 & 513,866 & 513,866 \\
+Adjusted R$^{2}$ & 0.09 & 0.41 & 0.51 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{3}{l}{and education. 'Credit' denotes whether or not the,} \\
+ & \multicolumn{3}{l}{household used a credit card to pay for a purchase } \\
+ & \multicolumn{3}{l}{at any point during the year. This is only available } \\
+ & \multicolumn{3}{l}{for years 2013 and onward.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Car Ownership May Help Low-Income Households Buy In Bulk}
+  \label{tab:packageSizeFullTpCar}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
+  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
+  25-50k & 0.06$^{***}$ (0.01) & 0.02$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
+  Car Share & 0.33$^{***}$ (0.08) & 0.17$^{**}$ (0.07) & 0.18$^{***}$ (0.06) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y \\
+Retailer FE & N & Y & Y \\
+Brand FE & N & N & Y \\
+Observations & 2,175,461 & 2,175,461 & 2,175,461 \\
+Adjusted R$^{2}$ & 0.08 & 0.35 & 0.45 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{3}{l}{and education. 'Car Share' denotes the share of } \\
+ & \multicolumn{3}{l}{households in the corresponding PUMA that own at } \\
+ & \multicolumn{3}{l}{least 1 vehicle.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Tampon Package Size Purchases Increase in Household Income}
+  \label{tab:packageSizeFullTampon}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ >100k & 0.10$^{***}$ (0.01) & 0.03$^{***}$ (0.01) & 0.04$^{***}$ (0.01) \\
+  50-100k & 0.05$^{***}$ (0.01) & 0.01 (0.01) & 0.02$^{***}$ (0.01) \\
+  25-50k & 0.01 (0.01) & $-$0.01 (0.01) & $-$0.002 (0.01) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y \\
+Retailer FE & N & Y & Y \\
+Brand FE & N & N & Y \\
+Observations & 236,908 & 236,908 & 236,908 \\
+Adjusted R$^{2}$ & 0.04 & 0.34 & 0.43 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Unit Price Regulations May Help Consumers Make Higher Value Choices}
+  \label{tab:unitPriceLawTp}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
+  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
+  25-50k & 0.05$^{***}$ (0.01) & 0.01$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
+  Guidelines & 0.03 (0.02) & 0.03$^{**}$ (0.01) & 0.03$^{**}$ (0.01) \\
+  Law & 0.06$^{**}$ (0.02) & 0.02 (0.01) & 0.01 (0.01) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y \\
+Retailer FE & N & Y & Y \\
+Brand FE & N & N & Y \\
+Observations & 3,362,228 & 3,362,228 & 3,362,228 \\
+Adjusted R$^{2}$ & 0.08 & 0.35 & 0.46 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Annual TP Purchases}
+  \label{tab:annualTP}
+\begin{tabular}{@{\extracolsep{5pt}}lc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & Annual Purchases \\
+ 12-15k & $-$0.69 (1.29) \\
+  15-20k & 1.28 (1.49) \\
+  20-25k & 1.17 (1.35) \\
+  25-30k & 0.98 (1.25) \\
+  30-35k & $-$1.61 (1.39) \\
+  35-40k & $-$0.72 (1.49) \\
+  40-45k & 0.04 (1.34) \\
+  45-50k & $-$0.04 (1.41) \\
+  50-60k & $-$0.40 (1.26) \\
+  60-70k & 0.97 (1.35) \\
+  70-100k & $-$1.00 (1.35) \\
+  >100k & $-$1.54 (1.35) \\
+  Home & 3.34$^{***}$ (0.63) \\
+  Mobile Home & 2.04$^{*}$ (1.11) \\
+  2 people & 26.58$^{***}$ (0.88) \\
+  3 people & 42.90$^{***}$ (1.18) \\
+  4 people & 52.95$^{***}$ (1.14) \\
+  5+ people & 64.30$^{***}$ (1.46) \\
+  Widowed & $-$3.14$^{***}$ (0.97) \\
+  Divorced & $-$5.76$^{***}$ (0.71) \\
+  Single & $-$6.85$^{***}$ (0.80) \\
+  White & $-$0.12 (0.70) \\
+  Child Present & $-$9.16$^{***}$ (0.73) \\
+  Hispanic & $-$8.49$^{***}$ (1.16) \\
+  Age 45-64 & 12.59$^{***}$ (0.62) \\
+  Age 65+ & 10.02$^{***}$ (0.74) \\
+  Urban & $-$0.18 (0.70) \\
+  College Degree & $-$8.96$^{***}$ (0.53) \\
+ \hline \\[-1.8ex]
+Observations & 574,482 \\
+Adjusted R$^{2}$ & 0.12 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{1}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{1}{l}{Standard errors are clustered} \\
+ & \multicolumn{1}{l}{at the market level. Omitted } \\
+ & \multicolumn{1}{l}{categories are the following: } \\
+ & \multicolumn{1}{l}{10-12k income, apartments, } \\
+ & \multicolumn{1}{l}{1 person households, married } \\
+ & \multicolumn{1}{l}{couples, and 18-44 year olds} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Bulk Discounts Provide More Savings Than Sales}
+  \label{tab:bulkDiscountSale}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{Log(Price)} \\
+\cline{2-4}
+ & \multicolumn{3}{c}{Full Sample} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ Log(Size) & $-$0.25$^{***}$ & $-$0.18$^{***}$ & $-$0.18$^{***}$ \\
+  & (0.004) & (0.003) & (0.003) \\
+  Sale and/or Coupon & 0.02$^{***}$ & $-$0.23$^{***}$ & $-$0.23$^{***}$ \\
+  & (0.005) & (0.004) & (0.004) \\
+  Sale Only & 0.04$^{***}$ & $-$0.05$^{***}$ & $-$0.07$^{***}$ \\
+  & (0.004) & (0.003) & (0.002) \\
+ \hline \\[-1.8ex]
+Time/MSA FE & Y & Y & Y \\
+Brand FE & N & Y & Y \\
+Retailer FE & N & N & Y \\
+Observations & 3,372,291 & 3,372,291 & 3,372,291 \\
+Adjusted R$^{2}$ & 0.19 & 0.78 & 0.78 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Standard errors are clustered at} \\
+ & \multicolumn{3}{l}{the market level.} \\
+\end{tabular}
+\end{table}

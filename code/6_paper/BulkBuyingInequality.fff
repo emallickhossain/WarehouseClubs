@@ -1,0 +1,14 @@
+\begin{figure}
+\centering
+\includegraphics{../5_figures/tpCoefficients.png}
+\caption{}
+\label{fig:coefficients}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics{../5_figures/tpSizeDist.png}
+\caption{}
+\label{fig:brandDist}
+\end{figure}
