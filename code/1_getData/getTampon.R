@@ -2,7 +2,7 @@
 source("./Nielsen/getItem.R")
 
 # Inputs
-yr <- 2004:2016
+yr <- 2006:2016
 prodCode <- 7270
 
 # Restrictions
@@ -18,7 +18,7 @@ prod <- fread(paste0(path, "prod.csv"),
                          "size1_units"))[product_module_code %in% prodCode]
 prod[, "size" := multi * size1_amount]
 prod <- prod[size <= max(sizeLim) & size >= min(sizeLim)]
-tamponPurch <- getItem(prod, yr)
+tamponPurch <- getItem(prod)
 
 # Applying limits
 tamponPurch <- tamponPurch[packages >= min(packageLim) & packages <= max(packageLim)]

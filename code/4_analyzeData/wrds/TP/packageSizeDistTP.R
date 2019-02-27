@@ -4,11 +4,11 @@ library(ggplot2)
 library(ggridges)
 library(ggthemes)
 library(lfe)
+threads <- 8
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
-tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "product_module_code",
-            "upc_descr", "size1_units", "purchase_date") := NULL]
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[!is.na(size)]
+tpPurch[, c("upc", "upc_ver_uc", "quantity", "upc_descr", "purchase_date") := NULL]
 
 tpPurch[, "household_income_coarse" := factor(household_income_coarse,
                                                   levels = c("<25k", "25-50k", "50-100k", ">100k"),
@@ -40,6 +40,7 @@ summary(reg)
 
 
 # Plot purchase sizes for various households
+setorder(tpPurch, household_code, trip_code_uc)
 tpPurch[, "trip" := 1:.N, by = household_code]
 ggplot(data = tpPurch[household_code == 2000649],
        aes(x = trip, y = sizeUnadj, color = as.character(household_code))) +
@@ -74,15 +75,14 @@ tpPurch[brand_descr %in% c("CHARMIN", "CHARIN BASIC", "CHARMIN ESSENTIALS",
                            "CHARMIN ULTRA SCENTS"), "brandBin" := "CHARMIN"]
 tpPurch[brand_descr %in% c("COTTONELLE", "KLEENEX COTTONELLE"), "brandBin" := "COTTONELLE"]
 tpPurch[brand_descr %in% c("CTL BR"), "brandBin" := "CTL BR"]
-tpPurch[brand_descr %in% c("MARCAL", "MARCAL PRIDE", "MARCAL SMALL STEPS",
-                           "MARCAL SOFPAC", "SOFPAC BY MARCAL"), "brandBin" := "MARCAL"]
+tpPurch[brand_descr %in% c("ANGEL SOFT"), "brandBind" := "ANGEL SOFT"]
 tpPurch[brand_descr %in% c("QUILTED NORTHERN"), "brandBin" := "QLTD NTN"]
 tpPurch[brand_descr %in% c("SCOTT", "SCOTT 1000", "SCOTT EXTRA SOFT",
                            "SCOTT NATURALS", "SCOTT RAPID DISSOLVING"), "brandBin" := "SCOTT"]
 tpPurch[is.na(brandBin), "brandBin" := "OTHER"]
 
-tpPurch[, "brandSizeBin" := paste0(brandBin, sizeBin)]
-tpPurch[, "sizeBrandBin" := paste0(sizeBin, brandBin)]
+tpPurch[, "brandSizeBin" := paste0(brandBin, sizeUnadjBin)]
+tpPurch[, "sizeBrandBin" := paste0(sizeUnadjBin, brandBin)]
 
 trans.matrix <- function(X, prob = T) {
   tt <- table( c(X[,-ncol(X)]), c(X[,-1]) )
@@ -106,7 +106,7 @@ reorder_cormat <- function(cormat){
   # Use correlation between variables as distance
   dd <- as.dist((1-cormat)/2)
   hc <- hclust(dd)
-  cormat <-cormat[hc$order, hc$order]
+  cormat <- cormat[hc$order, hc$order]
 }
 
 # Plotting transition matrices

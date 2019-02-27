@@ -68,7 +68,7 @@ Households are provided a scanner with which they scan all items that they purch
 
 For my analysis, I remove any households where the head of household is in the military to avoid instances where store choice may be limited (e.g. all shopping is on a military base) or students where shopping choices may be different than a typical household (e.g. a meal plan and dormitory housing with various amenities). I also remove all "Magnet" products, which are variable-weight items that generally do not have a UPC (e.g. produce, deli/seafood counter items, etc.). Finally, I drop any purchases where the price paid was 0 or the coupon value was more than 90\% of the purchase price.^[Some of these are valid purchases, such as free item offers, but I remove these to better focus on "typical" prices and sales.]
 
-In order to examine effects related to the value of bulk purchasing that is separate from immediate consumption, this analysis focuses on a product that is storable, non-perishable, and universal in consumption, namely, toilet paper. While this research focuses on toilet paper consumption, its conclusions are generalizable to overall household consumption, toilet paper provides the cleanest product by which to conduct this analysis.^[That is, before it is used. Pun intended.] All of the analysis that follows is done on the subset of toilet paper purchases in my Nielsen data. 
+In order to examine effects related to the value of bulk purchasing that is separate from immediate consumption, this analysis focuses on a product that is storable, non-perishable, and universal in consumption, namely, toilet paper. While this research focuses on toilet paper consumption, its conclusions are generalizable to overall household consumption, toilet paper provides the cleanest product by which to conduct this analysis.^[That is, before it is used. Pun intended.] Based on CPI basket weights, storable, non-perishable items account for about XX\% of expenditures.^[See Appendix for items and basket shares.] All of the analysis that follows is done on the subset of toilet paper purchases in my Nielsen data. 
 
 # Descriptive Evidence
 Before introducing my 2 key facts, I must establish one intuitive, but critical fact: After controlling for various household characteristics like household size,  age, and race, annual toilet paper consumption does not significantly differ based on household income. In short, high- and low-income households have similar annual purchase requirements given their other household characteristics. Therefore, their primary purchase decision is over their path of expenditures. See Appendix for further discussion of this finding.
@@ -299,6 +299,27 @@ Put conclusion here
 <div id="refs"></div>
 
 # Appendix
+
+## CPI Products and Weights
+These weights come from the Bureau of Labor Statistics Handbook of Methods, Chapter 17: The Consumer Price Index (Updated 2-14-2018). To be conservative in the importance of accounting for quantity discounts, I capture products that are shelf-stable and storable to varying degrees. The most convervative category would exclude food products, so I compute that separately. For context, these weights are across all consumer spending. The relevant sub-categories to consider are food at home (8.247), household supplies (0.847), and other goods (1.634). Bulk discounts are not relevant in other spending categories such as food away from home (5.830), housing (42.173), apparel (3.343), transportation (15.289), medical care (7.716), recreation (5.750), and education (7.062). 
+
+The CPI tries to adjust for quantity discounts in that the "first multiple-unit price is reported for use in the CPI." However, to the extent that there are systematic differences in multi-unit purchases, especially for storable goods, this is likely to overestimate the price index for households that consistently buy in bulk and underestimate the price index for households that buy small quantities. 
+
+| Category                                      | CPI-U | CPI-W |
+|-----------------------------------------------|-------|-------|
+| Cereals and cereal products                   | 0.370 | 0.420 |
+| Processed fruits and vegetables               | 0.303 | 0.331 |
+| Nonalcoholic beverages and beverage materials | 0.955 | 1.092 |
+| Sugar and artifical sweeteners                | 0.054 | 0.066 |
+| Fats and oils                                 | 0.245 | 0.270 |
+| Spices, seasonings, comdiments, sauces        | 0.292 | 0.302 |
+| Housekeeping supplies                         | 0.847 | 0.910 |
+| Personal care products                        | 0.724 | 0.709 |
+| Tobacco and smoking products                  | 0.718 | 1.187 |
+| ----------------------------------------------
+| Total                                         | 4.508 | 5.287 |
+| Non-Food Total                                | 2.289 | 2.806 |
+
 
 ## Annual Consumption Analysis (OLS and Lasso)
 In order to establish that annual consumption does not substantially depend on income, I first run a basic OLS regression to establish correlations between household covariates and annual purchases. Table \ref{tab:annualTP} provides the OLS results which suggests that other household covariates such as household size, age, and race are more predictive of annual toilet paper consumption than income. As a further check, I use a cross-validated Lasso regression to select the most predictive covariates and it does not select many income covariates.^[Lasso results are available upon request.]

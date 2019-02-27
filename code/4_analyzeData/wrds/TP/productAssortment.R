@@ -109,6 +109,9 @@ getAssortment <- function(yr) {
                key = c("upc"))[, "panel_year" := NULL]
   tp <- merge(tp, rms, by = "upc")
   tp <- merge(tp, prod, by = c("upc", "upc_ver_uc"))
+  stores <- fread(paste0(pathName, "Annual_Files/stores_", yr, ".tsv"),
+                  select = c("store_code_uc", "retailer_code", "dma_code", "fips_state_code"))
+  tp <- merge(tp, stores, by = "store_code_uc")
   fwrite(tp, paste0("/home/mallick/Desktop/Nielsen/Data/Scanner/Assortment/",
                     yr, ".csv"), nThread = threads)
 }

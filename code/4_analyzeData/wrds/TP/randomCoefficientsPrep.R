@@ -1,15 +1,32 @@
-# Estimates mixed logit model for TP choice (ONLY 2010)
+# Estimates mixed logit model for TP choice. Restricting to HHs that only purchase 1 package
+# of a major brand (CTL BR, Charmin, Qltd Ntn, Angel Soft, Kleenex, or Scott) [~86% of sales]
+# Merging with store assortments to get full choice set for households. Only
+# focusing on sizes of 4, 6, 12, or 24 rolls.
 library(data.table)
 library(bit64)
 library(lubridate)
-library(purrr)
-library(mlogit)
+library(knitr)
 path <- "/scratch/upenn/hossaine/"
+threads <- 8
 yr <- 2006:2016
 diffTol <- 0 # Tolerance for generic price mismatch. 0 is the strictest and minDiff is the loosest
+brands <- c("CTL BR", "CHARMIN", "ANGEL SOFT", "QUILTED NORTHERN", "KLEENEX COTTONELLE", "SCOTT 1000")
+brandCode <- c(536746, 526996, 506045, 624459, 581898, 635074)
 
-# Getting product master list
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
+# Quickly summarize the data and where observations get dropped
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
+tpPurch[, "brand_code_uc" := as.integer(substr(brand_code_uc, 1, 6))]
+row1 <- c("Starting", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
+
+# Dropping products that cannot be standardized
+tpPurch <- na.omit(tpPurch, cols = "size")
+row2 <- c("Cannot be standardized", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
+
+# Dropping stores without a store_code_uc
+tpPurch <- tpPurch[store_code_uc != 0]
+row3 <- c("Dropping stores without ID", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
+
+# Adding variables to enable merging with the retail scanner data
 tpPurch[, "generic" := ifelse(brand_descr == "CTL BR", 1L, 0L)]
 tpPurch[, "purchase_date" := as.Date(purchase_date, format = "%Y-%m-%d")]
 tpPurch[, "week_end" := ceiling_date(purchase_date, "week",
@@ -18,7 +35,7 @@ tpPurch[, "purchase_date" := NULL]
 tpPurch[, "week_end" := as.character(week_end)]
 tpPurch[, "week_end" := as.integer(gsub("-", "", week_end))]
 tpPurch[, "pCents" := as.integer(round(total_price_paid * 100))]
-tpPurch[, "unitCost" := as.integer(round(unitCost * 100))]
+tpPurch[, "unitCost" := as.integer(round(pCents / totVol))]
 
 fullChoice <- NULL
 fullTrips <- NULL
@@ -31,31 +48,18 @@ for (i in yr) {
                                              household_income, household_size,
                                              type_of_residence, marital_status,
                                              hispanic_origin, market, age, college,
-                                             white, child)])
+                                             white, child, rate)])
   purch <- unique(tpPurch[panel_year == i, .(trip_code_uc,
                                              choice_upc = upc,
                                              choice_upc_ver_uc = upc_ver_uc,
                                              store_code_uc, week_end, generic)])
 
   # Getting store assortment
-  assort <- fread(paste0(path, "Assortment/", i, ".csv"))
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = threads)
+  assort[, "unitCost" := round(pCents / size)]
 
   # Remove NA unit costs
   assort <- na.omit(assort, cols = "unitCost")
-
-  # Categorizing brands to top and other to reduce choice set
-  assort[, "pkgSizeBin" := cut(pkgSize, c(0, 4, 6, 9, 12, 20, 24, 100),
-                               c("1-4", "5-6", "7-9", "10-12", "13-20", "21-24", "25+"))]
-
-  assort[brand_descr %in% c("CHARMIN", "CHARIN BASIC", "CHARMIN ESSENTIALS",
-                            "CHARMIN PLUS", "CHARMIN SCENTS", "CHARMIN SENSITIVE",
-                            "CHARMIN ULTRA SCENTS"), "brandBin" := "CHARMIN"]
-  assort[brand_descr %in% c("COTTONELLE", "KLEENEX COTTONELLE"), "brandBin" := "COTTONELLE"]
-  assort[brand_descr %in% c("QUILTED NORTHERN"), "brandBin" := "QLTD NTN"]
-  assort[brand_descr %in% c("ANGEL SOFT"), "brandBin" := "ANGEL SOFT"]
-  assort[brand_descr %in% c("SCOTT", "SCOTT 1000", "SCOTT EXTRA SOFT",
-                            "SCOTT NATURALS", "SCOTT RAPID DISSOLVING"), "brandBin" := "SCOTT"]
-  assort[is.na(brandBin), "brandBin" := "OTHER"]
 
   # Combining with non-generic purchases. Can only match about 50% of stores and
   # only about 35% of shopping trips in 2010 for non-generics
@@ -64,13 +68,20 @@ for (i in yr) {
                       allow.cartesian = TRUE)
   choiceLong[, "choice" := ifelse(choice_upc == upc, TRUE, FALSE)]
   choiceLong[, "match" := sum(choice), by = trip_code_uc]
-  choiceLong <- choiceLong[match == 1]
-  choiceLong <- choiceLong[, .(unitCost = weighted.mean(unitCost, w = pkgSize),
-                               pCents = weighted.mean(pCents, w = pkgSize),
-                               choice = sum(choice),
-                               ply = weighted.mean(ply, w = pkgSize),
-                               pkgSize = weighted.mean(pkgSize, w = pkgSize)),
-                           by = .(trip_code_uc, pkgSizeBin, brandBin)]
+
+  # For some reason, there are instances where the product purchased is not
+  # recorded in the scanner data. In these cases, I input the data from the
+  # purchase occasion.
+  noMatch <- unique(choiceLong[match == 0]$trip_code_uc)
+  newDat <- tpPurch[trip_code_uc %in% noMatch,
+                    .(store_code_uc, week_end, trip_code_uc, choice_upc = upc,
+                      choice_upc_ver_uc = upc_ver_uc, generic, upc, upc_ver_uc,
+                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
+                      unitCost, choice = TRUE, match = 1)]
+  choiceLong <- rbind(choiceLong, newDat, use.names = TRUE)
+  choiceLong[, "match" := NULL]
+  choiceLong[, "match" := sum(choice), by = trip_code_uc]
+  choiceLong[, c("choice_upc", "choice_upc_ver_uc", "generic", "match") := NULL]
 
   # Adding generic purchases
   # As with non-generics, I can only match about 50% of stores and about 50% of trips in 2010
@@ -105,14 +116,21 @@ for (i in yr) {
   genericChoice[possible == TRUE, "minDiff" := min(diff), by = trip_code_uc]
   genericChoice[trip_code_uc %in% multiples & possible == TRUE, "choice" := ifelse(diff <= minDiff + 0.01, TRUE, FALSE)]
   genericChoice[, "match" := sum(choice), by = trip_code_uc]
-  genericChoice <- genericChoice[match == 1]
+  genericChoice[, c("choice_ply", "pCents_choice", "choice_size", "choice_unitCost",
+                    "coupon", "diff", "possible", "minDiff") := NULL]
 
-  genericChoice <- genericChoice[, .(unitCost = weighted.mean(unitCost, w = pkgSize),
-                                     pCents = weighted.mean(pCents, w = pkgSize),
-                                     choice = sum(choice),
-                                     ply = weighted.mean(ply, w = pkgSize),
-                                     pkgSize = weighted.mean(pkgSize, w = pkgSize)),
-                                 by = .(trip_code_uc, pkgSizeBin, brandBin)]
+  # For some reason, there are instances where the product purchased is not
+  # recorded in the scanner data. For generics, there are a variety of explanations
+  # To fix this, I just add in the record from the consumer panel
+  noMatch <- unique(genericChoice[match == 0]$trip_code_uc)
+  newDat <- tpPurch[trip_code_uc %in% noMatch,
+                    .(store_code_uc, week_end, trip_code_uc, upc, upc_ver_uc,
+                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
+                      unitCost, choice = TRUE, match = 1)]
+  genericChoice <- rbind(genericChoice, newDat, use.names = TRUE)
+  genericChoice[, "match" := NULL]
+  genericChoice[, "match" := sum(choice), by = trip_code_uc]
+  genericChoice[, c("match") := NULL]
 
   # Combining choice sets and expanding to full possibility set
   fullChoice <- rbindlist(list(fullChoice, choiceLong, genericChoice), use.names = TRUE)
@@ -120,42 +138,51 @@ for (i in yr) {
   fullPanel <- rbindlist(list(fullPanel, panel), use.names = TRUE)
 }
 
-# Generating full choice set and making unavailable products really expensive
-brands <- c("CHARMIN", "COTTONELLE", "QLTD NTN", "ANGEL SOFT", "SCOTT", "OTHER")
-sizes <- c("1-4", "5-6", "7-9", "10-12", "13-20", "21-24", "25+")
+fullChoice <- merge(fullChoice, fullTrips, by = "trip_code_uc")
+
+# Matched to Retail Scanner Data
+row4 <- c("Matched to Scanner", uniqueN(fullChoice$trip_code_uc), uniqueN(fullChoice$household_code))
+
+# Identifying purchases of the top 5 brands and in the 4 popular sizes
+fullChoice[, "rightBrand" := ifelse(brand_code_uc %in% brandCode, 1L, 0L)]
+fullChoice[, "rightSize" := ifelse(pkgSize %in% c(4, 6, 12, 24), 1L, 0L)]
+fullChoice[, "focusSet" := rightBrand * rightSize]
+fullChoice <- fullChoice[focusSet == 1]
+fullChoice[, c("rightBrand", "rightSize", "focusSet") := NULL]
+madePurch <- fullChoice[, .(madePurch = sum(choice)), by = trip_code_uc][madePurch > 0]$trip_code_uc
+fullChoice <- fullChoice[trip_code_uc %in% madePurch]
+row5 <- c("Restrict to top brand/size combos", uniqueN(fullChoice$trip_code_uc),
+          uniqueN(fullChoice$household_code))
+
+# Only single-unit purchases
+unitCount <- fullChoice[, .(quantity = sum(choice)), by = trip_code_uc][quantity == 1]$trip_code_uc
+fullChoice <- fullChoice[trip_code_uc %in% unitCount]
+row6 <- c("Single packages", uniqueN(fullChoice$trip_code_uc), uniqueN(fullChoice$household_code))
+
+cleanTable <- as.data.table(rbind(row1, row2, row3, row4, row5, row6))
+setnames(cleanTable, c("Step", "Obs", "HH"))
+cleanTable[, c("Obs", "HH") := .(as.integer(Obs), as.integer(HH))]
+kable(cleanTable, format = "markdown", format.args = list(big.mark = ","))
+
+# Assigning choice id's
+sizes <- c(4, 6, 12, 24)
 tripCodes <- unique(fullChoice$trip_code_uc)
-fullSet <- expand.grid(brandBin = brands, pkgSizeBin = sizes, trip_code_uc = tripCodes)
-fullSet <- cbind(id = 1:42, fullSet)
+fullSet <- expand.grid(brand_code_uc = brandCode, pkgSize = sizes, trip_code_uc = tripCodes)
+fullSet <- cbind(alt = 1:24, fullSet)
 
 # Getting selection
-fullChoice <- merge(fullChoice, fullSet, by = c("trip_code_uc", "brandBin", "pkgSizeBin"))
-
-# # If selection has to be balanced
-# fullChoice <- merge(fullChoice, fullSet,
-#                     by = c("trip_code_uc", "brandBin", "pkgSizeBin"), all.y = TRUE)
-# fullChoice[, c("lower", "upper") := tstrsplit(pkgSizeBin, "-")]
-# fullChoice[is.na(choice), ':=' (unitCost = 999.0,
-#                                 pCents = 99999.0,
-#                                 choice = 0L,
-#                                 ply = 2.0,
-#                                 pkgSize = as.numeric(upper))]
-# fullChoice[is.na(pkgSize), "pkgSize" := 30]
-# fullChoice[, c("lower", "upper") := NULL]
+fullChoice <- merge(fullChoice, fullSet, by = c("trip_code_uc", "brand_code_uc", "pkgSize"))
 
 # Adding in demographics and making income and household size continuous
-fullChoice <- merge(fullChoice, fullTrips, by = "trip_code_uc")
-fullChoice[, "p" := pCents / 100]
-fullChoice[, "pCents" := NULL]
-fullChoice[, "household_income_cts" :=
-             factor(household_income, levels = c(8, 10, 11, 13, 15:19, 21, 23, 26, 27),
+fullChoice[, c("p", "pCents") := .(pCents / 100, NULL)]
+fullChoice[, "unitCost" := unitCost / 100]
+fullPanel[, "household_income_cts" :=
+            factor(household_income, levels = c(8, 10, 11, 13, 15:19, 21, 23, 26, 27),
                     labels = c("11", "13.5", "17.5", "22.5", "27.5", "32.5",
                                "37.5", "42.5", "47.5", "55", "65", "85", "100"))]
-fullChoice[, "household_income_cts" := as.numeric(as.character(household_income_cts))]
-fullChoice[, "household_size_cts" := factor(household_size,
-                                            levels = c("1", "2", "3", "4", "5+"),
-                                            labels = c("1", "2", "3", "4", "5"))]
-fullChoice[, "household_size_cts" := as.numeric(as.character(household_size_cts))]
+fullPanel[, "household_income_cts" := as.numeric(as.character(household_income_cts))]
+
 fullChoice <- merge(fullChoice, fullPanel, by = c("household_code", "panel_year"))
 
 # Saving data
-fwrite(fullChoice, "/scratch/upenn/hossaine/TPMLogit.csv")
+fwrite(fullChoice, "/scratch/upenn/hossaine/TPMLogit.csv", nThread = threads)

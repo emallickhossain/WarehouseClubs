@@ -1,6 +1,7 @@
 # Gets and cleans toilet paper data.
 source("./Nielsen/getItem.R")
 library(knitr)
+library(stargazer)
 
 # Inputs
 prodCode <- 7260
@@ -114,6 +115,8 @@ totRow <- c("Total HH/Observations:", totalCount, "-", totalHH, "-")
 # For consideration
 fullData[, ':=' (missing = uniqueN(activePeriod) - 1,
                  maxIPD = max(IPD, na.rm = TRUE),
+                 maxQuant = max(quantity, na.rm = TRUE),
+                 maxVol = max(totVol, na.rm = TRUE),
                  active = mean(duration)),
          by = .(household_code)]
 
@@ -122,7 +125,7 @@ fullData[, ':=' (missing = uniqueN(activePeriod) - 1,
 missID <- fullData[missing > 3]$ household_code
 fullData[, "excessMissing" := ifelse(household_code %in% missID, 1L, 0L)]
 excessMissing <- fullData[excessMissing == 1]
-miss1 <- nrow(excessMissing)
+miss1 <- uniqueN(excessMissing$trip_code_uc)
 miss2 <- round(miss1 / totalCount * 100, 1)
 miss3 <- uniqueN(excessMissing$household_code)
 miss4 <- round(miss3 / totalHH * 100, 1)
@@ -135,7 +138,7 @@ ipd99 <- unique(fullData[, .(household_code, maxIPD)])
 ipd99 <- quantile(ipd99$maxIPD, 0.99, na.rm = TRUE)
 fullData[, "ipd99" := ifelse(maxIPD > ipd99, 1L, 0L)]
 longIPD <- fullData[ipd99 == 1]
-long1 <- nrow(longIPD)
+long1 <- uniqueN(longIPD$trip_code_uc)
 long2 <- round(long1 / totalCount * 100, 1)
 long3 <- uniqueN(longIPD$household_code)
 long4 <- round(long3 / totalHH * 100, 1)
@@ -144,7 +147,7 @@ longRow <- c("Max IPD > 99th Pct:", long1, long2, long3, long4)
 # Cannot calculate consumption
 fullData[, "nocons" := ifelse(is.na(rate), 1L, 0L)]
 noCons <- fullData[nocons == 1]
-nocon1 <- nrow(noCons)
+nocon1 <- uniqueN(noCons$trip_code_uc)
 nocon2 <- round(nocon1 / totalCount * 100, 1)
 nocon3 <- uniqueN(noCons$household_code)
 nocon4 <- round(nocon3 / totalHH * 100, 1)
@@ -155,7 +158,7 @@ cons01 <- unique(fullData[, .(household_code, rate)])
 cons01 <- quantile(cons01$rate, 0.01, na.rm = TRUE)
 fullData[, "inCons" := ifelse(rate < cons01, 1L, 0L)]
 inCons <- fullData[inCons == 1]
-incons1 <- nrow(inCons)
+incons1 <- uniqueN(inCons$trip_code_uc)
 incons2 <- round(incons1 / totalCount, 1)
 incons3 <- uniqueN(inCons$household_code)
 incons4 <- round(incons3 / totalHH, 1)
@@ -164,27 +167,29 @@ inconsRow <- c("Insufficient Consumption:", incons1, incons2, incons3, incons4)
 # Active for less than 90 days
 fullData[, "noActive" := ifelse(duration < 90, 1L, 0L)]
 noActive <- fullData[noActive == 1]
-noact1 <- nrow(noActive)
+noact1 <- uniqueN(noActive$trip_code_uc)
 noact2 <- round(noact1 / totalCount * 100, 1)
 noact3 <- uniqueN(noActive$household_code)
 noact4 <- round(noact3 / totalHH * 100, 1)
 noactRow <- c("Active < 90 days:", noact1, noact2, noact3, noact4)
 
 # Excessive quantity purchase
-quant99 <- quantile(fullData$quantity, 0.99)
+quant99 <- unique(fullData[, .(household_code, maxQuant)])
+quant99 <- quantile(quant99$maxQuant, 0.99, na.rm = TRUE)
 fullData[, "abQuant" := ifelse(quantity > quant99, 1L, 0L)]
 abQuant <- fullData[abQuant == 1]
-abquan1 <- nrow(abQuant)
+abquan1 <- uniqueN(abQuant$trip_code_uc)
 abquan2 <- round(abquan1 / totalCount * 100, 1)
 abquan3 <- uniqueN(abQuant$household_code)
 abquan4 <- round(abquan3 / totalHH * 100, 1)
 abquanRow <- c("Abnormal Quantity:", abquan1, abquan2, abquan3, abquan4)
 
 # Abnormal volume purchased
-vol99 <- quantile(fullData$totVol, 0.99, na.rm = TRUE)
+vol99 <- unique(fullData[, .(household_code, maxVol)])
+vol99 <- quantile(vol99$maxVol, 0.99, na.rm = TRUE)
 fullData[, "abVol" := ifelse(totVol > vol99, 1L, 0L)]
 abVol <- fullData[abVol == 1]
-abvol1 <- nrow(abVol)
+abvol1 <- uniqueN(abVol$trip_code_uc)
 abvol2 <- round(abvol1 / totalCount * 100, 1)
 abvol3 <- uniqueN(abVol$household_code)
 abvol4 <- round(abvol3 / totalHH * 100, 1)
@@ -194,7 +199,7 @@ abvolRow <- c("Abnormal Volume:", abvol1, abvol2, abvol3, abvol4)
 fullData[, "abPrice" := ifelse(total_price_paid_real > max_price, 1L, 0L)]
 fullData[total_price_paid_real == 0, "abPrice" := 1L]
 abPrice <- fullData[abPrice == 1]
-abprice1 <- nrow(abPrice)
+abprice1 <- uniqueN(abPrice$trip_code_uc)
 abprice2 <- round(abprice1 / totalCount * 100, 1)
 abprice3 <- uniqueN(abPrice$household_code)
 abprice4 <- round(abprice3 / totalHH * 100, 1)
@@ -210,8 +215,10 @@ fullData[noActive == 1, "drop" := 1]
 fullData[abQuant == 1, "drop" := 1]
 fullData[abVol == 1, "drop" := 1]
 fullData[abPrice == 1, "drop" := 1]
+dropHH <- fullData[drop == 1]$household_code
+fullData[household_code %in% dropHH, "drop" := 1]
 totDrop <- fullData[drop == 1]
-totDrop1 <- nrow(totDrop)
+totDrop1 <- uniqueN(totDrop$trip_code_uc)
 totDrop2 <- round(totDrop1 / totalCount * 100, 1)
 totDrop3 <- uniqueN(totDrop$household_code)
 totDrop4 <- round(totDrop3 / totalHH * 100, 1)
@@ -243,6 +250,12 @@ ptile <- c("1st pct", "25th pct", "50th pct", "75th pct", "99th pct", "N")
 
 compTable <- data.table(ptile, consRaw, consClean, IPDRaw, IPDClean, volRaw, volClean)
 kable(compTable, digits = 2, type = "markdown", format.args = list(big.mark = ","))
+
+# Summary table of data
+stargazer(fullData[, .(quantity, total_price_paid, sizeUnadj, ply, size, rate)],
+          type = "text")
+stargazer(fullData[drop == 0, .(quantity, total_price_paid, sizeUnadj,
+                                ply, size, rate)], type = "text")
 
 fullData[, c("finalPurch", "maxIPD", "active", "excessMissing", "ipd99", "nocons",
              "inCons", "noActive", "abQuant", "abVol", "abPrice", "duration",

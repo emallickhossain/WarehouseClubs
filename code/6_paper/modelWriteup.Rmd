@@ -8,6 +8,9 @@ fontsize: 12pt
 geometry: margin=1.5in
 bibliography: reference.bib
 citation_package: natbib
+header-includes:
+  - \usepackage{graphicx}
+  - \usepackage{adjustbox}
 ---
 
 # Introduction
@@ -15,57 +18,53 @@ This document estimates a variety of multinomial discrete choice models for toil
 
 # Model
 
-I will estimate a mixed logit (i.e. random coefficients) model to capture the consumer choice decision. 
+## Multinomial Logit
+I start by estimating a simple multinomial logit model of a consumer's purchase decision. This is the basic workhorse model of any discrete choice setting. For simplicity and computational efficiency, I begin by estimating this model on a restricted subset of the product space. In particular, I only consider the top 6 brands (Angel Soft, Charmin, Cottonelle, Quilted Northern, Scott, and private-labels) and 4 different sizes (4-, 6-, 12-, and 24-roll packages). This generates a total of 24 brand-sizes. While this may seem like a limited sample given the wide variety of brands and package sizes, this covers over 70\% of consumer purchases that matched with the Retail Scanner data.^[Not all stores are assigned an ID in the Consumer Panel data. Between 2006-2016, only about 68\% of purchases take place at a store that has been assigned an individual ID. Furthermore, not all stores with an ID share scanner data with Nielsen, which further reduces the sample. To obtain a consumer's choice set, I have to be able to match each consumer to a store. See Appendix for further details.]
 
-The setting is as follows. The decision-maker (a household) makes a shopping trip to a store in which they purchase toilet paper.^[In my model, households only purchase 1 package per trip, which is true for over 80\% of shopping trips.] The decision I model is conditional on this being a trip in which they purchase toilet paper, which product do they choose. With this setting, their choice set is the set of products with positive sales at the store they visit during the week of their visit. This is obtained by matching consumer panel data with retail scanner data at the store-week level. 
+The setting is as follows. A household makes a shopping trip to a store in which they purchase toilet paper. In over 85\% of shopping trips, households only purchase 1 package, so a discrete choice model is appropriate for this setting.^[Households purchasing 2 packages make up the majority of remaining purchases. This could be addressed in one of two ways. We could modify the choice set to include 2-package products. The other option is to treat my estimates as an upper bound on price sensitivity. Because of bulk discounts, purchasing multiple packages is weakly more expensive than the equivalent larger package. One other fact is that in 98\% of trips, a single UPC is purchased.] The household's choice set consists of all products with positive sales at the store they visit during the week of their visit. This is obtained by matching consumer panel data with retail scanner data at the store-week level.
 
-A choice alternative is a brand-size combination. While there are over 200 different brands and 26 different sizes, I focus on the top 5 brands (Angel Soft, Charmin, Cottonelle, Quilted Northern, and Scott) along with an "Other" category that captures other brands as well as private labels.^[Kimberly-Clark owns both Scott and Cottonelle brands.] These top 5 brands capture about 74\% of purchases, which I verify is also reported in Orhun and Palazzolo (2019). Private label brands account for another 18\% of purchases. Furthermore, I restrict sizes to be 4, 6, 9, 12, 18, 24, 30, and 36 packs, which cover about 91\% of purchases (also reported in Orhun and Palazzolo (2019)). The cross of these two (top brand and top size) covers 80\% of all purchases. 
+I only model the product choice decision conditional on purchasing toilet paper. Since toilet paper is storable, one might want to also model the purchase/no-purchase decision allowing for an underlying inventory state. However, toilet paper tends to go on sale relatively infrequently and a majority of purchases are made at full price. This consideration would imply that my price elasticity estimates are a lower bound since the purchase/no-purchase decision would relax some of the constraint associated with having to make a purchase. 
 
-|Brand              | Share|
-|:------------------|-----:|
-|CHARMIN            |  0.21|
-|CTL BR             |  0.18|
-|ANGEL SOFT         |  0.15|
-|QUILTED NORTHERN   |  0.13|
-|KLEENEX COTTONELLE |  0.11|
-|SCOTT 1000         |  0.08|
-|------------------|-----|
-|**Total**              |  **0.87**|
-
-|Size  | Share|
-|:-----|-----:|
-|12    |  0.38|
-|4     |  0.18|
-|6     |  0.11|
-|24    |  0.09|
-|36    |  0.04|
-|9     |  0.04|
-|30    |  0.04|
-|18    |  0.02|
-|------|------|
-|**Total** |  **0.91**|
-
-Furthermore, I explicitly model this as a static problem. One way I incorporate price changes is that item prices are inclusive of any sales that may apply to the item. I do not model price expectations or sale anticipation, but I do account for any price changes that are available at the time of purchase.^[Over 65\% of purchases are at full price, so at least a majority of households do not appear to be "waiting" along this dimension, especially when considering that an overwhelming share of shopping trips do not include a purchase of toilet paper, so there are multiple opportunities to "wait" for the right time. It does not appear that this is of primary importance. Furthermore, that would only affect the timing of the purchase decision and my goal is to model the actual choice conditional on a purchase.] While inventory behavior may be another concern since this is a storable product, that primarily would affect the timing of purchases, but conditional on this being a purchase trip, my model will capture how this decision may depend on size. Those that are more likely to stockpile would likely increase the estimated taste for package size. Additionally, purchase patterns tend to be relatively consistent with households sticking with their brand-size combination with limited deviations in size, and even less frequent deviations between brands.
-
-## Utility
+### Utility
 
 Households choose the product that maximizes their utility, which I represent as the following.
 
 \begin{equation}
-U_{njt} = X_{njt} \beta_n + \epsilon_{njt}
+U_{njt} = X_{njt} \beta + \epsilon_{njt}
 \end{equation}
 
-where $U_{njt}$ represents the utility that household $n$ gets from product $j$ on trip $t$. $X_{njt}$ is a matrix of product characteristics, namely package size, price, and brand. $\epsilon_{njt}$ is an error term drawn from a Type I Extreme Value distribution. $\beta_n$  varies by household, but we assume that each household's $\beta$ comes from a normal distribution, except for the price coefficient, which we assume is drawn from a lognormal distribution since this is likely to be negative for all consumers. 
+where $U_{njt}$ represents the utility that household $n$ gets from product $j$ on trip $t$. $X_{njt}$ is a matrix of product characteristics, namely price, ply, package size, and unit cost. $\epsilon_{njt}$ is an error term drawn from a Type I Extreme Value distribution. $\beta$ reflects the population's average taste for each product characteristic. This model is estimated using MLE.
 
-This model is estimated by Maximum Simulated Likelihood because there is not a closed form of the likelihood. 
+To streamline computation, I focus on Boston in 2014-2016, but hope to expand this sample more widely.
 
-In my setting, a product is defined as a brand-size combination.^[I reduce the brand space by concentrating on Charmin, Quilted Northern, Angel Soft, Kleenex Cottonelle, and Scott. Brands outside of this set (including private labels) are grouped as "Other". These top 5 brands account for about 75\% of sales. I also segment the package size space to cover the most popular sizes: 1-4, 5-6, 7-9, 10-12, 13-20, 21-24, 25+. The common sizes are the right end points of these bins. With the 30 and 36-packs lumped in the 25+ category, these sizes account for about 91\% of purchases.] The relevant product characteristics in my setting are package size, package cost, and ply. In some specifications, I also include brand as a rough proxy for quality. 
+\input{./tables/mnlBostonBaseline.tex}
 
-I start by estimating a conditional logit model and a random coefficients model without including any demographic information, but leveraging the panel structure of the data. The results are in the table below:
+The coefficients fit relatively well with intuition. The price coefficient is significantly negative as expected. Angel Soft is the reference brand, so the brand fixed effects indicate that only Scott is less likely to be bought, but all other brands, including private labels are more likely to be bought over Angel Soft. An increased package size slightly increases the likelihood of purchase while the days' supply offered by the package (which I define as the standardized package divided by household's average daily consumption) slightly reduces the probability of purchase. 
 
-<!-- \input{./tables/MNLBase.tex}  -->
+To translate this into dollar terms, we can compute the willingness to pay by dividing each coefficient by the price coefficient. This implies that households are willing to pay an extra \$0.68 for a package with an extra unit, but they would have to be paid an extra \$0.11 to purchase an additional days' supply of toilet paper. Since days' supply is a function of package size, this implies and interesting trade off. For high consumption households, they prefer larger package sizes, but for low consumption households, they prefer smaller package sizes. The willingness to pay for particular brands does give large estimates which outstrip the usual price differences seen in a store (WTP ranges from +\$6.79 for Cottonelle to -\$3.84 for Scott).
 
-# Data Details
+Furthermore, while this model is a good starting point, a pure multinomial logit model implies a strict substition pattern as a result of the independence from irrelevant alternatives property. This implies that if a new product is introduced, whether a Charmin 36-pack or a private-label single roll, it will draw from other alternatives proportionately. This is at odds with what we would expect given that a Charmin 36-pack is more suited for customers that prefer Charmin or large packages, but it is unlikely to compete with, say, a Scott 4-pack. 
+
+
+<!-- ## Random Coefficients -->
+<!-- Households choose the product that maximizes their utility, which I represent as the following. -->
+
+<!-- \begin{equation} -->
+<!-- U_{njt} = X_{njt} \beta_n + \epsilon_{njt} -->
+<!-- \end{equation} -->
+
+<!-- where $U_{njt}$ represents the utility that household $n$ gets from product $j$ on trip $t$. $X_{njt}$ is a matrix of product characteristics, namely package size, price, ply, and brand. $\epsilon_{njt}$ is an error term drawn from a Type I Extreme Value distribution. $\beta_n$  varies by household, but we assume that each household's $\beta$ comes from a normal distribution, except for the price coefficient, which we assume is drawn from a lognormal distribution since this is likely to be negative for all consumers.  -->
+
+<!-- This model is estimated by Maximum Simulated Likelihood because there is not a closed form of the likelihood.  -->
+
+<!-- In my setting, a product is defined as a brand-size combination.^[I reduce the brand space by concentrating on Charmin, Quilted Northern, Angel Soft, Kleenex Cottonelle, and Scott. Brands outside of this set (including private labels) are grouped as "Other". These top 5 brands account for about 75\% of sales. I also segment the package size space to cover the most popular sizes: 1-4, 5-6, 7-9, 10-12, 13-20, 21-24, 25+. The common sizes are the right end points of these bins. With the 30 and 36-packs lumped in the 25+ category, these sizes account for about 91\% of purchases.] The relevant product characteristics in my setting are package size, package cost, and ply. In some specifications, I also include brand as a rough proxy for quality.  -->
+
+<!-- I start by estimating a conditional logit model and a random coefficients model without including any demographic information, but leveraging the panel structure of the data. The results are in the table below: -->
+
+# References
+<div id="refs"></div>
+
+# Data Appendix
 In order to conduct this analysis, we need a dataset that captures consumer decisions and their available choices. I create the necessary dataset by combining two Nielsen datasets: the Consumer Panel dataset and the Retail Scanner dataset. Nielsen's Consumer Panel dataset contains information on consumer purchases as well as a rich set of demographic variables. Nielsen's Retail Scanner dataset contains information on the weekly volumes of products sold at stores that have agreed to share their data with Nielsen. 
 
 ## Consumer Panel Data
@@ -103,52 +102,65 @@ As a result of these conditions, 6.5\% of purchases and 28.8\% of households are
 
 |Criteria                  |       Obs|Obs % |      HH|HH % |
 |:-------------------------|---------:|:-----|-------:|:----|
-|Missing 3+ IPD:           |   171,042|4     |   6,899|4.6  |
-|Max IPD > 99th Pct:       |    22,053|0.5   |   1,493|1    |
-|Cannot calc. consumption: |    12,366|0.3   |   9,031|6.1  |
-|Insufficient Consumption: |     7,882|0     |   1,403|0    |
-|Active < 90 days:         |    27,882|0.7   |  14,247|9.5  |
-|Abnormal Quantity:        |    36,579|0.9   |  12,898|8.6  |
-|Abnormal Volume:          |    24,727|0.6   |  11,758|7.9  |
-|Abnormal Price:           |     6,969|0.2   |   4,642|3.1  |
-|--------------------------|
+|Missing 3+ IPD:           |   168,106|4     |   6,899|4.6  |
+|Max IPD > 99th Pct:       |    21,600|0.5   |   1,493|1    |
+|Cannot calc. consumption: |    12,364|0.3   |   9,031|6.1  |
+|Insufficient Consumption: |     7,843|0     |   1,403|0    |
+|Active < 90 days:         |    27,475|0.6   |  14,247|9.5  |
+|Abnormal Quantity:        |     2,088|0     |   1,189|0.8  |
+|Abnormal Volume:          |     1,913|0     |   1,307|0.9  |
+|Abnormal Price:           |     6,956|0.2   |   4,642|3.1  |
 |Total HH/Observations:    | 4,241,992|-     | 149,272|-    |
-|Total Dropped:            |   277,193|6.5   |  43,021|28.8 |
+|Total Dropped:            |   520,042|12.3  |  28,345|19   |
 
 
-|ptile    |   consRaw| consClean|  IPDRaw| IPDClean|     volRaw|   volClean|
-|:--------|---------:|---------:|-------:|--------:|----------:|----------:|
-|1st pct  |      0.04|      0.05|       0|        0|       1.82|       1.82|
-|25th pct |      0.15|      0.16|      14|       14|       5.82|       5.82|
-|50th pct |      0.24|      0.23|      28|       28|       9.60|       9.09|
-|75th pct |      0.35|      0.35|      59|       56|      16.58|      15.71|
-|99th pct |      1.04|      0.91|     382|      300|      65.45|      55.64|
-|---------|
-|N        | 149272.00| 126049.00| 4092720|  3840729| 4187109.00| 3915409.00|
+|ptile    |    consRaw|  consClean|    IPDRaw|  IPDClean|       volRaw|     volClean|
+|:--------|----------:|----------:|---------:|---------:|------------:|------------:|
+|1st pct  |       0.04|       0.05|         0|         0|         1.82|         1.82|
+|25th pct |       0.15|       0.16|        14|        14|         5.82|         5.82|
+|50th pct |       0.23|       0.23|        28|        28|         9.60|         9.09|
+|75th pct |       0.34|       0.34|        59|        56|        16.58|        15.71|
+|99th pct |       1.02|       0.89|       382|       305|        65.45|        55.64|
+|N        | 149,272.00| 120,927.00| 4,092,720| 3,589,017| 4,187,109.00| 3,665,655.00|
+
+Finally, for my discrete choice modeling, I restrict the sample to households that purchased a single package. This leaves me with a sample of 3,813,591 purchases across 126,034 households.
 
 ## Nielsen Retail Scanner Data
+The Nielsen Retail Scanner Data contains weekly pricing, volume, and promotional activity of about 35,000 stores from about 90 retail chains and covers 2006-2016. Each store in the panel reports their weekly quantity sold as well as the weighted average unit price. For a subset of stores, they also report their promotional activity (i.e. if a product was featured or on display). 
+
+Because my focus is on the consumer's choice problem, I only extract information related to a consumer's choice set for toilet paper. In order to do this, I combine all movement files of the toilet paper category and then merge those with the Nielsen Consumer Panel data based on the store ID and the week of the shopping trip. This match reduces the possible size of the Consumer Panel because it requires that households shop at the exact stores that have agreed to report their weekly sales to Nielsen. 
+
+In examining the consumer choice, I have to make a few assumptions with respect to the Retail Scanner Data. 
 
 **Assumption 1:** 
-*If a product has no sales, it is not in the consumer's choice set. If a product has positive sales, it is in the consumer's full choice set.*
+*If a product has no sales, it is not in the consumer's choice set. If a product has positive sales, it is in the consumer's choice set.*
 
 In the data, only products with positive sales are recorded, therefore it is difficult to determine if an available product did not sell (a true zero) or if the product was not available (a missing product). Because the data does not distinguish between missing items and those with no sales, I assume that the selection available to consumers is only the set of items with positive sales during the week they shopped at the store.
 
-For some models, it is important to observe multiple purchases by the same household. In those cases, the sample size may be dramatically reduced for various reasons. The data slims down in the following fashion:
+## Merging Data 
+I merge the two datasets based on store ID and the week of the consumer's shopping trip. As stated above, I assume that all products with positive sales are in the consumer's choice set and I identify their actual purchase choice by matching the product they chose with the product being offered by UPC. There are some cases where these cannot be precisely matched up and I outline my steps to fix these issues below. 
 
-| Purchases | Households | Notes                                          |
-|-----------|------------|------------------------------------------------|
-| 3 million | 135,000    | Full 2006-2016 Consumer Panel                  |
-| 770,000   | 78,000     | Linking Panel with Scanner                     |
-| 165,000   | 12,000     | Restricting to households with 10-20 trips     |
+**Missing Brand Name Purchases**
+In some cases, the purchase of a brand name cannot be matched by UPC to its corresponding store. In these cases, I simply combine the purchase record from the Consumer Panel with the product assortment offered at that store in the corresponding week. For example, if a consumer records purchasing a 12-pack of Quilted Northern at a particular store in a particular week, but the corresponding store has only recorded sales of other brands (Charmin, Angel Soft, etc.) and maybe other sizes of Quilted Northern (4-, 6-, 8-roll packages), then I add on the consumer's actual purchase to the store assortment. The Kilts Marketing Center has confirmed that this happens occasionally, but they have not been able to ascertain a reason for this occurrence.
 
-This sample is substantially larger than typical studies and the reductions are primarily due to data limitations. As a check, I can look at the balance on observables on this smaller subsample and compare it to the larger sample. Even without that, Nielsen provides projection weights that help adjust for various selection issues and properly weight households to be projectable to the full United States.
+**Private-Label Purchases**
+In order to maintain anonymity of stores, Nielsen masks the UPCs of private labelled goods in the Retail Scanner Dataset. Since these are commonly purchased, I match private-label purchases between the two datasets based on the following procedure. I record the price, ply, and package size of the item purchased in the Consumer Panel Data. If there is a corresponding item that is the same price, ply, and package size, I record that as a match. This is a conservative matching algorithm and misses some items that might have been purchased at a sale price since the prices would not match up. If there remain unmatched purchases, I follow the same procedure as with the brand-name purchases and append the record from the Consumer Panel to the store's assortment.
 
-Furthermore, another strategy that could be leveraged to address concerns about sample size would be to expand the data by adding another (relatively weak) assumption:
+The results of this matching procedure are recorded in the table below. I start with the Consumer Panel data that has been cleaned as outlined in the "Consumer Panel Data" section. We can see that a majority of the sample shrinkage occurs because Nielsen has not assigned certain stores an ID and because some stores that have been assigned an ID do not share their scanner data with Nielsen. Overall, the sample remains large and could be credibly expanded under Assumption 2 below.
+
+|Step                              |       Obs|      HH|
+|:---------------------------------|---------:|-------:|
+|Starting                          | 3,639,516| 120,927|
+|Cannot be standardized            | 3,596,784| 120,927|
+|Dropping stores without ID        | 2,413,246| 105,528|
+|Matched to Scanner                | 1,100,724|  80,083|
+|Restrict to top brand/size combos |   802,816|  73,008|
+|Single packages                   |   788,654|  72,834|
+
+**Collapsing Products**
+For some products, a brand-size does not define a unique product. In these cases, I collapse these items to a composite brand-size with a standardized size, unit cost, price, and ply reflecting the average of the component products.
 
 **Assumption 2:** 
 *Stores in the same retail chain offer the same assortment.*
 
-Given that pricing and inventory policies are often set at a regional or national level, this is likely a weak assumption. Furthermore, the results of DellaVigna and Gentzkow (2017) suggest that pricing is nearly uniform across stores within the same retail chain.
-
-
-# References
+Given that pricing and inventory policies are often set at a regional or national level, this is likely a weak assumption. Furthermore, the results of DellaVigna and Gentzkow (2017) suggest that pricing is nearly uniform across stores within the same retail chain. With this assumption, the matching requirements can be relaxed because instead of requiring a household to visit a particular store, they only have to visit a particular chain. 

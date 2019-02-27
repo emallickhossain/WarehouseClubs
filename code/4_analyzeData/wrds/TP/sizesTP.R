@@ -6,12 +6,12 @@ library(lfe)
 library(stargazer)
 library(ggplot2)
 library(ggthemes)
+threads <- 8
 source("./Nielsen/runReg.R")
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
-tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity",
-                "product_module_code", "upc_descr", "size1_units") := NULL]
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
+tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "upc_descr") := NULL]
 tpPurch[, "purchWeek" := week(purchase_date)]
 tpPurch[, "day" := mday(purchase_date)]
 tpPurch[method_of_payment_cd %in% c(1, 2, 8), "payment" := "Cash"]
@@ -34,20 +34,20 @@ cluster <- "market"
 weights <- tpPurch$projection_factor
 
 reg1 <- runReg(x, y, tpPurch, controls, cluster, weights)
-reg2 <- runReg(paste0(x, "+total"), y, tpPurch, controls, cluster, weights)
-reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
-reg4 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
+reg2 <- runReg(paste0(x, "+rate"), y, tpPurch, controls, cluster, weights)
+reg3 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
+reg4 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
                cluster, weights)
 
 stargazer(reg1, reg2, reg3, reg4, type = "text",
-          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y",),
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
                            c("Retailer FE", "N", "N", "Y", "Y"),
                            c("Brand FE", "N", "N", "N", "Y")),
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           column.labels = c("Log(Size)"), column.separate = c(4),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          covariate.labels = c(">100k", "50-100k", "25-50k", ""),
+          covariate.labels = c(">100k", "50-100k", "25-50k", "Cons. Rate"),
           notes.align = "l",
           notes = c("Standard errors are clustered at the market level.",
                     "Fixed effects include indicators for year, month, ",
@@ -55,7 +55,7 @@ stargazer(reg1, reg2, reg3, reg4, type = "text",
                     "include household size, housing type, marital status, ",
                     "race, ethnicity, age group, urban/rural indicator, ",
                     "and education."),
-          order = c(1, 3, 2),
+          order = c(1, 3, 2, 4),
           digits = 2,
           label = "tab:packageSizeFullTP",
           title = "Toilet Paper Package Size Purchases Increase in Household Income",
@@ -63,23 +63,25 @@ stargazer(reg1, reg2, reg3, reg4, type = "text",
 
 # Credit Access ################################################################
 # Restrict to years 2013 and later
-# No interaction
-x <- "household_income_coarse + hasCredit"
-weights <- tpPurch[panel_year >= 2013]$projection_factor
-
-reg4 <- runReg(x, y, tpPurch[panel_year >= 2013], controls, cluster, weights)
-reg5 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code"), cluster, weights)
-reg6 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code+brand_code_uc"),
-               cluster, weights)
-
-# # With interaction
-# x <- "household_income_coarse * hasCredit"
+# # No interaction
+# x <- "household_income_coarse + hasCredit"
 # weights <- tpPurch[panel_year >= 2013]$projection_factor
 #
 # reg4 <- runReg(x, y, tpPurch[panel_year >= 2013], controls, cluster, weights)
-# reg5 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code"), cluster, weights)
-# reg6 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code+brand_code_uc"),
+# reg5 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], controls, cluster, weights)
+# reg6 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code"), cluster, weights)
+# reg7 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code+brand_code_uc"),
 #                cluster, weights)
+
+# With interaction
+x <- "household_income_coarse * hasCredit"
+weights <- tpPurch[panel_year >= 2013]$projection_factor
+
+reg8 <- runReg(x, y, tpPurch[panel_year >= 2013], controls, cluster, weights)
+reg9 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], controls, cluster, weights)
+reg10 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code"), cluster, weights)
+reg11 <- runReg(paste0(x, "+rate"), y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code+brand_code_uc"),
+               cluster, weights)
 
 # # Rerun original analysis on this subsample for robustness
 # x <- "household_income_coarse"
@@ -89,16 +91,16 @@ reg6 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_co
 # reg6 <- runReg(x, y, tpPurch[panel_year >= 2013], paste0(controls, "+retailer_code+brand_code_uc"),
 #                cluster, weights)
 
-stargazer(reg4, reg5, reg6, type = "text",
-          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
-                           c("Retailer FE", "N", "Y", "Y"),
-                           c("Brand FE", "N", "N", "Y")),
+stargazer(reg8, reg9, reg10, reg11, type = "text",
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
+                           c("Retailer FE", "N", "N", "Y", "Y"),
+                           c("Brand FE", "N", "N", "N", "Y")),
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
-          column.labels = c("Log(Size)"), column.separate = c(3),
+          column.labels = c("Log(Size)"), column.separate = c(4),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          covariate.labels = c(">100k", "50-100k", "25-50k", "Credit",
-                               "Credit:>100k", "Credit:50-100k", "Credit:25-50k"),
+          covariate.labels = c(">100k", "50-100k", "25-50k", "Cons. Rate",
+                               "Credit:>100k", "Credit:50-100k", "Credit:25-50k", "Credit"),
           notes.align = "l",
           notes = c("Standard errors are clustered at the market level.",
                     "Fixed effects include indicators for year, month, ",
@@ -109,7 +111,7 @@ stargazer(reg4, reg5, reg6, type = "text",
                     "household used a credit card to pay for a purchase ",
                     "at any point during the year. This is only available ",
                     "for years 2013 and onward."),
-          order = c(1, 3, 2, 4, 5, 7, 6),
+          order = c(1, 3, 2, 5, 6, 8, 7, 4),
           digits = 2,
           label = "tab:packageSizeFullTpLiq",
           title = "Credit Access May Help Low-Income Households Buy In Bulk",
@@ -152,10 +154,11 @@ cluster <- "market"
 weights <- tpPurch$projection_factor
 
 reg7 <- runReg(x, y, tpPurch, controls, cluster, weights)
-reg8 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
-reg9 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster, weights)
+reg8 <- runReg(paste0(x, "+rate"), y, tpPurch, controls, cluster, weights)
+reg9 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
+reg10 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster, weights)
 
-stargazer(reg7, reg8, reg9, type = "text",
+stargazer(reg7, reg8, reg9, reg10, type = "text",
           add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
                            c("Retailer FE", "N", "Y", "Y"),
                            c("Brand FE", "N", "N", "Y")),

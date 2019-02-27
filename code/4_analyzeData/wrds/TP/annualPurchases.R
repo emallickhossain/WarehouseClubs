@@ -7,16 +7,20 @@ library(stargazer)
 library(glmnet)
 library(doMC)
 registerDoMC(cores = 4)
+threads <- 8
 source("./Nielsen/runReg.R")
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)
 cols <- c("panel_year", "household_income", "household_size", "type_of_residence",
           "marital_status", "hispanic_origin", "market", "age", "college",
           "urban", "white", "child")
 tpPurch[, (cols) := lapply(.SD, as.factor), .SDcols = cols]
-tpPurch <- tpPurch[type_of_residence != ""]
+tpPurch[, "unitCost" := total_price_paid / totVol]
+tpPurch <- na.omit(tpPurch, cols = "unitCost")
+tpPurch <- tpPurch[unitCost > 0]
 
+# Sarah's regression looking directly at unit cost by size and income.
 reg <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income |
               type_of_residence + household_size + marital_status + white + child +
               hispanic_origin + age + urban + college + brand_code_uc + retailer_code +
