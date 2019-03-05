@@ -7,12 +7,13 @@ library(stargazer)
 library(ggplot2)
 library(ggridges)
 library(ggthemes)
+library(knitr)
 source("./Nielsen/runReg.R")
+threads <- 8
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
-tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "product_module_code",
-            "upc_descr", "size1_units") := NULL]
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
+tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "upc_descr") := NULL]
 tpPurch[, "deal_type" := relevel(as.factor(deal_type), ref = "No Deal")]
 tpPurch[, "purchWeek" := week(purchase_date)]
 
@@ -182,3 +183,28 @@ stargazer(reg4, type = "text", single.row = FALSE, no.space = TRUE,
           label = "tab:bulkDiscountScanner4",
           title = "Bulk Discounts Are Common Across Retailers",
           out = "tables/bulkDiscountScanner4.tex")
+
+###### Table 1 of Orhun and Palazzolo
+tpPurch <- na.omit(tpPurch, cols = "size")
+brands <- c("ANGEL SOFT", "CHARMIN", "QUILTED NORTHERN", "KLEENEX COTTONELLE", "SCOTT 1000")
+tableDat <- tpPurch[brand_descr %in% brands, .(total_price_paid, deal_type,
+                                               brand_code_uc, brand_descr,
+                                               sizeUnadj, size, projection_factor)]
+tableDat[, "unitCost" := total_price_paid / size]
+tableDat <- tableDat[deal_type == "No Deal", .(price = mean(total_price_paid),
+                         unitCost = mean(unitCost)),
+                     by = .(brand_descr, sizeUnadj)]
+tableDatWide <- dcast(data = tableDat[sizeUnadj %in% c(4, 6, 12, 24)],
+                      brand_descr ~ sizeUnadj, value.var = c("price", "unitCost"))
+tableDatWide[, ':=' (disc6 = round(unitCost_6 / unitCost_4 - 1, digits = 2),
+                     disc12 = round(unitCost_12 / unitCost_4 - 1, digits = 2),
+                     disc24 = round(unitCost_24 / unitCost_4 - 1, digits = 2))]
+finalTable <- tableDatWide[, .(brand_descr, round(price_4, digits = 2), disc6, disc12, disc24)]
+finalTable[, "Brand" := c("Angel Soft", "Charmin", "Cottonelle", "Qltd Ntn", "Scott")]
+setnames(finalTable, c("Brand", "4 Roll Price", "6 Roll Discount", "12 Roll Discount", "24 Roll Discount"))
+stargazer(finalTable, type = "text", summary = FALSE,
+          title = "Prices and Bulk Discounts of Top 5 Brands",
+          label = "tab:bulkDiscountTable",
+          notes = "Discounts are per-unit savings.",
+          digits = 2, rownames = FALSE,
+          out = "tables/bulkDiscountTable.tex")

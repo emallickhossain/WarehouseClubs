@@ -1,30 +1,68 @@
 \begin{table}[!htbp] \centering
-  \caption{Toilet Paper Package Size Purchases Increase in Household Income}
-  \label{tab:packageSizeFullTP}
-\begin{tabular}{@{\extracolsep{5pt}}lccc}
+  \caption{Prices and Bulk Discounts of Top 5 Brands}
+  \label{tab:bulkDiscountTable}
+\begin{tabular}{@{\extracolsep{5pt}} ccccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{3}{c}{Log(Size)} \\
-\\[-1.8ex] & (1) & (2) & (3)\\
+Brand & 4 Roll Price & 6 Roll Discount & 12 Roll Discount & 24 Roll Discount \\
 \hline \\[-1.8ex]
- >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
-  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
-  25-50k & 0.05$^{***}$ (0.01) & 0.01$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
+Angel Soft & $2.11$ & $$-$0.07$ & $$-$0.28$ & $$-$0.33$ \\
+Charmin & $3.60$ & $$-$0.21$ & $$-$0.30$ & $$-$0.38$ \\
+Cottonelle & $3.41$ & $$-$0.04$ & $$-$0.20$ & $$-$0.30$ \\
+Qltd Ntn & $3.48$ & $$-$0.11$ & $$-$0.26$ & $$-$0.35$ \\
+Scott & $3.97$ & $$-$0.07$ & $$-$0.21$ & $$-$0.57$ \\
+\hline \\[-1.8ex]
+\multicolumn{5}{l}{Discounts are per-unit savings.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Package Size Statistics by Income Quantile}
+  \label{tab:sizeSummary}
+\begin{tabular}{@{\extracolsep{5pt}} ccccccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+Income & 25th Pctl & 50th Pctl & 75th Pctl & M & SD & N \\
+\hline \\[-1.8ex]
+\textless 25k & $4.160$ & $7.680$ & $13.090$ & $10$ & $8.750$ & $612,739$ \\
+25-50k & $4.680$ & $8.290$ & $14.400$ & $11.230$ & $9.820$ & $1,200,978$ \\
+50-100k & $5.760$ & $8.730$ & $15.360$ & $12.910$ & $11.330$ & $1,397,074$ \\
+\textgreater 100k & $6.720$ & $11.200$ & $19.640$ & $15.140$ & $12.920$ & $454,864$ \\
+\hline \\[-1.8ex]
+\multicolumn{7}{l}{Sizes are in standardized 225-sheet, 2-ply rolls.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Toilet Paper Package Size Purchases Increase in Household Income}
+  \label{tab:packageSizeFullTP}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{4}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
+\hline \\[-1.8ex]
+ >100k & 0.27$^{***}$ (0.02) & 0.29$^{***}$ (0.02) & 0.11$^{***}$ (0.02) & 0.10$^{***}$ (0.01) \\
+  50-100k & 0.15$^{***}$ (0.01) & 0.16$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.06$^{***}$ (0.01) \\
+  25-50k & 0.07$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.03$^{***}$ (0.01) & 0.02$^{***}$ (0.01) \\
+  Cons. Rate &  & 0.94$^{***}$ (0.04) & 0.73$^{***}$ (0.04) & 0.58$^{***}$ (0.04) \\
  \hline \\[-1.8ex]
-Time/MSA/Demog. FE & Y & Y & Y \\
-Retailer FE & N & Y & Y \\
-Brand FE & N & N & Y \\
-Observations & 3,372,291 & 3,372,291 & 3,372,291 \\
-Adjusted R$^{2}$ & 0.08 & 0.35 & 0.46 \\
+Time/MSA/Demog. FE & Y & Y & Y & Y \\
+Retailer FE & N & N & Y & Y \\
+Brand FE & N & N & N & Y \\
+Observations & 3,665,655 & 3,665,655 & 3,665,655 & 3,665,655 \\
+Adjusted R$^{2}$ & 0.08 & 0.13 & 0.37 & 0.45 \\
 \hline
 \hline \\[-1.8ex]
-\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
- & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
- & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
- & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
- & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
- & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
- & \multicolumn{3}{l}{and education.} \\
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{4}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{4}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{4}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{4}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{4}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{4}{l}{and education.} \\
 \end{tabular}
 \end{table}
 \efloatseparator
@@ -58,36 +96,231 @@ Adjusted R$^{2}$ & 0.19 & 0.75 & 0.76 \\
 \efloatseparator
  
 \begin{table}[!htbp] \centering
-  \caption{Credit Access May Help Low-Income Households Buy In Bulk}
-  \label{tab:packageSizeFullTpLiq}
+  \caption{Bulk Discounts Are Common Across Retailers}
+  \label{tab:bulkDiscountScanner}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{4}{c}{Log(Price)} \\
+\cline{2-5}
+\hline \\[-1.8ex]
+Log(Size)           & $-$0.28$^{***}$ &  $-$0.19$^{***}$ & $-$0.19$^{***}$ & $-$0.19$^{***}$ \\
+                    & (0.000)        & (0.000)          & (0.000)        & (0.000) \\
+ \hline \\[-1.8ex]
+Brand FE            & N               & Y                 & Y               & Y         \\
+Store FE            & N               & N                 & Y               & Y         \\
+Week FE             & N               & N                 & N               & Y         \\
+Observations        & 452,223,221     & 452,223,221       & 452,223,221     & 452,223,221 \\
+Adjusted R$^{2}$    & 0.17            & 0.71              & 0.73            & 0.77 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{}
+  \label{tab:mnlBostonBaseline}
 \begin{tabular}{@{\extracolsep{5pt}}lccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{3}{c}{Log(Size)} \\
+ & \multicolumn{3}{c}{\textit{Dependent variable:}} \\
+\cline{2-4}
+\\[-1.8ex] & \multicolumn{3}{c}{choice} \\
 \\[-1.8ex] & (1) & (2) & (3)\\
 \hline \\[-1.8ex]
- >100k & 0.19$^{***}$ (0.02) & 0.03$^{**}$ (0.01) & 0.05$^{***}$ (0.01) \\
-  50-100k & 0.09$^{***}$ (0.01) & 0.01 (0.01) & 0.02 (0.01) \\
-  25-50k & 0.03$^{**}$ (0.01) & $-$0.002 (0.01) & 0.001 (0.01) \\
-  Credit & 0.17$^{***}$ (0.01) & 0.05$^{***}$ (0.01) & 0.06$^{***}$ (0.01) \\
+ Price (-) & $-$0.06$^{***}$ (0.004) & $-$0.03$^{***}$ (0.004) & 0.02$^{***}$ (0.004) \\
+  Unit Cost (-) & 2.18$^{***}$ (0.04) & 2.17$^{***}$ (0.04) & 2.36$^{***}$ (0.04) \\
+  Charmin & 1.47$^{***}$ (0.03) & 1.47$^{***}$ (0.03) & 1.31$^{***}$ (0.03) \\
+  Cottonelle & 1.82$^{***}$ (0.04) & 1.82$^{***}$ (0.04) & 1.66$^{***}$ (0.04) \\
+  Qltd Ntn & 0.25$^{***}$ (0.03) & 0.25$^{***}$ (0.03) & 0.20$^{***}$ (0.03) \\
+  Scott & 0.16$^{***}$ (0.02) & 0.16$^{***}$ (0.02) & 0.26$^{***}$ (0.02) \\
+  Other & 1.07$^{***}$ (0.02) & 1.07$^{***}$ (0.02) & 1.09$^{***}$ (0.02) \\
+  Small Size & 0.81$^{***}$ (0.04) & 0.80$^{***}$ (0.04) & 0.69$^{***}$ (0.04) \\
+  Medium Size & 0.51$^{***}$ (0.02) & 0.51$^{***}$ (0.02) & 0.47$^{***}$ (0.02) \\
+  Price/Income Ratio &  & 0.90$^{***}$ (0.06) & 0.71$^{***}$ (0.06) \\
+  Day Supply &  &  & $-$0.01$^{***}$ (0.0003) \\
  \hline \\[-1.8ex]
-Time/MSA/Demog. FE & Y & Y & Y \\
-Retailer FE & N & Y & Y \\
-Brand FE & N & N & Y \\
-Observations & 513,866 & 513,866 & 513,866 \\
-Adjusted R$^{2}$ & 0.09 & 0.41 & 0.51 \\
+Observations & 33,723 & 33,723 & 33,723 \\
+Log Likelihood & $-$80,476.24 & $-$80,323.46 & $-$79,741.19 \\
 \hline
 \hline \\[-1.8ex]
 \textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
- & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
- & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
- & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
- & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
- & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
- & \multicolumn{3}{l}{and education. 'Credit' denotes whether or not the,} \\
- & \multicolumn{3}{l}{household used a credit card to pay for a purchase } \\
- & \multicolumn{3}{l}{at any point during the year. This is only available } \\
- & \multicolumn{3}{l}{for years 2013 and onward.} \\
+ & \multicolumn{3}{l}{Small size is less than 6 rolls. Medium size is 7-12 rolls. } \\
+ & \multicolumn{3}{l}{Days' supply is the number of standardized rolls in a package} \\
+ & \multicolumn{3}{l}{divided by a household's average daily consumption.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{}
+  \label{tab:mnlDallasRand}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{\textit{Dependent variable:}} \\
+\cline{2-4}
+\\[-1.8ex] & \multicolumn{3}{c}{choice} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ p & $-$4.14$^{***}$ & $-$3.80$^{***}$ & $-$3.54$^{***}$ \\
+  & (0.50) & (0.34) & (0.21) \\
+  & & & \\
+ unitCost & 2.55$^{***}$ & 0.96$^{***}$ & 0.99$^{***}$ \\
+  & (0.04) & (0.02) & (0.02) \\
+  & & & \\
+ brandCharmin & 1.37$^{***}$ & 1.45$^{***}$ & 1.46$^{***}$ \\
+  & (0.03) & (0.04) & (0.04) \\
+  & & & \\
+ brandCottonelle & 1.41$^{***}$ & 1.48$^{***}$ & 1.47$^{***}$ \\
+  & (0.03) & (0.04) & (0.04) \\
+  & & & \\
+ brandOther & 0.44$^{***}$ & 0.48$^{***}$ & 0.50$^{***}$ \\
+  & (0.02) & (0.02) & (0.03) \\
+  & & & \\
+ brandQltd Ntn & 0.27$^{***}$ & 0.31$^{***}$ & 0.33$^{***}$ \\
+  & (0.03) & (0.03) & (0.03) \\
+  & & & \\
+ brandScott & $-$0.94$^{***}$ & $-$0.96$^{***}$ & $-$0.96$^{***}$ \\
+  & (0.03) & (0.04) & (0.04) \\
+  & & & \\
+ sizeCatmedium & 0.76$^{***}$ & 0.78$^{***}$ & 0.80$^{***}$ \\
+  & (0.03) & (0.03) & (0.03) \\
+  & & & \\
+ sizeCatsmall & 0.05 & 0.08$^{*}$ & 0.02 \\
+  & (0.04) & (0.05) & (0.05) \\
+  & & & \\
+ piRatio & 0.65$^{***}$ & 0.64$^{***}$ & 0.64$^{***}$ \\
+  & (0.06) & (0.06) & (0.06) \\
+  & & & \\
+ daySupply & $-$0.02$^{***}$ & $-$0.02$^{***}$ & $-$0.02$^{***}$ \\
+  & (0.001) & (0.001) & (0.001) \\
+  & & & \\
+ sd.p & 0.17 & 0.15 & 0.03 \\
+  & (2.00) & (1.37) & (1.14) \\
+  & & & \\
+ sd.unitCost &  & 0.31$^{***}$ & $-$0.32$^{***}$ \\
+  &  & (0.03) & (0.03) \\
+  & & & \\
+ sd.daySupply &  &  & $-$0.01$^{***}$ \\
+  &  &  & (0.001) \\
+  & & & \\
+\hline \\[-1.8ex]
+Observations & 23,649 & 23,649 & 23,649 \\
+Log Likelihood & $-$58,653.32 & $-$58,630.61 & $-$58,603.61 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Pack size is defined number of rolls in a package. Days' } \\
+ & \multicolumn{3}{l}{supply is the number of standardized rolls in a package} \\
+ & \multicolumn{3}{l}{divided by a household's average daily consumption.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{}
+  \label{tab:mnlPhillyRand}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{3}{c}{\textit{Dependent variable:}} \\
+\cline{2-4}
+\\[-1.8ex] & \multicolumn{3}{c}{choice} \\
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ p & $-$2.79$^{***}$ & $-$2.69$^{***}$ & $-$2.58$^{***}$ \\
+  & (0.07) & (0.07) & (0.08) \\
+  & & & \\
+ unitCost & 2.39$^{***}$ & 0.90$^{***}$ & 1.00$^{***}$ \\
+  & (0.05) & (0.02) & (0.02) \\
+  & & & \\
+ brandCharmin & 1.34$^{***}$ & 1.43$^{***}$ & 1.47$^{***}$ \\
+  & (0.04) & (0.04) & (0.04) \\
+  & & & \\
+ brandCottonelle & 1.69$^{***}$ & 1.71$^{***}$ & 1.70$^{***}$ \\
+  & (0.04) & (0.04) & (0.04) \\
+  & & & \\
+ brandOther & 1.04$^{***}$ & 1.09$^{***}$ & 1.06$^{***}$ \\
+  & (0.02) & (0.03) & (0.03) \\
+  & & & \\
+ brandQltd Ntn & 0.26$^{***}$ & 0.32$^{***}$ & 0.30$^{***}$ \\
+  & (0.03) & (0.03) & (0.03) \\
+  & & & \\
+ brandScott & 0.76$^{***}$ & 0.70$^{***}$ & 0.60$^{***}$ \\
+  & (0.03) & (0.03) & (0.03) \\
+  & & & \\
+ sizeCatmedium & 0.61$^{***}$ & 0.62$^{***}$ & 0.62$^{***}$ \\
+  & (0.02) & (0.02) & (0.03) \\
+  & & & \\
+ sizeCatsmall & 0.51$^{***}$ & 0.54$^{***}$ & 0.49$^{***}$ \\
+  & (0.04) & (0.04) & (0.04) \\
+  & & & \\
+ piRatio & 0.69$^{***}$ & 0.68$^{***}$ & 0.77$^{***}$ \\
+  & (0.05) & (0.06) & (0.06) \\
+  & & & \\
+ daySupply & $-$0.01$^{***}$ & $-$0.01$^{***}$ & $-$0.02$^{***}$ \\
+  & (0.0003) & (0.0004) & (0.0005) \\
+  & & & \\
+ sd.p & 0.02 & 0.03 & $-$0.14 \\
+  & (0.51) & (0.40) & (0.28) \\
+  & & & \\
+ sd.unitCost &  & 0.55$^{***}$ & $-$0.63$^{***}$ \\
+  &  & (0.03) & (0.02) \\
+  & & & \\
+ sd.daySupply &  &  & $-$0.005$^{***}$ \\
+  &  &  & (0.001) \\
+  & & & \\
+\hline \\[-1.8ex]
+Observations & 25,071 & 25,071 & 25,071 \\
+Log Likelihood & $-$60,841.93 & $-$60,752.69 & $-$60,699.80 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{3}{l}{Pack size is defined number of rolls in a package. Days' } \\
+ & \multicolumn{3}{l}{supply is the number of standardized rolls in a package} \\
+ & \multicolumn{3}{l}{divided by a household's average daily consumption.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Credit Access May Help Low-Income Households Buy In Bulk}
+  \label{tab:packageSizeFullTpLiq}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{4}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
+\hline \\[-1.8ex]
+ >100k & 0.19$^{***}$ (0.03) & 0.20$^{***}$ (0.03) & 0.04 (0.03) & 0.04 (0.02) \\
+  50-100k & 0.11$^{***}$ (0.02) & 0.10$^{***}$ (0.02) & 0.02 (0.02) & 0.01 (0.02) \\
+  25-50k & 0.01 (0.02) & 0.02 (0.02) & $-$0.01 (0.02) & $-$0.01 (0.01) \\
+  Cons. Rate &  & 0.97$^{***}$ (0.09) & 0.70$^{***}$ (0.07) & 0.55$^{***}$ (0.06) \\
+  Credit:>100k & 0.07$^{*}$ (0.03) & 0.10$^{**}$ (0.04) & 0.07$^{**}$ (0.03) & 0.07$^{**}$ (0.03) \\
+  Credit:50-100k & 0.01 (0.02) & 0.05 (0.03) & 0.05$^{*}$ (0.03) & 0.04 (0.03) \\
+  Credit:25-50k & 0.05$^{*}$ (0.02) & 0.06$^{*}$ (0.03) & 0.05 (0.03) & 0.05$^{*}$ (0.03) \\
+  Credit & 0.001 (0.02) & $-$0.04 (0.03) & $-$0.06$^{**}$ (0.03) & $-$0.04$^{*}$ (0.02) \\
+ \hline \\[-1.8ex]
+Time/MSA/Demog. FE & Y & Y & Y & Y \\
+Retailer FE & N & N & Y & Y \\
+Brand FE & N & N & N & Y \\
+Observations & 602,919 & 602,919 & 602,919 & 602,919 \\
+Adjusted R$^{2}$ & 0.07 & 0.13 & 0.41 & 0.50 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{4}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{4}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{4}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{4}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{4}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{4}{l}{and education. 'Credit' denotes whether or not the,} \\
+ & \multicolumn{4}{l}{household used a credit card to pay for a purchase } \\
+ & \multicolumn{4}{l}{at any point during the year. This is only available } \\
+ & \multicolumn{4}{l}{for years 2013 and onward.} \\
 \end{tabular}
 \end{table}
 \efloatseparator
@@ -95,33 +328,34 @@ Adjusted R$^{2}$ & 0.09 & 0.41 & 0.51 \\
 \begin{table}[!htbp] \centering
   \caption{Car Ownership May Help Low-Income Households Buy In Bulk}
   \label{tab:packageSizeFullTpCar}
-\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{3}{c}{Log(Size)} \\
-\\[-1.8ex] & (1) & (2) & (3)\\
+ & \multicolumn{4}{c}{Log(Size)} \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
 \hline \\[-1.8ex]
- >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
-  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
-  25-50k & 0.06$^{***}$ (0.01) & 0.02$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
-  Car Share & 0.33$^{***}$ (0.08) & 0.17$^{**}$ (0.07) & 0.18$^{***}$ (0.06) \\
+ >100k & 0.27$^{***}$ (0.02) & 0.28$^{***}$ (0.02) & 0.11$^{***}$ (0.02) & 0.11$^{***}$ (0.01) \\
+  50-100k & 0.15$^{***}$ (0.01) & 0.16$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.07$^{***}$ (0.01) \\
+  25-50k & 0.06$^{***}$ (0.01) & 0.06$^{***}$ (0.01) & 0.03$^{***}$ (0.01) & 0.03$^{***}$ (0.01) \\
+  Rate &  & 0.93$^{***}$ (0.05) & 0.74$^{***}$ (0.04) & 0.59$^{***}$ (0.04) \\
+  Car Share & 0.33$^{***}$ (0.10) & 0.31$^{***}$ (0.09) & 0.23$^{***}$ (0.09) & 0.24$^{***}$ (0.09) \\
  \hline \\[-1.8ex]
-Time/MSA/Demog. FE & Y & Y & Y \\
-Retailer FE & N & Y & Y \\
-Brand FE & N & N & Y \\
-Observations & 2,175,461 & 2,175,461 & 2,175,461 \\
-Adjusted R$^{2}$ & 0.08 & 0.35 & 0.45 \\
+Time/MSA/Demog. FE & Y & Y & Y & Y \\
+Retailer FE & N & N & Y & Y \\
+Brand FE & N & N & N & Y \\
+Observations & 2,595,358 & 2,595,358 & 2,595,358 & 2,595,358 \\
+Adjusted R$^{2}$ & 0.07 & 0.13 & 0.36 & 0.44 \\
 \hline
 \hline \\[-1.8ex]
-\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
- & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
- & \multicolumn{3}{l}{Fixed effects include indicators for year, month, } \\
- & \multicolumn{3}{l}{week, MSA, retail chain, and brand. Demographics } \\
- & \multicolumn{3}{l}{include household size, housing type, marital status, } \\
- & \multicolumn{3}{l}{race, ethnicity, age group, urban/rural indicator, } \\
- & \multicolumn{3}{l}{and education. 'Car Share' denotes the share of } \\
- & \multicolumn{3}{l}{households in the corresponding PUMA that own at } \\
- & \multicolumn{3}{l}{least 1 vehicle.} \\
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{4}{l}{Standard errors are clustered at the market level.} \\
+ & \multicolumn{4}{l}{Fixed effects include indicators for year, month, } \\
+ & \multicolumn{4}{l}{week, MSA, retail chain, and brand. Demographics } \\
+ & \multicolumn{4}{l}{include household size, housing type, marital status, } \\
+ & \multicolumn{4}{l}{race, ethnicity, age group, urban/rural indicator, } \\
+ & \multicolumn{4}{l}{and education. 'Car Share' denotes the share of } \\
+ & \multicolumn{4}{l}{households in the corresponding PUMA that own at } \\
+ & \multicolumn{4}{l}{least 1 vehicle.} \\
 \end{tabular}
 \end{table}
 \efloatseparator
@@ -155,28 +389,54 @@ Adjusted R$^{2}$ & 0.04 & 0.34 & 0.43 \\
 \begin{table}[!htbp] \centering
   \caption{Unit Price Regulations May Help Consumers Make Higher Value Choices}
   \label{tab:unitPriceLawTp}
-\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{3}{c}{Log(Size)} \\
-\\[-1.8ex] & (1) & (2) & (3)\\
+ & \multicolumn{3}{c}{Log(Size)} &  \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
 \hline \\[-1.8ex]
- >100k & 0.25$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.09$^{***}$ (0.01) \\
-  50-100k & 0.13$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.05$^{***}$ (0.01) \\
-  25-50k & 0.05$^{***}$ (0.01) & 0.01$^{**}$ (0.01) & 0.02$^{***}$ (0.01) \\
-  Guidelines & 0.03 (0.02) & 0.03$^{**}$ (0.01) & 0.03$^{**}$ (0.01) \\
-  Law & 0.06$^{**}$ (0.02) & 0.02 (0.01) & 0.01 (0.01) \\
+ >100k & 0.27$^{***}$ (0.02) & 0.29$^{***}$ (0.02) & 0.11$^{***}$ (0.02) & 0.10$^{***}$ (0.01) \\
+  50-100k & 0.15$^{***}$ (0.01) & 0.16$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.06$^{***}$ (0.01) \\
+  25-50k & 0.07$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.03$^{***}$ (0.01) & 0.02$^{***}$ (0.01) \\
+  Law/Guidelines & 0.07$^{***}$ (0.02) & 0.06$^{***}$ (0.02) & 0.02$^{**}$ (0.01) & 0.01$^{**}$ (0.01) \\
+  Cons. Rate &  & 0.94$^{***}$ (0.04) & 0.73$^{***}$ (0.04) & 0.58$^{***}$ (0.04) \\
  \hline \\[-1.8ex]
-Time/MSA/Demog. FE & Y & Y & Y \\
-Retailer FE & N & Y & Y \\
-Brand FE & N & N & Y \\
-Observations & 3,362,228 & 3,362,228 & 3,362,228 \\
-Adjusted R$^{2}$ & 0.08 & 0.35 & 0.46 \\
+Time/MSA/Demog. FE & Y & Y & Y & Y \\
+Retailer FE & N & N & Y & Y \\
+Brand FE & N & N & N & Y \\
+Observations & 3,654,043 & 3,654,043 & 3,654,043 & 3,654,043 \\
+Adjusted R$^{2}$ & 0.08 & 0.13 & 0.37 & 0.45 \\
 \hline
 \hline \\[-1.8ex]
-\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
- & \multicolumn{3}{l}{Standard errors are clustered at the market level.} \\
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{4}{l}{Standard errors are clustered at the market level.} \\
 \end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[] \centering
+  \caption{CPI Basket Shares}
+  \label{tab:cpi}
+\begin{tabular}{ll}
+\textbf{Category}                               & \textbf{Basket Share} \\
+\hline
+Cereals and cereal products                     & 0.370        \\
+Processed fruits and vegetables                 & 0.303        \\
+Nonalcoholic beverages and beverage materials   & 0.955        \\
+Sugar and artificial sweeteners                 & 0.054         \\
+Fats and oils                                   & 0.245 \\
+Spices, seasonings, condiments, sauces          & 0.292 \\
+Housekeeping supplies                           & 0.847 \\
+Personal care products                          & 0.724 \\
+Tobacco and smoking products                    & 0.718 \\
+\hline
+Total (all CPI)                                 & 4.508 \\
+Non-Food Total (all CPI)                        & 2.289 \\
+\hline
+Share of Store Shopping                         & 23.117 \\
+Non-Food Share of Store Shopping                & 11.738 \\
+&
+  \end{tabular}
 \end{table}
 \efloatseparator
  
@@ -186,47 +446,56 @@ Adjusted R$^{2}$ & 0.08 & 0.35 & 0.46 \\
 \begin{tabular}{@{\extracolsep{5pt}}lc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & Annual Purchases \\
- 12-15k & $-$0.69 (1.29) \\
-  15-20k & 1.28 (1.49) \\
-  20-25k & 1.17 (1.35) \\
-  25-30k & 0.98 (1.25) \\
-  30-35k & $-$1.61 (1.39) \\
-  35-40k & $-$0.72 (1.49) \\
-  40-45k & 0.04 (1.34) \\
-  45-50k & $-$0.04 (1.41) \\
-  50-60k & $-$0.40 (1.26) \\
-  60-70k & 0.97 (1.35) \\
-  70-100k & $-$1.00 (1.35) \\
-  >100k & $-$1.54 (1.35) \\
-  Home & 3.34$^{***}$ (0.63) \\
-  Mobile Home & 2.04$^{*}$ (1.11) \\
-  2 people & 26.58$^{***}$ (0.88) \\
-  3 people & 42.90$^{***}$ (1.18) \\
-  4 people & 52.95$^{***}$ (1.14) \\
-  5+ people & 64.30$^{***}$ (1.46) \\
-  Widowed & $-$3.14$^{***}$ (0.97) \\
-  Divorced & $-$5.76$^{***}$ (0.71) \\
-  Single & $-$6.85$^{***}$ (0.80) \\
-  White & $-$0.12 (0.70) \\
-  Child Present & $-$9.16$^{***}$ (0.73) \\
-  Hispanic & $-$8.49$^{***}$ (1.16) \\
-  Age 45-64 & 12.59$^{***}$ (0.62) \\
-  Age 65+ & 10.02$^{***}$ (0.74) \\
-  Urban & $-$0.18 (0.70) \\
-  College Degree & $-$8.96$^{***}$ (0.53) \\
+ & Average Daily Consumption \\
+ 5-8k & $-$0.002 (0.003) \\
+  8-10k & $-$0.01$^{**}$ (0.002) \\
+  10-12k & $-$0.01$^{***}$ (0.002) \\
+  12-15k & $-$0.01$^{***}$ (0.002) \\
+  15-20k & $-$0.01$^{***}$ (0.002) \\
+  20-25k & $-$0.005$^{**}$ (0.002) \\
+  25-30k & $-$0.004$^{**}$ (0.002) \\
+  30-35k & $-$0.01$^{***}$ (0.002) \\
+  35-40k & $-$0.01$^{***}$ (0.002) \\
+  40-45k & $-$0.01$^{***}$ (0.002) \\
+  45-50k & $-$0.005$^{**}$ (0.002) \\
+  50-60k & $-$0.005$^{***}$ (0.002) \\
+  60-70k & $-$0.002 (0.002) \\
+  70-100k & $-$0.004$^{**}$ (0.002) \\
+  >100k & $-$0.003 (0.002) \\
+  Multi-Family Home & $-$0.01$^{***}$ (0.001) \\
+  Single-Family Home & 0.01$^{***}$ (0.001) \\
+  2 people & 0.06$^{***}$ (0.001) \\
+  3 people & 0.11$^{***}$ (0.001) \\
+  4 people & 0.13$^{***}$ (0.001) \\
+  5 people & 0.16$^{***}$ (0.001) \\
+  6 people & 0.18$^{***}$ (0.002) \\
+  7 people & 0.19$^{***}$ (0.002) \\
+  8 people & 0.20$^{***}$ (0.004) \\
+  9+ people & 0.23$^{***}$ (0.01) \\
+  Widowed & $-$0.01$^{***}$ (0.001) \\
+  Divorced & $-$0.01$^{***}$ (0.001) \\
+  Single & $-$0.01$^{***}$ (0.001) \\
+  White & $-$0.002$^{***}$ (0.001) \\
+  Child Present & $-$0.03$^{***}$ (0.001) \\
+  Not Hispanic & $-$0.03$^{***}$ (0.001) \\
+  Age & 0.001$^{***}$ (0.0000) \\
+  Urban & 0.0002 (0.001) \\
+  College & $-$0.03$^{***}$ (0.0005) \\
  \hline \\[-1.8ex]
-Observations & 574,482 \\
-Adjusted R$^{2}$ & 0.12 \\
+Observations & 481,031 \\
+Adjusted R$^{2}$ & 0.13 \\
 \hline
 \hline \\[-1.8ex]
 \textit{Note:}  & \multicolumn{1}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{1}{l}{Market and year fixed effects included. } \\
  & \multicolumn{1}{l}{Standard errors are clustered} \\
  & \multicolumn{1}{l}{at the market level. Omitted } \\
  & \multicolumn{1}{l}{categories are the following: } \\
- & \multicolumn{1}{l}{10-12k income, apartments, } \\
+ & \multicolumn{1}{l}{<5k income, mobile homes, } \\
  & \multicolumn{1}{l}{1 person households, married } \\
- & \multicolumn{1}{l}{couples, and 18-44 year olds} \\
+ & \multicolumn{1}{l}{couples, non-whites, } \\
+ & \multicolumn{1}{l}{households without children, } \\
+ & \multicolumn{1}{l}{Hispanics, rural areas, and non-college} \\
 \end{tabular}
 \end{table}
 \efloatseparator
@@ -259,5 +528,66 @@ Adjusted R$^{2}$ & 0.19 & 0.78 & 0.78 \\
 \textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
  & \multicolumn{3}{l}{Standard errors are clustered at} \\
  & \multicolumn{3}{l}{the market level.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Data Cleaning Steps}
+  \label{tab:tpPurchClean}
+\begin{tabular}{@{\extracolsep{5pt}} ccccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+Criteria & Obs & Obs \% & HH & HH \% \\
+\hline \\[-1.8ex]
+Missing 3+ IPD: & $168,106$ & 4 & $6,899$ & 4.6 \\
+Max IPD \textgreater  99th Pct: & $21,600$ & 0.5 & $1,493$ & 1 \\
+Cannot calc. consumption: & $12,364$ & 0.3 & $9,031$ & 6.1 \\
+Insufficient Consumption: & $7,843$ & 0 & $1,403$ & 0 \\
+Active \textless  90 days: & $27,475$ & 0.6 & $14,247$ & 9.5 \\
+Abnormal Quantity: & $2,088$ & 0 & $1,189$ & 0.8 \\
+Abnormal Volume: & $1,913$ & 0 & $1,307$ & 0.9 \\
+Abnormal Price: & $6,956$ & 0.2 & $4,642$ & 3.1 \\
+Total HH/Observations: & $4,241,992$ & - & $149,272$ & - \\
+Total Dropped: & $520,042$ & 12.3 & $28,345$ & 19 \\
+\hline \\[-1.8ex]
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Distribution of Clean and Raw Data}
+  \label{tab:tpPurchDist}
+\begin{tabular}{@{\extracolsep{5pt}} ccccccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+Pctl & Cons. (R) & Cons. (C) & IPD (R) & IPD (C) & Volume (R) & Volume (C) \\
+\hline \\[-1.8ex]
+1st pct & $0.04$ & $0.05$ & $0$ & $0$ & $1.82$ & $1.82$ \\
+25th pct & $0.15$ & $0.16$ & $14$ & $14$ & $5.82$ & $5.82$ \\
+50th pct & $0.23$ & $0.23$ & $28$ & $28$ & $9.60$ & $9.09$ \\
+75th pct & $0.34$ & $0.34$ & $59$ & $56$ & $16.58$ & $15.71$ \\
+99th pct & $1.02$ & $0.89$ & $382$ & $305$ & $65.45$ & $55.64$ \\
+N & $149,272$ & $120,927$ & $4,092,720$ & $3,589,017$ & $4,187,109$ & $3,665,655$ \\
+\hline \\[-1.8ex]
+\multicolumn{7}{l}{'R' denotes raw data and 'C' denotes cleaned data.} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Scanner Cleaning and Merging Steps}
+  \label{tab:scannerClean}
+\begin{tabular}{@{\extracolsep{5pt}} ccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+Step & Obs & HH \\
+\hline \\[-1.8ex]
+Starting & $3,639,516$ & $120,927$ \\
+Cannot be standardized & $3,596,784$ & $120,927$ \\
+Matched to Scanner & $1,153,184$ & $83,102$ \\
+Single packages & $941,702$ & $78,557$ \\
+Excess Prices & $941,701$ & $78,557$ \\
+\hline \\[-1.8ex]
 \end{tabular}
 \end{table}

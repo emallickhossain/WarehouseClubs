@@ -25,8 +25,9 @@ prod[, "size" := multi * size1_amount * stdRolls]
 prod[, c("sheet", "stdRolls", "product_module_code", "multi", "size1_amount",
          "size1_units") := NULL]
 
-# Removing "TO GO" packages
+# Removing "TO GO" packages and products where size cannot be computed
 prod <- prod[!grep("TO GO", brand_descr)]
+
 
 # Getting purchases
 fullData <- getItem(prod)
@@ -229,7 +230,10 @@ cleanTable <- as.data.table(rbind(missRow, longRow, noconRow, inconsRow, noactRo
                                   abquanRow, abvolRow, abpriceRow, totRow, totDropRow))
 setnames(cleanTable, c("Criteria", "Obs", "Obs %", "HH", "HH %"))
 cleanTable[, c("Obs", "HH") := lapply(.SD, as.integer), .SDcols = c("Obs", "HH")]
-kable(cleanTable, type = "markdown", format.args = list(big.mark = ","))
+stargazer(cleanTable, type = "text", rownames = FALSE, summary = FALSE,
+          title = "Data Cleaning Steps",
+          label = "tab:tpPurchClean",
+          out = "./tables/tpPurchClean.tex")
 
 # Comparing clean and raw data
 qtile <- c(0.01, 0.25, 0.5, 0.75, 0.99)
@@ -249,7 +253,13 @@ volClean <- c(quantile(fullData[drop == 0]$totVol, qtile, na.rm = TRUE),
 ptile <- c("1st pct", "25th pct", "50th pct", "75th pct", "99th pct", "N")
 
 compTable <- data.table(ptile, consRaw, consClean, IPDRaw, IPDClean, volRaw, volClean)
-kable(compTable, digits = 2, type = "markdown", format.args = list(big.mark = ","))
+setnames(compTable, c("Pctl", "Cons. (R)", "Cons. (C)", "IPD (R)", "IPD (C)",
+                      "Volume (R)", "Volume (C)"))
+stargazer(compTable, type = "text", rownames = FALSE, summary = FALSE,
+          title = "Distribution of Clean and Raw Data",
+          label = "tab:tpPurchDist", digits = 2,
+          notes = "'R' denotes raw data and 'C' denotes cleaned data.",
+          out = "./tables/tpPurchDist.tex")
 
 # Summary table of data
 stargazer(fullData[, .(quantity, total_price_paid, sizeUnadj, ply, size, rate)],
@@ -261,5 +271,4 @@ fullData[, c("finalPurch", "maxIPD", "active", "excessMissing", "ipd99", "nocons
              "inCons", "noActive", "abQuant", "abVol", "abPrice", "duration",
              "activePeriod", "missing") := NULL]
 
-fwrite(fullData, paste0("/home/upenn/hossaine/Nielsen/Data/", prodCode, "Purch.csv"),
-       nThread = threads)
+fwrite(fullData, paste0("/home/upenn/hossaine/Nielsen/Data/", prodCode, "Purch.csv"), nThread = threads)

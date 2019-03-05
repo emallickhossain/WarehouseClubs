@@ -55,7 +55,7 @@ getItem <- function(prod) {
 #'
 #' @return data.table of all purchases
 getPurch <- function(prod) {
-  purch <- fread(paste0(path, "purchase.csv"))
+  purch <- fread(paste0(path, "purchase.csv"), nThread = threads)
   purch <- merge(purch, prod, by = c("upc", "upc_ver_uc"))
   purch[deal_flag_uc == 0 & coupon_value == 0, "deal_type_ind" := 1L]    # No deal
   purch[deal_flag_uc == 1 & coupon_value == 0, "deal_type_ind" := 10L]  # Sale only

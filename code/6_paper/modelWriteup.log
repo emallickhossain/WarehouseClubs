@@ -1,9 +1,9 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2018.11.3)  5 MAR 2019 08:54
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2018.11.3)  4 MAR 2019 17:51
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
-**BulkBuyingInequality.tex
-(./BulkBuyingInequality.tex
+**modelWriteup.tex
+(./modelWriteup.tex
 LaTeX2e <2018-04-01> patch level 5
 (/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
 Document Class: article 2014/09/29 v1.4h Standard LaTeX document class
@@ -443,7 +443,43 @@ Now handling font encoding PU ...
 ... no UTF-8 mapping file for font encoding PU
 )
 Package hyperref Info: Option `breaklinks' set `true' on input line 30.
-(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+(/usr/share/texlive/texmf-dist/tex/latex/tools/longtable.sty
+Package: longtable 2014/10/28 v4.11 Multi-page Table package (DPC)
+\LTleft=\skip48
+\LTright=\skip49
+\LTpre=\skip50
+\LTpost=\skip51
+\LTchunksize=\count115
+\LTcapwidth=\dimen125
+\LT@head=\box28
+\LT@firsthead=\box29
+\LT@foot=\box30
+\LT@lastfoot=\box31
+\LT@cols=\count116
+\LT@rows=\count117
+\c@LT@tables=\count118
+\c@LT@chunks=\count119
+\LT@p@ftn=\toks25
+) (/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2016/04/27 v1.618033 publication quality tables
+\heavyrulewidth=\dimen126
+\lightrulewidth=\dimen127
+\cmidrulewidth=\dimen128
+\belowrulesep=\dimen129
+\belowbottomsep=\dimen130
+\aboverulesep=\dimen131
+\abovetopsep=\dimen132
+\cmidrulesep=\dimen133
+\cmidrulekern=\dimen134
+\defaultaddspace=\dimen135
+\@cmidla=\count120
+\@cmidlb=\count121
+\@aboverulesep=\dimen136
+\@belowrulesep=\dimen137
+\@thisruleclass=\count122
+\@lastruleclass=\count123
+\@thisrulewidth=\dimen138
+) (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
 Package: graphicx 2017/06/01 v1.1a Enhanced LaTeX Graphics (DPC,SPQR)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
 Package: graphics 2017/06/25 v1.2c Standard LaTeX Graphics (DPC,SPQR)
@@ -456,8 +492,8 @@ Package graphics Info: Driver file: pdftex.def on input line 99.
 (/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def
 File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
 ))
-\Gin@req@height=\dimen125
-\Gin@req@width=\dimen126
+\Gin@req@height=\dimen139
+\Gin@req@width=\dimen140
 ) (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grffile.sty
 Package: grffile 2017/06/30 v1.18 Extended file name support for graphics (HO)
 Package grffile Info: Option `multidot' is set to `true'.
@@ -468,99 +504,84 @@ Package grffile Info: \Gin@ii of package `graphicx' fixed on input line 494.
 Package: parskip 2001/04/09 non-zero parskip adjustments
 ) (/usr/share/texlive/texmf-dist/tex/latex/titling/titling.sty
 Package: titling 2009/09/04 v2.1d maketitle typesetting
-\thanksmarkwidth=\skip48
-\thanksmargin=\skip49
-\droptitle=\skip50
-) (/usr/share/texlive/texmf-dist/tex/latex/setspace/setspace.sty
-Package: setspace 2011/12/19 v6.7a set line spacing
-) (/usr/share/texlive/texmf-dist/tex/latex/bbm-macros/bbm.sty
-Package: bbm 1999/03/15 V 1.2 provides fonts for set symbols - TH
-LaTeX Font Info:    Overwriting math alphabet `\mathbbm' in version `bold'
-(Font)                  U/bbm/m/n --> U/bbm/bx/n on input line 33.
-LaTeX Font Info:    Overwriting math alphabet `\mathbbmss' in version `bold'
-(Font)                  U/bbmss/m/n --> U/bbmss/bx/n on input line 35.
-) (/usr/share/texlive/texmf-dist/tex/latex/footmisc/footmisc.sty
-Package: footmisc 2011/06/06 v5.5b a miscellany of footnote facilities
-\FN@temptoken=\toks25
-\footnotemargin=\dimen127
-\c@pp@next@reset=\count115
-
-LaTeX Warning: Command \@footnotemark  has changed.
-               Check if current package is valid.
-
-Package footmisc Info: Declaring symbol style bringhurst on input line 855.
-Package footmisc Info: Declaring symbol style chicago on input line 863.
-Package footmisc Info: Declaring symbol style wiley on input line 872.
-Package footmisc Info: Declaring symbol style lamport-robust on input line 883.
-
-Package footmisc Info: Declaring symbol style lamport* on input line 903.
-Package footmisc Info: Declaring symbol style lamport*-robust on input line 924
-.
-) (/usr/share/texlive/texmf-dist/tex/latex/endfloat/endfloat.sty
-Package: endfloat 2018/03/24 v2.6 LaTeX2e package puts figures and tables at en
-d (jdm)
-\c@postfigure=\count116
-\efloat@postfff=\write3
-\@ef@fffopen=\count117
-\c@posttable=\count118
-\efloat@postttt=\write4
-\@ef@tttopen=\count119
-) (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
-Package: caption 2018/05/01 v3.3-147 Customizing captions (AR)
-(/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty
-Package: caption3 2018/05/27 v1.8a caption3 kernel (AR)
-Package caption3 Info: TeX engine: e-TeX on input line 64.
-\captionmargin=\dimen128
-\captionmargin@=\dimen129
-\captionwidth=\dimen130
-\caption@tempdima=\dimen131
-\caption@indent=\dimen132
-\caption@parindent=\dimen133
-\caption@hangindent=\dimen134
+\thanksmarkwidth=\skip52
+\thanksmargin=\skip53
+\droptitle=\skip54
+) (/usr/share/texlive/texmf-dist/tex/latex/adjustbox/adjustbox.sty
+Package: adjustbox 2018/04/08 v1.1 Adjusting TeX boxes (trim, clip, ...)
+(/usr/share/texlive/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2014/12/03 v2.7a package option processing (HA)
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkeyval.tex (/usr/share/texl
+ive/texmf-dist/tex/generic/xkeyval/xkvutils.tex
+\XKV@toks=\toks26
+\XKV@tempa@toks=\toks27
 )
-\c@ContinuedFloat=\count120
-Package caption Info: hyperref package is loaded.
-) (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty
-Package: multirow 2018/08/03 v2.3 Span multiple rows of a table
-\multirow@colwidth=\skip51
-\multirow@cntb=\count121
-\multirow@dima=\skip52
-\bigstrutjot=\dimen135
-) (./BulkBuyingInequality.aux
-
-LaTeX Warning: Label `eq:size' multiply defined.
-
+\XKV@depth=\count124
+File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
+)) (/usr/share/texlive/texmf-dist/tex/latex/adjustbox/adjcalc.sty
+Package: adjcalc 2012/05/16 v1.1 Provides advanced setlength with multiple back
+-ends (calc, etex, pgfmath)
+) (/usr/share/texlive/texmf-dist/tex/latex/adjustbox/trimclip.sty
+Package: trimclip 2018/04/08 v1.1 Trim and clip general TeX material
+(/usr/share/texlive/texmf-dist/tex/latex/collectbox/collectbox.sty
+Package: collectbox 2012/05/17 v0.4b Collect macro arguments as boxes
+\collectedbox=\box32
 )
-\openout1 = `BulkBuyingInequality.aux'.
+\tc@llx=\dimen141
+\tc@lly=\dimen142
+\tc@urx=\dimen143
+\tc@ury=\dimen144
+Package trimclip Info: Using driver 'tc-pdftex.def'.
+(/usr/share/texlive/texmf-dist/tex/latex/adjustbox/tc-pdftex.def
+File: tc-pdftex.def 2018/04/08 v2.1 Clipping driver for pdftex
+))
+\adjbox@Width=\dimen145
+\adjbox@Height=\dimen146
+\adjbox@Depth=\dimen147
+\adjbox@Totalheight=\dimen148
+\adjbox@pwidth=\dimen149
+\adjbox@pheight=\dimen150
+\adjbox@pdepth=\dimen151
+\adjbox@ptotalheight=\dimen152
+(/usr/share/texlive/texmf-dist/tex/latex/ifoddpage/ifoddpage.sty
+Package: ifoddpage 2016/04/23 v1.1 Conditionals for odd/even page detection
+\c@checkoddpage=\count125
+) (/usr/share/texlive/texmf-dist/tex/latex/varwidth/varwidth.sty
+Package: varwidth 2009/03/30 ver 0.92;  Variable-width minipages
+\@vwid@box=\box33
+\sift@deathcycles=\count126
+\@vwid@loff=\dimen153
+\@vwid@roff=\dimen154
+)) (./modelWriteup.aux)
+\openout1 = `modelWriteup.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 101.
-LaTeX Font Info:    Try loading font information for TS1+cmr on input line 101.
-
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 91.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 91.
 (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 101.
-LaTeX Font Info:    ... okay on input line 101.
-LaTeX Font Info:    Try loading font information for T1+lmr on input line 101.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 91.
+LaTeX Font Info:    ... okay on input line 91.
+LaTeX Font Info:    Try loading font information for T1+lmr on input line 91.
 (/usr/share/texmf/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Info: Redefining \microtypecontext on input line 101.
+LaTeX Info: Redefining \microtypecontext on input line 91.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using protrusion set `basicmath'.
@@ -608,35 +629,35 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 * \@reversemarginfalse
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
-\AtBeginShipoutBox=\box28
-Package hyperref Info: Link coloring OFF on input line 101.
+\AtBeginShipoutBox=\box34
+Package hyperref Info: Link coloring OFF on input line 91.
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
 (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
 Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
-\c@section@level=\count122
+\c@section@level=\count127
 )
-LaTeX Info: Redefining \ref on input line 101.
-LaTeX Info: Redefining \pageref on input line 101.
-LaTeX Info: Redefining \nameref on input line 101.
-(./BulkBuyingInequality.out) (./BulkBuyingInequality.out)
-\@outlinefile=\write5
-\openout5 = `BulkBuyingInequality.out'.
+LaTeX Info: Redefining \ref on input line 91.
+LaTeX Info: Redefining \pageref on input line 91.
+LaTeX Info: Redefining \nameref on input line 91.
+(./modelWriteup.out) (./modelWriteup.out)
+\@outlinefile=\write3
+\openout3 = `modelWriteup.out'.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count123
-\scratchdimen=\dimen136
-\scratchbox=\box29
-\nofMPsegments=\count124
-\nofMParguments=\count125
-\everyMPshowfont=\toks26
-\MPscratchCnt=\count126
-\MPscratchDim=\dimen137
-\MPnumerator=\count127
-\makeMPintoPDFobject=\count128
-\everyMPtoPDFconversion=\toks27
+\scratchcounter=\count128
+\scratchdimen=\dimen155
+\scratchbox=\box35
+\nofMPsegments=\count129
+\nofMParguments=\count130
+\everyMPshowfont=\toks28
+\MPscratchCnt=\count131
+\MPscratchDim=\dimen156
+\MPnumerator=\count132
+\makeMPintoPDFobject=\count133
+\everyMPtoPDFconversion=\toks29
 ) (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/epstopdf-base.sty
 Package: epstopdf-base 2016/05/15 v2.6 Base part for package epstopdf
 (/usr/share/texlive/texmf-dist/tex/latex/oberdiek/grfext.sty
@@ -652,220 +673,118 @@ G,.JBIG2,.JB2,.eps]
 File: epstopdf-sys.cfg 2010/07/13 v1.3 Configuration of (r)epstopdf for TeX Liv
 e
 ))
-Package caption Info: Begin \AtBeginDocument code.
-Package caption Info: End \AtBeginDocument code.
-LaTeX Font Info:    Try loading font information for OT1+lmr on input line 116.
+LaTeX Font Info:    Try loading font information for OT1+lmr on input line 117.
 
 (/usr/share/texmf/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 116.
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 117.
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 116
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 117
 .
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 116
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 117
 .
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 116.
+(Font)              <12> on input line 117.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 116.
+(Font)              <8> on input line 117.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 116.
-LaTeX Font Info:    Try loading font information for U+msa on input line 116.
+(Font)              <6> on input line 117.
+LaTeX Font Info:    Try loading font information for U+msa on input line 117.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 116.
+LaTeX Font Info:    Try loading font information for U+msb on input line 117.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 116.
+(Font)              <10> on input line 123.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 116.
+(Font)              <7> on input line 123.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 116.
+(Font)              <5> on input line 123.
 [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] (./tables/
-bulkDiscountTable.tex
-\openout4 = `BulkBuyingInequality.ttt'.
-
-(BulkBuyingInequality.ttt)) (./tables/sizeSummary.tex) [6] [7] [8] (./tables/pa
-ckageSizeFullTp.tex)
-\openout3 = `BulkBuyingInequality.fff'.
-
-(BulkBuyingInequality.fff) [9] (./tables/bulkDiscountUnitCost.tex) (./tables/bu
-lkDiscountScanner.tex) [10]
-Overfull \hbox (26.7239pt too wide) detected at line 486
-[]\OML/lmm/m/it/12 log\OT1/lmr/m/n/12 (\OML/lmm/m/it/12 P\OT1/lmr/m/n/12 )[] = 
-\OML/lmm/m/it/12 ^^L[]Log\OT1/lmr/m/n/12 (\OML/lmm/m/it/12 Q\OT1/lmr/m/n/12 )[]
- + \OML/lmm/m/it/12 ^^L[]Log\OT1/lmr/m/n/12 (\OML/lmm/m/it/12 Q\OT1/lmr/m/n/12 
-)[] \OMS/lmsy/m/n/12 ^^C \OML/lmm/m/it/12 Inc[] \OT1/lmr/m/n/12 + \OML/lmm/m/it
-/12 ^^MX[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/
-m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/l
-mm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^O[];
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] (./tables/mnlBostonBas
+eline.tex) [3] (./tables/mnlBostonCond.tex
+Overfull \hbox (104.37181pt too wide) in paragraph at lines 7--102
+ [][] 
  []
 
-[11] [12] (./tables/mnlBostonBaseline.tex) (./tables/mnlDallasRand.tex) (./tabl
-es/mnlPhillyRand.tex) [13] [14] [15] (./tables/packageSizeFullTpLiq.tex) [16] (
-./tables/packageSizeFullTpCar.tex) [17] (./tables/packageSizeFullTampon.tex) [1
-8] (./tables/unitPriceLawTp.tex) [19] [20] [21] (./tables/cpi.tex) [22] (./tabl
-es/annualTP.tex)
-Overfull \hbox (20.53297pt too wide) detected at line 977
-[]\OML/lmm/m/it/12 log\OT1/lmr/m/n/12 (\OML/lmm/m/it/12 P\OT1/lmr/m/n/12 )[] = 
-\OML/lmm/m/it/12 ^^L[]log\OT1/lmr/m/n/12 (\OML/lmm/m/it/12 Q\OT1/lmr/m/n/12 )[]
- + \OML/lmm/m/it/12 ^^L[]Coupon[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^L[]Sale[
-] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^
-^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/1
-2 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^O[];
- []
 
-[23] (./tables/bulkDiscountSale.tex) [24] [25]
-LaTeX Font Info:    Try loading font information for TS1+lmr on input line 1084
-.
+LaTeX Warning: Float too large for page by 730.10492pt on input line 102.
+
+) [4] [5] [6] [7]
+LaTeX Font Info:    Try loading font information for TS1+lmr on input line 381.
+
 (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [26] (./tables/tpPurchClean.tex) (./tables/tpPurchDist.tex) [27] [28] [29] (.
-/tables/scannerClean.tex) AED endfloat: Processing end Figures and Tables [30] 
-(./BulkBuyingInequality.fff
-<../5_figures/tpCoefficients.png, id=342, 505.4082pt x 504.9264pt>
-File: ../5_figures/tpCoefficients.png Graphic file (type png)
-<use ../5_figures/tpCoefficients.png>
-Package pdftex.def Info: ../5_figures/tpCoefficients.png  used on input line 3.
-
-(pdftex.def)             Requested size: 397.47893pt x 397.10004pt.
-<../5_figures/IncUnitCost.png, id=343, 505.4082pt x 504.9264pt>
-File: ../5_figures/IncUnitCost.png Graphic file (type png)
-<use ../5_figures/IncUnitCost.png>
-Package pdftex.def Info: ../5_figures/IncUnitCost.png  used on input line 11.
-(pdftex.def)             Requested size: 397.47893pt x 397.10004pt.
-<../5_figures/tpSizeDist.png, id=344, 505.89pt x 505.89pt>
-File: ../5_figures/tpSizeDist.png Graphic file (type png)
-<use ../5_figures/tpSizeDist.png>
-Package pdftex.def Info: ../5_figures/tpSizeDist.png  used on input line 19.
-(pdftex.def)             Requested size: 397.49504pt x 397.49504pt.
-) [31
-
-
- <../5_figures/tpCoefficients.png>] [32 <../5_figures/IncUnitCost.png>] [33 <..
-/5_figures/tpSizeDist.png>] (./BulkBuyingInequality.ttt
-Overfull \hbox (43.55121pt too wide) in paragraph at lines 4--17
- [][] 
+) [8]
+Overfull \hbox (48.5494pt too wide) in alignment at lines 426--431
+ [] [] [] [] [] [] [] 
  []
 
 
-Overfull \hbox (10.37936pt too wide) in paragraph at lines 23--35
- [][] 
+Overfull \hbox (48.5494pt too wide) in alignment at lines 431--440
+ [] [] [] [] [] [] [] 
  []
 
-
-Overfull \hbox (73.35197pt too wide) in paragraph at lines 41--67
- [][] 
- []
-
-
-Overfull \hbox (43.77289pt too wide) in paragraph at lines 125--154
- [][] 
- []
-
-
-LaTeX Warning: Float too large for page by 216.93896pt on input line 220.
-
-
-LaTeX Warning: Float too large for page by 216.93896pt on input line 286.
-
-
-Overfull \hbox (79.26851pt too wide) in paragraph at lines 292--325
- [][] 
- []
-
-
-Overfull \hbox (73.35197pt too wide) in paragraph at lines 331--360
- [][] 
- []
-
-
-Overfull \hbox (4.07806pt too wide) in paragraph at lines 366--386
- [][] 
- []
-
-
-Overfull \hbox (73.35197pt too wide) in paragraph at lines 392--414
- [][] 
- []
-
-
-LaTeX Warning: No positions in optional float specifier.
-               Default added (so using `tbp') on input line 417.
-
-
-LaTeX Warning: Float too large for page by 142.93913pt on input line 500.
-
-[34
-
-] [35] [36] [37] [38] [39] [40] [41]
-Overfull \hbox (80.92267pt too wide) in paragraph at lines 561--575
- [][] 
- []
-
-)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1243.
-[42] [43] [44] [45]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1243.
-(./BulkBuyingInequality.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1243.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1243.
-
-Package rerunfilecheck Info: File `BulkBuyingInequality.out' has not changed.
-(rerunfilecheck)             Checksum: D3BAF5A8999ECBB93A2770A01D56792B;4781.
-
-LaTeX Warning: There were multiply-defined labels.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1243.
- )
-(\end occurred inside a group at level 1)
-
-### semi simple group (level 1) entered at line 88 (\begingroup)
-### bottom level 
+[9] [10] [11]
+<../5_figures/Scott_ad_1915.png, id=133, 309.3156pt x 526.1256pt>
+File: ../5_figures/Scott_ad_1915.png Graphic file (type png)
+<use ../5_figures/Scott_ad_1915.png>
+Package pdftex.def Info: ../5_figures/Scott_ad_1915.png  used on input line 570
+.
+(pdftex.def)             Requested size: 305.94963pt x 520.40033pt.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 576.
+[12] [13 <../5_figures/Scott_ad_1915.png>]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 576.
+(./modelWriteup.aux)
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 576.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 576.
+Package rerunfilecheck Info: File `modelWriteup.out' has not changed.
+(rerunfilecheck)             Checksum: D69185CC33487222A9574ABD6FD9ED37;1403.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 576.
+ ) 
 Here is how much of TeX's memory you used:
- 13874 strings out of 492641
- 207389 string characters out of 6131787
- 383370 words of memory out of 5000000
- 17223 multiletter control sequences out of 15000+600000
- 81524 words of font info for 145 fonts, out of 8000000 for 9000
+ 13252 strings out of 492641
+ 194852 string characters out of 6131787
+ 318508 words of memory out of 5000000
+ 16765 multiletter control sequences out of 15000+600000
+ 73588 words of font info for 122 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 36i,9n,43p,1175b,2415s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}{/usr/share/tex
-mf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mat
-hex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fo
-nts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}</usr
-/share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/type1/pub
-lic/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></usr/shar
-e/texmf/fonts/type1/public/lm/lmmi12.pfb></usr/share/texmf/fonts/type1/public/l
-m/lmmi6.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf
-/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.
-pfb></usr/share/texmf/fonts/type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/t
-ype1/public/lm/lmr7.pfb></usr/share/texmf/fonts/type1/public/lm/lmr8.pfb></usr/
-share/texmf/fonts/type1/public/lm/lmri12.pfb></usr/share/texmf/fonts/type1/publ
-ic/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
-Output written on BulkBuyingInequality.pdf (45 pages, 590896 bytes).
+ 35i,9n,43p,254b,388s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}{/usr/share/texmf/fonts/enc/d
+vips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/
+share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/l
+m-mathex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}</usr/share/texmf/f
+onts/type1/public/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.
+pfb></usr/share/texmf/fonts/type1/public/lm/lmmi12.pfb></usr/share/texmf/fonts/
+type1/public/lm/lmmi6.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi8.pfb></u
+sr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/type1/pu
+blic/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm/lmr17.pfb></usr/share
+/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/type1/public/lm/l
+mr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmri12.pfb></usr/share/texmf/fo
+nts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pf
+b>
+Output written on modelWriteup.pdf (13 pages, 402340 bytes).
 PDF statistics:
- 504 PDF objects out of 1000 (max. 8388607)
- 432 compressed objects within 5 object streams
- 127 named destinations out of 1000 (max. 500000)
- 16656 words of extra memory for PDF output out of 17280 (max. 10000000)
+ 209 PDF objects out of 1000 (max. 8388607)
+ 178 compressed objects within 2 object streams
+ 43 named destinations out of 1000 (max. 500000)
+ 14430 words of extra memory for PDF output out of 17280 (max. 10000000)
 

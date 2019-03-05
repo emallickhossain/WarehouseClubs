@@ -6,14 +6,16 @@ library(lfe)
 library(stargazer)
 library(glmnet)
 library(doMC)
+library(ggplot2)
+library(ggthemes)
 registerDoMC(cores = 4)
 threads <- 8
 source("./Nielsen/runReg.R")
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
 cols <- c("panel_year", "household_income", "household_size", "type_of_residence",
-          "marital_status", "hispanic_origin", "market", "age", "college",
+          "marital_status", "hispanic_origin", "market", "college",
           "urban", "white", "child")
 tpPurch[, (cols) := lapply(.SD, as.factor), .SDcols = cols]
 tpPurch[, "unitCost" := total_price_paid / totVol]
@@ -21,42 +23,112 @@ tpPurch <- na.omit(tpPurch, cols = "unitCost")
 tpPurch <- tpPurch[unitCost > 0]
 
 # Sarah's regression looking directly at unit cost by size and income.
-reg <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income |
+reg1 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income |
               type_of_residence + household_size + marital_status + white + child +
-              hispanic_origin + age + urban + college + brand_code_uc + retailer_code +
-              panel_year + market | 0 | market,
+              hispanic_origin + age + urban + college + panel_year + market | 0 | market,
             weights = tpPurch$projection_factor)
+reg2 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
+               type_of_residence + household_size + marital_status + white + child +
+               hispanic_origin + age + urban + college + panel_year + market | 0 | market,
+             weights = tpPurch$projection_factor)
+reg3 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
+              type_of_residence + household_size + marital_status + white + child +
+              hispanic_origin + age + urban + college + panel_year + market +
+               brand_code_uc | 0 | market,
+            weights = tpPurch$projection_factor)
+reg4 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
+              type_of_residence + household_size + marital_status + white + child +
+              hispanic_origin + age + urban + college + panel_year + market +
+               + brand_code_uc + retailer_code | 0 | market,
+            weights = tpPurch$projection_factor)
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          column.labels = c("Log(Unit Cost)"),
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          covariate.labels = c("Log(Size)",
+                               "5-8k", "8-10k", "10-12k", "12-15k", "15-20k",
+                               "20-25k", "25-30k", "30-35k", "35-40k", "40-45k",
+                               "45-50k", "50-60k", "60-70k", "70-100k", ">100k",
+                               "Cons.Rate",
+                               "Log(Size) : 5-8k", "Log(Size) : 8-10k",
+                               "Log(Size) : 10-12k", "Log(Size) : 12-15k",
+                               "Log(Size) : 15-20k", "Log(Size) : 20-25k",
+                               "Log(Size) : 25-30k", "Log(Size) : 30-35k",
+                               "Log(Size) : 35-40k", "Log(Size) : 40-45k",
+                               "Log(Size) : 45-50k", "Log(Size) : 50-60k",
+                               "Log(Size) : 60-70k", "Log(Size) : 70-100k",
+                               "Log(Size) : >100k"),
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
+                           c("Brand FE", "N", "N", "Y", "Y"),
+                           c("Retailer FE", "N", "N", "N", "Y")),
+          notes.align = "l",
+          notes = c("Market and year fixed effects included. Standard errors are ",
+                    "clustered at the market level."),
+          digits = 2,
+          label = "tab:IncUnitCost",
+          title = "Richer Households Can Obtain Same Sizes for Less",
+          out = "./tables/IncUnitCost.tex")
+
+incomes <- c(2.5, 6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100)
+betas <- c(0, reg4$coefficients[18:32])
+se <- c(0, reg4$cse[18:32])
+graphData <- data.table(income = incomes, beta = betas, se = se)
+ggplot(graphData, aes(x = incomes, y = betas)) +
+  geom_errorbar(aes(ymin = betas - 1.96 * se, ymax = betas + 1.96 * se), width = 1) +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  labs(title = "Rich Households Obtain Same Sizes for Cheaper",
+       x = "Household Income",
+       y = "Log Unit Cost",
+       caption = paste0("Source: Author calulations using Nielsen Consumer Panel.\n",
+                        "Midpoints of household income bins are plotted above.\n",
+                        "Figure plots coefficients of package size interacted with \n",
+                        "household income after controlling for household demographics \n",
+                        "as well as brand, store, market, and year fixed effects.")) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text())
+ggsave(filename = "./figures/IncUnitCost.png")
+
+# Identifying predictors of usage
+rateData <- unique(tpPurch[, .(household_code, panel_year, projection_factor,
+                               household_income, household_size, type_of_residence,
+                               marital_status, hispanic_origin, market, market, age,
+                               college, white, child, urban, rate)])
+rateData <- na.omit(rateData, cols = "rate")
+rateData <- rateData[rate < 1 & rate > 0.01]
+
+reg <- felm(data = rateData, rate ~ household_income + type_of_residence +
+              household_size + marital_status + white + child +
+              hispanic_origin + age + urban + college | market + panel_year,
+            weights = rateData$projection_factor)
 summary(reg)
 
-tpPurch <- tpPurch[, .(avgCost = weighted.mean(unitCost, w = size)),
-                   by = .(panel_year, household_code, projection_factor,
-                          household_income, household_size, type_of_residence,
-                          marital_status, hispanic_origin, market, age,
-                          college, urban, white, child, total)]
 
-reg <- felm(data = tpPurch, total ~ household_income +
-              type_of_residence + household_size + marital_status + white + child +
-              hispanic_origin + age + urban + college |
-              panel_year + market | 0 | market,
-            weights = tpPurch$projection_factor)
 stargazer(reg, type = "text",
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
-          column.labels = c("Annual Purchases"),
+          column.labels = c("Average Daily Consumption"),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          covariate.labels = c("12-15k", "15-20k", "20-25k", "25-30k", "30-35k",
-                               "35-40k", "40-45k", "45-50k", "50-60k", "60-70k",
-                               "70-100k", ">100k", "Home", "Mobile Home", "2 people",
-                               "3 people", "4 people", "5+ people", "Widowed", "Divorced",
-                               "Single", "White", "Child Present", "Hispanic",
-                               "Age 45-64", "Age 65+", "Urban", "College Degree"),
+          covariate.labels = c("5-8k", "8-10k", "10-12k", "12-15k", "15-20k",
+                               "20-25k", "25-30k", "30-35k", "35-40k", "40-45k",
+                               "45-50k", "50-60k", "60-70k", "70-100k", ">100k",
+                               "Multi-Family Home", "Single-Family Home",
+                               "2 people", "3 people", "4 people", "5 people",
+                               "6 people", "7 people", "8 people", "9+ people",
+                               "Widowed", "Divorced", "Single",
+                               "White", "Child Present", "Not Hispanic",
+                               "Age", "Urban", "College"),
           notes.align = "l",
-          notes = c("Standard errors are clustered",
+          notes = c("Market and year fixed effects included. ",
+                    "Standard errors are clustered",
                     "at the market level. Omitted ",
                     "categories are the following: ",
-                    "10-12k income, apartments, ",
+                    "<5k income, mobile homes, ",
                     "1 person households, married ",
-                    "couples, and 18-44 year olds"),
+                    "couples, non-whites, ",
+                    "households without children, ",
+                    "Hispanics, rural areas, and non-college"),
           digits = 2,
           label = "tab:annualTP",
           title = "Annual TP Purchases",
@@ -66,48 +138,9 @@ stargazer(reg, type = "text",
 x <- sparse.model.matrix(~ -1 + as.factor(panel_year) + as.factor(household_income) +
                            as.factor(household_size) + as.factor(type_of_residence) +
                            as.factor(marital_status) + as.factor(hispanic_origin) +
-                           as.factor(market) + as.factor(household_composition) +
-                           as.factor(age) + as.factor(college) + as.factor(urban) +
-                           as.factor(white) + as.factor(child), data = tpPurch)
-y <- tpPurch$total
-regLasso <- cv.glmnet(x, y, weights = tpPurch$projection_factor, alpha = 1, parallel = TRUE)
-apple <- as.matrix(coef(regLasso, lambda = "lambda.1se"))
-
-# Coefficients:
-# Estimate Cluster s.e. t value Pr(>|t|)
-# household_income10      -7.342e-03    1.732e-02  -0.424  0.67173
-# household_income11       7.913e-03    1.947e-02   0.406  0.68439
-# household_income13       1.005e-02    1.779e-02   0.565  0.57213
-# household_income15       3.239e-03    1.591e-02   0.204  0.83869
-# household_income16      -2.610e-02    1.602e-02  -1.629  0.10323
-# household_income17      -1.151e-02    1.790e-02  -0.643  0.52018
-# household_income18       3.721e-05    1.630e-02   0.002  0.99818
-# household_income19      -4.806e-03    1.715e-02  -0.280  0.77930
-# household_income21       1.460e-03    1.630e-02   0.090  0.92863
-# household_income23       1.469e-02    1.721e-02   0.853  0.39339
-# household_income26      -9.877e-03    1.755e-02  -0.563  0.57353
-# household_income27      -9.896e-03    1.669e-02  -0.593  0.55322
-# type_of_residenceHome    4.895e-02    8.739e-03   5.601 2.13e-08 ***
-# type_of_residenceMobile  3.704e-02    1.373e-02   2.698  0.00698 **
-# household_size2          4.357e-01    1.179e-02  36.956  < 2e-16 ***
-# household_size3          6.022e-01    1.421e-02  42.368  < 2e-16 ***
-# household_size4          7.031e-01    1.376e-02  51.092  < 2e-16 ***
-# household_size5+         7.962e-01    1.657e-02  48.041  < 2e-16 ***
-# marital_status2         -3.257e-02    1.146e-02  -2.842  0.00449 **
-# marital_status3         -8.039e-02    7.550e-03 -10.647  < 2e-16 ***
-# marital_status4         -1.351e-01    9.268e-03 -14.576  < 2e-16 ***
-# white1                  -5.997e-04    7.505e-03  -0.080  0.93631
-# child1                  -9.998e-02    7.991e-03 -12.512  < 2e-16 ***
-# hispanic_origin2        -8.521e-02    1.158e-02  -7.361 1.83e-13 ***
-# age45-64                 1.478e-01    6.901e-03  21.411  < 2e-16 ***
-# age65+                   1.176e-01    8.707e-03  13.503  < 2e-16 ***
-# urban1                   3.023e-04    8.281e-03   0.037  0.97088
-# college1                -1.155e-01    5.971e-03 -19.342  < 2e-16 ***
-# ---
-# Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-#
-# Residual standard error: 33.24 on 574355 degrees of freedom
-# Multiple R-squared(full model): 0.1358   Adjusted R-squared: 0.1356
-# Multiple R-squared(proj model): 0.1267   Adjusted R-squared: 0.1265
-# F-statistic(full model, *iid*):716.2 on 126 and 574355 DF, p-value: < 2.2e-16
-# F-statistic(proj model): 509.9 on 28 and 86 DF, p-value: < 2.2e-16
+                           as.factor(market) + age + as.factor(college) + as.factor(urban) +
+                           as.factor(white) + as.factor(child), data = rateData)
+y <- rateData$rate
+regLasso <- cv.glmnet(x, y, weights = rateData$projection_factor, alpha = 1,
+                      parallel = TRUE, nfolds = 20)
+coef(regLasso, lambda = "lambda.1se")

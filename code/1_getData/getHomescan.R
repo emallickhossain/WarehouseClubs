@@ -31,7 +31,7 @@ getPanel <- function(yr) {
                             "Male_Head_Birth", "Female_Head_Birth",
                             "Marital_Status", "Race", "Hispanic_Origin",
                             "Panelist_ZipCd", "Fips_State_Cd", "Fips_County_Cd",
-                            "Scantrack_Market_Identifier_Desc"))
+                            "Scantrack_Market_Identifier_Desc", "DMA_Cd", "DMA_Name"))
   setnames(panel, tolower(names(panel)))
   panel[, "fips" := paste0(str_pad(fips_state_cd, 2, "left", "0"),
                            str_pad(fips_county_cd, 3, "left", "0"))]

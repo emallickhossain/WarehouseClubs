@@ -159,14 +159,14 @@ reg9 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"
 reg10 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster, weights)
 
 stargazer(reg7, reg8, reg9, reg10, type = "text",
-          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
-                           c("Retailer FE", "N", "Y", "Y"),
-                           c("Brand FE", "N", "N", "Y")),
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
+                           c("Retailer FE", "N", "N", "Y", "Y"),
+                           c("Brand FE", "N", "N", "N", "Y")),
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
-          column.labels = c("Log(Size)"), column.separate = c(3),
+          column.labels = c("Log(Size)"), column.separate = c(4),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          covariate.labels = c(">100k", "50-100k", "25-50k", "Car Share"),
+          covariate.labels = c(">100k", "50-100k", "25-50k", "Rate", "Car Share"),
           notes.align = "l",
           notes = c("Standard errors are clustered at the market level.",
                     "Fixed effects include indicators for year, month, ",
@@ -176,7 +176,7 @@ stargazer(reg7, reg8, reg9, reg10, type = "text",
                     "and education. 'Car Share' denotes the share of ",
                     "households in the corresponding PUMA that own at ",
                     "least 1 vehicle."),
-          order = c(1, 3, 2, 4, 5, 7, 6),
+          order = c(1, 3, 2, 5, 4),
           digits = 2,
           label = "tab:packageSizeFullTpCar",
           title = "Car Ownership May Help Low-Income Households Buy In Bulk",
@@ -223,24 +223,24 @@ stargazer(reg7, reg8, reg9, type = "text",
 x <- "household_income_coarse + lawType"
 
 tpPurch[law == 1, "lawType" := "None"]
-tpPurch[law == 2, "lawType" := "Guidelines"]
-tpPurch[law >= 3, "lawType" := "Law"]
+tpPurch[law >= 2, "lawType" := "Law/Guidelines"]
 tpPurch[, "lawType" := relevel(factor(lawType), ref = "None")]
 
 reg1 <- runReg(x, y, tpPurch, controls, cluster, weights)
-reg2 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
-reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
+reg2 <- runReg(paste0(x, "+rate"), y, tpPurch, controls, cluster, weights)
+reg3 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
+reg4 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
                cluster, weights)
 
-stargazer(reg1, reg2, reg3, type = "text",
-          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
-                           c("Retailer FE", "N", "Y", "Y"),
-                           c("Brand FE", "N", "N", "Y")),
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
+                           c("Retailer FE", "N", "N", "Y", "Y"),
+                           c("Brand FE", "N", "N", "N", "Y")),
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           column.labels = c("Log(Size)"), column.separate = c(3),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          covariate.labels = c(">100k", "50-100k", "25-50k", "Guidelines", "Law"),
+          covariate.labels = c(">100k", "50-100k", "25-50k", "Law/Guidelines", "Cons. Rate"),
           notes.align = "l",
           notes = c("Standard errors are clustered at the market level."),
           order = c(1, 3, 2, 4, 5),
@@ -259,14 +259,15 @@ cluster <- "market"
 weights <- tpPurch$projection_factor
 
 reg1 <- runReg(x, y, tpPurch, controls, cluster, weights)
-reg2 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
-reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
+reg2 <- runReg(paste0(x, "+rate"), y, tpPurch, controls, cluster, weights)
+reg3 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
+reg4 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
                cluster, weights)
 
-stargazer(reg1, reg2, reg3, type = "text",
-          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
-                           c("Retailer FE", "N", "Y", "Y"),
-                           c("Brand FE", "N", "N", "Y")),
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y", "Y"),
+                           c("Retailer FE", "N", "N", "Y", "Y"),
+                           c("Brand FE", "N", "N", "N", "Y")),
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           column.labels = c("Log(Size)"), column.separate = c(3),
@@ -283,7 +284,7 @@ stargazer(reg1, reg2, reg3, type = "text",
                     "include household size, housing type, marital status, ",
                     "race, ethnicity, age group, urban/rural indicator, ",
                     "and education."),
-          order = c(1, 3, 2),
+          order = c(1, 3, 2, 4, 5, 6, 8, 10, 9, 11, 13, 12, 14, 16, 15, 7),
           digits = 2,
           label = "tab:packageSizeFullWeekLiquidity",
           title = "Toilet Paper Package Size Purchases Increase in Household Income",
@@ -300,11 +301,12 @@ controls <- paste0("panel_year + month + purchWeek + market + household_size + "
 cluster <- "market"
 weights <- tpPurch$projection_factor
 reg1 <- runReg(x, y, tpPurch, controls, cluster, weights)
-reg2 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
-reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
+reg2 <- runReg(paste0(x, "+rate"), y, tpPurch, controls, cluster, weights)
+reg3 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code"), cluster, weights)
+reg4 <- runReg(paste0(x, "+rate"), y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"),
                cluster, weights)
 
-stargazer(reg1, reg2, reg3, type = "text",
+stargazer(reg1, reg2, reg3, reg4, type = "text",
           add.lines = list(c("Time/MSA/Demog. FE", "Y", "Y", "Y"),
                            c("Retailer FE", "N", "Y", "Y"),
                            c("Brand FE", "N", "N", "Y")),
@@ -337,17 +339,18 @@ stargazer(reg4, reg5, reg6, type = "text",
           label = "tab:packageSizeFullTpLiq",
           title = "Credit Access May Help Lower Middle-Income Households")
 
-incomes <- c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100)
-betas <- c(0, reg1$coefficients)
-se <- c(0, reg1$cse)
+incomes <- c(2.5, 6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100)
+betas <- c(0, reg2$coefficients[1:15])
+se <- c(0, reg2$cse[1:15])
 graphData <- data.table(income = incomes, beta = betas, se = se)
 ggplot(graphData, aes(x = incomes, y = betas)) +
   geom_errorbar(aes(ymin = betas - 1.96 * se, ymax = betas + 1.96 * se), width = 1) +
   geom_line() +
+  geom_hline(yintercept = 0) +
   labs(title = "Package Size Purchased Increases in Income", x = "Household Income",
        y = "Log TP Rolls Per Package",
        caption = paste0("Source: Author calulations using Nielsen Consumer Panel.\n",
-                   "Note: TP rolls are standardized to 275-sheet, 2-ply rolls.\n",
+                   "Note: TP rolls are standardized to 225-sheet, 2-ply rolls.\n",
                    "Midpoints of household income bins are plotted above.")) +
   theme_fivethirtyeight() +
   theme(axis.title = element_text())

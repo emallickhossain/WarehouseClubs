@@ -102,7 +102,7 @@ prod[, c("sheet", "stdRolls", "product_module_code", "multi", "upc_descr",
 
 getAssortment <- function(yr) {
   tp <- unique(fread(paste0(pathName, "Movement_Files/7260_", yr, ".tsv"),
-                     select = c("store_code_uc", "upc", "week_end", "price"),
+                     select = c("store_code_uc", "upc", "week_end", "price", "units"),
                      key = c("upc"), nThread = threads))
   tp[, c("pCents", "price") := .(as.integer(round(price * 100)), NULL)]
   rms <- fread(paste0(pathName, "Annual_Files/rms_versions_", yr, ".tsv"),

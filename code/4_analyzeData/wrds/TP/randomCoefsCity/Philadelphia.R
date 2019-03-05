@@ -8,14 +8,6 @@ threads <- 8
 
 fullChoice <- fread("/scratch/upenn/hossaine/TPMLogit.csv", nThread = threads)
 
-# # Looking at price variance
-# fullChoice[, "meanPrice" := mean(p), by = .(topBrand, sizeCat, store_code_uc, week_end)]
-# fullChoice[, "meanDiff" := (p - meanPrice) / meanPrice * 100]
-# ggplot(data = fullChoice, aes(x = meanDiff, y = ..density..)) +
-#   geom_histogram(binwidth = 1) +
-#   scale_x_continuous(limits = c(-100, 100)) +
-#   theme_fivethirtyeight()
-
 # Collapsing products that are not uniquely defined by a brand-size
 fullChoice <- na.omit(fullChoice, cols = "size")
 fullChoice <- fullChoice[, .(size = mean(size),
@@ -41,33 +33,22 @@ fullChoice[, ':=' (piRatio = p / household_income_cts,
 
 ############################ TESTING ###########################################
 # Focusing only on Boston for testing
-focusSet <- fullChoice[market == "Boston" & panel_year %in% 2014:2016]
+focusSet <- fullChoice[market == "Philadelphia"]
 
 # Running MNL regression
 focusM <- mlogit.data(data = focusSet, choice = "choice", shape = "long",
                       alt.var = "alt", chid.var = "trip_code_uc",
                       id.var = "household_code", opposite = c("unitCost", "piRatio"))
 start <- proc.time()
-reg1 <- mlogit(choice ~ unitCost | 0, data = focusM)
-reg2 <- mlogit(choice ~ unitCost + brand | 0, data = focusM)
-reg3 <- mlogit(choice ~ unitCost + brand + sizeCat | 0, data = focusM)
-reg4 <- mlogit(choice ~ unitCost + brand + sizeCat + piRatio | 0, data = focusM)
-reg5 <- mlogit(choice ~ unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM)
+reg1 <- mlogit(choice ~ unitCost + brand + sizeCat | 0, data = focusM)
+reg2 <- mlogit(choice ~ unitCost + brand + sizeCat + piRatio | 0, data = focusM)
+reg3 <- mlogit(choice ~ unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM)
 proc.time() - start
 
-meanVals <- unique(focusSet[, .(unitCost = mean(unitCost),
-                                brand = brand,
-                                sizeCat = sizeCat,
-                                piRatio = mean(piRatio),
-                                daySupply = mean(daySupply)), by = alt])
-
-round(effects(reg4, covariate = "size", data = meanVals), digits = 3)
-
-
-stargazer(reg3, reg4, reg5, type = "text",
+stargazer(reg1, reg2, reg3, type = "text",
           out.header = FALSE,
           notes.align = "l",
-          covariate.labels = c("Price (-)", "Unit Cost (-)",
+          covariate.labels = c("Unit Cost (-)",
                                "Charmin", "Cottonelle", "Qltd Ntn", "Scott", "Other",
                                "Small Size", "Medium Size",
                                "Price/Income Ratio", "Day Supply"),
@@ -83,15 +64,15 @@ stargazer(reg3, reg4, reg5, type = "text",
 
 # Running random coefficients specification
 start <- proc.time()
-reg6 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
+reg4 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
                rpar = c(p = "ln"), R = 25, halton = NA)
-reg7 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
+reg5 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
                rpar = c(p = "ln", unitCost = "ln"), R = 25, halton = NA)
-reg8 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
+reg6 <- mlogit(choice ~ p + unitCost + brand + sizeCat + piRatio + daySupply | 0, data = focusM,
                rpar = c(p = "ln", unitCost = "ln", daySupply = "n"), R = 25, halton = NA)
 proc.time() - start
 
-stargazer(reg6, reg7, reg8, type = "text",
+stargazer(reg4, reg5, reg6, type = "text",
           out.header = FALSE,
           notes.align = "l",
           # covariate.labels = c("Unit Cost",
@@ -100,6 +81,8 @@ stargazer(reg6, reg7, reg8, type = "text",
           #                      "Price/Income Ratio", "Day Supply"),
           # order = c(1:3, 5, 6, 4, 8, 7, 9, 10),
           digits = 2,
+          no.space = TRUE,
+          single.row = TRUE,
           label = "tab:mnlBostonRand",
           notes = c("Pack size is defined number of rolls in a package. Days' ",
                     "supply is the number of standardized rolls in a package",

@@ -8,6 +8,14 @@
  
 \begin{figure}
 \centering
+\includegraphics{../5_figures/IncUnitCost.png}
+\caption{}
+\label{fig:unitCostCoef}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
 \includegraphics{../5_figures/tpSizeDist.png}
 \caption{}
 \label{fig:brandDist}
