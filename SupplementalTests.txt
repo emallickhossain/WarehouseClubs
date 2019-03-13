@@ -1,0 +1,6 @@
+Miscellaneous thoughts
+
+* For a diff-in-diff analysis, look at state Medicaid expansions, SNAP policy changes, WIC policy changes or something else that would affect household budgets. Each of the above would be an event study, but then after they are in effect, they provide a level improvement in all household's budgets. I.e. for a SNAP increase, that would free up say $50 per month in food spending which may be spent on bulk purchases.
+
+* For Medicaid expansion, see KFF: https://www.kff.org/medicaid/issue-brief/status-of-state-medicaid-expansion-decisions-interactive-map/
+

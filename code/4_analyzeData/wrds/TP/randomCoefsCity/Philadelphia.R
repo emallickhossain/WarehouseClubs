@@ -32,7 +32,7 @@ fullChoice[, ':=' (piRatio = p / household_income_cts,
                    daySupply = size / rate)]
 
 ############################ TESTING ###########################################
-# Focusing only on Boston for testing
+# Focusing only on Philly for testing
 focusSet <- fullChoice[market == "Philadelphia"]
 
 # Running MNL regression
@@ -52,15 +52,15 @@ stargazer(reg1, reg2, reg3, type = "text",
                                "Charmin", "Cottonelle", "Qltd Ntn", "Scott", "Other",
                                "Small Size", "Medium Size",
                                "Price/Income Ratio", "Day Supply"),
-          order = c(1:4, 6, 7, 5, 9, 8, 10, 11),
+          order = c(1:3, 5, 6, 4, 8, 7, 9, 10),
           no.space = TRUE,
           single.row = TRUE,
           digits = 2,
-          label = "tab:mnlBostonBaseline",
+          label = "tab:mnlPhillyBaseline",
           notes = c("Small size is less than 6 rolls. Medium size is 7-12 rolls. ",
                     "Days' supply is the number of standardized rolls in a package",
                     "divided by a household's average daily consumption."),
-          out = "./tables/mnlBostonBaseline.tex")
+          out = "./tables/mnlPhillyBaseline.tex")
 
 # Running random coefficients specification
 start <- proc.time()
@@ -83,8 +83,8 @@ stargazer(reg4, reg5, reg6, type = "text",
           digits = 2,
           no.space = TRUE,
           single.row = TRUE,
-          label = "tab:mnlBostonRand",
+          label = "tab:mnlPhillyRand",
           notes = c("Pack size is defined number of rolls in a package. Days' ",
                     "supply is the number of standardized rolls in a package",
                     "divided by a household's average daily consumption."),
-          out = "./tables/mnlBostonRand.tex")
+          out = "./tables/mnlPhillyRand.tex")

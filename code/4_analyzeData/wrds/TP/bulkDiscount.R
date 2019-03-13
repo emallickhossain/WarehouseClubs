@@ -125,10 +125,10 @@ scanner <- NULL
 for (i in 2006:2016) {
   print(i)
   # Getting store assortment
-  assort <- na.omit(fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16),
-                    cols = "unitCost")
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16)
   scanner <- rbind(scanner, assort)
 }
+scanner[, "unitCost" := pCents / size]
 scanner[, c("lcost", "lsize") := .(log(unitCost), log(size))]
 scanner[, c("upc", "upc_ver_uc", "pkgSize", "ply", "pCents") := NULL]
 rm(assort)
@@ -183,6 +183,18 @@ stargazer(reg4, type = "text", single.row = FALSE, no.space = TRUE,
           label = "tab:bulkDiscountScanner4",
           title = "Bulk Discounts Are Common Across Retailers",
           out = "tables/bulkDiscountScanner4.tex")
+
+reg5 <- felm(lcost ~ lsize | week_end + brand_code_uc * store_code_uc, data = scanner,
+             keepX = FALSE, keepCX = FALSE, keepModel = FALSE)
+stargazer(reg5, type = "text", single.row = FALSE, no.space = TRUE,
+          omit.stat = c("ser", "rsq"), out.header = FALSE,
+          dep.var.caption = "Log(Price)", dep.var.labels.include = FALSE,
+          covariate.labels = "Log(Size)",
+          notes.align = "l",
+          digits = 2,
+          label = "tab:bulkDiscountScanner5",
+          title = "Bulk Discounts Are Common Across Retailers",
+          out = "tables/bulkDiscountScanner5.tex")
 
 ###### Table 1 of Orhun and Palazzolo
 tpPurch <- na.omit(tpPurch, cols = "size")
