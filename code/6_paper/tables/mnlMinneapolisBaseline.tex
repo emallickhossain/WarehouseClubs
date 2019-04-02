@@ -1,8 +1,8 @@
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Fri, Mar 08, 2019 - 06:19:19 PM
+% Date and time: Fri, Mar 22, 2019 - 04:24:59 PM
 \begin{table}[!htbp] \centering 
-  \caption{} 
+  \caption{Multinomial Logit Estimation: Minneapolis} 
   \label{tab:mnlMinneapolisBaseline} 
 \begin{tabular}{@{\extracolsep{5pt}}lcccc} 
 \\[-1.8ex]\hline 
@@ -12,23 +12,20 @@
 \\[-1.8ex] & \multicolumn{4}{c}{choice} \\ 
 \\[-1.8ex] & (1) & (2) & (3) & (4)\\ 
 \hline \\[-1.8ex] 
- Unit Cost (-) & $-$0.32$^{***}$ (0.02) & 2.38$^{***}$ (0.05) & 2.80$^{***}$ (0.05) & 2.62$^{***}$ (0.05) \\ 
-  Charmin &  & 1.87$^{***}$ (0.03) & 2.00$^{***}$ (0.03) & 1.96$^{***}$ (0.03) \\ 
-  Cottonelle &  & 2.25$^{***}$ (0.04) & 2.37$^{***}$ (0.04) & 2.28$^{***}$ (0.04) \\ 
-  Qltd Ntn &  & 0.89$^{***}$ (0.02) & 0.96$^{***}$ (0.02) & 0.96$^{***}$ (0.02) \\ 
-  Scott &  & $-$0.43$^{***}$ (0.03) & $-$0.28$^{***}$ (0.03) & $-$0.19$^{***}$ (0.03) \\ 
-  Other &  & 0.26$^{***}$ (0.03) & 0.27$^{***}$ (0.03) & 0.36$^{***}$ (0.03) \\ 
-  Std. Rolls &  &  & $-$0.03$^{***}$ (0.001) & $-$0.03$^{***}$ (0.002) \\ 
-  Small Size &  &  &  & $-$0.09$^{***}$ (0.03) \\ 
-  Medium Size &  &  &  & 0.64$^{***}$ (0.02) \\ 
+ Price & $-$0.12$^{***}$ & $-$0.18$^{***}$ & $-$0.23$^{***}$ & $-$0.16$^{***}$ \\ 
+  & (0.002) & (0.002) & (0.01) & (0.01) \\ 
+  Std. Rolls &  &  & 0.03$^{***}$ & 0.04$^{***}$ \\ 
+  &  &  & (0.003) & (0.003) \\ 
+  Small Size &  &  &  & 0.63$^{***}$ \\ 
+  &  &  &  & (0.03) \\ 
  \hline \\[-1.8ex] 
-Observations & 26,810 & 26,810 & 26,810 & 26,810 \\ 
-Log Likelihood & $-$73,070.70 & $-$69,866.89 & $-$69,549.87 & $-$68,034.95 \\ 
+Brand FE & N & Y & Y & Y \\ 
+Observations & 25,256 & 25,256 & 25,256 & 25,256 \\ 
+Log Likelihood & $-$59,080.55 & $-$56,109.78 & $-$56,044.06 & $-$55,805.55 \\ 
 \hline 
 \hline \\[-1.8ex] 
 \textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
- & \multicolumn{4}{l}{Small size is less than 6 rolls. Medium size is 7-12 rolls. } \\ 
- & \multicolumn{4}{l}{Days' supply is the number of standardized rolls in a package} \\ 
- & \multicolumn{4}{l}{divided by a household's average daily consumption.} \\ 
+ & \multicolumn{4}{l}{Small size is 12 rolls or less.} \\ 
+ & \multicolumn{4}{l}{Standard rolls are defined as 225-sheet, 2-ply equivalents.} \\ 
 \end{tabular} 
 \end{table} 
