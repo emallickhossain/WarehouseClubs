@@ -1,14 +1,14 @@
 \begin{figure}
 \centering
-\includegraphics{../5_figures/tpCoefficients.png}
+\includegraphics{../5_figures/bulkDiscountAllProds.png}
 \caption{}
-\label{fig:coefficients}
+\label{fig:bulkDiscountAllProds}
 \end{figure}
 \efloatseparator
  
 \begin{figure}
 \centering
-\includegraphics{../5_figures/IncUnitCost.png}
+\includegraphics{../5_figures/savingsBehavior.png}
 \caption{}
-\label{fig:unitCostCoef}
+\label{fig:savingsBehavior}
 \end{figure}

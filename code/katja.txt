@@ -1,0 +1,4 @@
+Katja Comments
+
+2. Add more to the Stylized facts section
+* Add more discussion of data cleaning and what I do. Don't make it just seem like magic

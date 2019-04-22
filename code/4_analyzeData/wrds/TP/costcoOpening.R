@@ -1,58 +1,70 @@
-# Looks at size differences when warehouse clubs open
+# Looks at size differences when warehouse clubs open within some distance cutoff
 library(data.table)
 library(geosphere)
 library(lfe)
 library(stargazer)
+library(zoo)
+library(lubridate)
+library(ggplot2)
+library(ggthemes)
 path <- "/scratch/upenn/hossaine/"
+threads <- 8
+distanceKM <- 30
 
-tpPurch <- fread(paste0(path, "tpPurch.csv"))
-tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "product_module_code",
-            "upc_descr", "product_module_descr", "product_group_code",
-            "product_group_descr", "department_code", "department_descr",
-            "size1_code_uc", "size1_units", "dataset_found_uc",
-            "size1_change_flag_uc", "purchase_date") := NULL]
-zipLatLon <- fread("./Nielsen/zipLatLon.csv")
-clubs <- na.omit(fread("./Nielsen/club_store_openings_by_zip.csv"))
+# Getting purchase data
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop %in% c(0, 2)]
+tpPurch[, "purchase_date" := as.Date(purchase_date, format = "%Y-%m-%d")]
+tpPurch[, "month" := month(purchase_date)]
+tpPurch[, "monthYear" := paste0(panel_year, month)]
+tpPurch <- na.omit(tpPurch, cols = c("size", "rate"))
+tpPurch <- tpPurch[rate < Inf & rate > 0]
+setorder(tpPurch, household_code, purchase_date)
+hhGeos <- na.omit(unique(tpPurch[, .(household_code, lat, lon)]))
+hhGeos[, "hhGeoID" := 1:.N]
+
+# Getting club opening data and merging with lat lon by zip code
+clubs <- na.omit(fread("./Nielsen/Data/club_store_openings_by_zip.csv"))
 setnames(clubs, "zip", "zip_code")
-setkey(clubs, zip_code)
+setkey(clubs, zip_code, open_club)
 clubs[, "open_club" := as.Date(open_club)]
-clubs[, "store" := 1:nrow(clubs)]
-clubZips <- clubs[, .(zip_code)]
-clubZips <- merge(clubZips, zipLatLon, by = "zip_code", all.x = TRUE)
+zipLatLon <- fread("./Nielsen/Data/zipLatLon.csv")
+clubs <- merge(clubs, zipLatLon, by = "zip_code")
+clubs[, "clubGeoID" := 1:.N]
 
-hhZips <- unique(tpPurch[, .(zip_code)])
-hhZips <- merge(hhZips, zipLatLon, by = "zip_code")
-distMat <- distm(hhZips[, .(lon, lat)], clubZips[, .(lon, lat)])
-closest <- data.table(zip_code = hhZips$zip_code,
-                      store = apply(distMat, 1, which.min),
-                      dist = apply(distMat, 1, min, na.rm = TRUE))
-closest <- merge(closest, clubs, by = "store")[, "zip_code.y" := NULL]
-closest[, c("open_year", "open_month") := .(year(open_club), month(open_club))]
-setnames(closest, "zip_code.x", "zip_code")
+# Computing distances and finding closest store (most everyone lives within about
+# 100km to a warehouse club)
+distMat <- distm(hhGeos[, .(lon, lat)], clubs[, .(lon, lat)])
+closestClub <- apply(distMat, 1, which.min)
+distClub <- apply(distMat, 1, min)
+hhGeos[, ':=' (closestClub = as.integer(closestClub),
+               distClubKM = distClub / 1000)]
+hhGeos <- merge(hhGeos, clubs[, .(open_club, clubname, clubGeoID)],
+                by.x = "closestClub", by.y = "clubGeoID")
+tpPurch <- merge(tpPurch, hhGeos[, .(household_code, lat, lon, distClubKM, open_club, clubname)],
+                 by = c("household_code", "lat", "lon"))
+tpPurch[, "monthsSinceOpen" := interval(open_club, purchase_date) %/% months(1)]
+tpPurch[, "nearby" := (distClubKM <= distanceKM)]
+tpPurch[, "distClubKM2" := distClubKM ^ 2]
 
-tpPurch <- merge(tpPurch, closest, by = "zip_code")
-tpPurch[, "monthsSinceOpen" := ((panel_year - 2004) * 12 + month) - ((open_year - 2004) * 12 + open_month)]
+# Running regressions of purchase sizes pre and post opening
+openingData <- tpPurch[monthsSinceOpen %in% -12:12]
+openingData[, "monthsSinceOpen" := relevel(factor(monthsSinceOpen), ref = "-1")]
+reg1 <- felm(data = openingData, log(size) ~ monthsSinceOpen |
+               household_code + monthYear,
+             weights = openingData$projection_factor)
+reg2 <- felm(data = openingData, log(size) ~ monthsSinceOpen * nearby |
+               household_code + monthYear,
+             weights = openingData$projection_factor)
+reg3 <- felm(data = openingData, log(size) ~ monthsSinceOpen * household_income_coarse |
+               household_code + monthYear,
+             weights = openingData$projection_factor)
+reg4 <- felm(data = openingData, log(size) ~ monthsSinceOpen * household_income_coarse * nearby |
+               household_code + monthYear,
+             weights = openingData$projection_factor)
+stargazer(reg1, reg2, reg3, reg4, type = "text")
 
-distance <- 30000
-tpPurch[, "nearby" := (dist <= distance)]
-tpPurch[, "monthsSinceOpen" := monthsSinceOpen * nearby]
-tpPurch[, "open" := .(monthsSinceOpen > 0)]
 
-# Getting HH that experienced an opening
-openHH <- unique(tpPurch[monthsSinceOpen == 0]$household_code)
-openings <- tpPurch[household_code %in% openHH]
 
-reg1 <- felm(data = openings, log(size) ~ open |
-               household_code + market | 0 | market,
-             weights = openings$projection_factor)
-
-reg2 <- felm(data = openings, log(size) ~ open + household_income |
-               household_code + market | 0 | market,
-             weights = openings$projection_factor)
-
-reg3 <- felm(data = openings, log(size) ~ open * household_income |
-               household_code + market | 0 | market,
-             weights = openings$projection_factor)
 
 stargazer(reg1, reg2, reg3, type = "text",
           add.lines = list(c("Household/MSA FE", "Y", "Y", "Y")),

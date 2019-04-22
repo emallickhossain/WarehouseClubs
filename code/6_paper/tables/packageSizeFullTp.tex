@@ -1,34 +1,39 @@
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Thu, Mar 28, 2019 - 05:47:16 PM
+% Date and time: Wed, Apr 10, 2019 - 12:09:45 AM
 \begin{table}[!htbp] \centering 
   \caption{Toilet Paper Package Size Purchases Increase in Household Income} 
   \label{tab:packageSizeFullTP} 
 \begin{tabular}{@{\extracolsep{5pt}}lcccc} 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & Log(Size) &  &  &  \\ 
+ & \multicolumn{4}{c}{Log(Size)} \\ 
 \\[-1.8ex] & (1) & (2) & (3) & (4)\\ 
 \hline \\[-1.8ex] 
- >100k & 0.15$^{***}$ (0.02) & 0.13$^{***}$ (0.02) & 0.11$^{***}$ (0.01) & 0.11$^{***}$ (0.01) \\ 
-  50-100k & 0.09$^{***}$ (0.01) & 0.07$^{***}$ (0.01) & 0.06$^{***}$ (0.01) & 0.06$^{***}$ (0.01) \\ 
-  25-50k & 0.04$^{***}$ (0.01) & 0.03$^{***}$ (0.01) & 0.02$^{**}$ (0.01) & 0.02$^{**}$ (0.01) \\ 
-  Cons. Rate & 0.82$^{***}$ (0.04) & 0.78$^{***}$ (0.04) & 0.65$^{***}$ (0.04) & 0.63$^{***}$ (0.04) \\ 
+ 25-50k & 0.01 (0.01) & 0.01 (0.01) & 0.004 (0.01) & 0.01 (0.01) \\ 
+  50-100k & 0.06$^{***}$ (0.01) & 0.05$^{***}$ (0.01) & 0.04$^{***}$ (0.01) & 0.04$^{***}$ (0.01) \\ 
+  >100k & 0.12$^{***}$ (0.02) & 0.10$^{***}$ (0.02) & 0.09$^{***}$ (0.02) & 0.10$^{***}$ (0.02) \\ 
+  Apartment & $-$0.13$^{***}$ (0.02) & $-$0.11$^{***}$ (0.02) & $-$0.11$^{***}$ (0.01) & $-$0.11$^{***}$ (0.01) \\ 
+  25-50k : Apartment & 0.05$^{**}$ (0.02) & 0.03$^{*}$ (0.02) & 0.04$^{**}$ (0.02) & 0.04$^{**}$ (0.02) \\ 
+  50-100k : Apartment & 0.07$^{***}$ (0.02) & 0.05$^{***}$ (0.02) & 0.05$^{***}$ (0.02) & 0.05$^{***}$ (0.02) \\ 
+  >100k : Apartment & 0.09$^{***}$ (0.03) & 0.08$^{***}$ (0.02) & 0.08$^{***}$ (0.03) & 0.07$^{***}$ (0.02) \\ 
+  Month Start & 0.03$^{***}$ (0.01) & 0.03$^{***}$ (0.005) & 0.02$^{***}$ (0.005) & 0.02$^{***}$ (0.004) \\ 
+  25-50k : Month Start & $-$0.02$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) & $-$0.01$^{***}$ (0.005) \\ 
+  50-100k : Month Start & $-$0.03$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) \\ 
+  >100k : Month Start & $-$0.03$^{***}$ (0.01) & $-$0.03$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) & $-$0.02$^{***}$ (0.01) \\ 
  \hline \\[-1.8ex] 
 Time/MSA/Demog. FE & Y & Y & Y & Y \\ 
 Retailer FE & N & Y & Y & N \\ 
 Brand FE & N & N & Y & N \\ 
-Brand-Store FE & N & N & N & Y \\ 
-Observations & 2,942,364 & 2,942,364 & 2,942,364 & 2,942,364 \\ 
-Adjusted R$^{2}$ & 0.10 & 0.16 & 0.26 & 0.29 \\ 
+Brand-Retailer FE & N & N & N & Y \\ 
+Observations & 2,876,255 & 2,876,255 & 2,876,255 & 2,876,255 \\ 
+Adjusted R$^{2}$ & 0.09 & 0.16 & 0.25 & 0.29 \\ 
 \hline 
 \hline \\[-1.8ex] 
 \textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
- & \multicolumn{4}{l}{Standard errors are clustered at the market level.} \\ 
- & \multicolumn{4}{l}{Fixed effects include indicators for year, month, } \\ 
- & \multicolumn{4}{l}{week, MSA, retail chain, and brand. Demographics } \\ 
- & \multicolumn{4}{l}{include household size, housing type, marital status, } \\ 
- & \multicolumn{4}{l}{race, ethnicity, age group, urban/rural indicator, } \\ 
- & \multicolumn{4}{l}{and education.} \\ 
+ & \multicolumn{4}{l}{Standard errors are clustered at the market level. Fixed effects } \\ 
+ & \multicolumn{4}{l}{include indicators for year, month, week, MSA, retail chain, } \\ 
+ & \multicolumn{4}{l}{and brand. Demographics include household size, marital status, } \\ 
+ & \multicolumn{4}{l}{race, ethnicity, age group, urban/rural indicator, and education.} \\ 
 \end{tabular} 
 \end{table} 

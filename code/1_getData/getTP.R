@@ -2,13 +2,13 @@
 source("./Nielsen/getItem.R")
 library(knitr)
 library(stargazer)
+library(stringr)
 
 # Inputs
 prodCode <- 7260
 
 # Restrictions
 max_price <- 50 # maximum price paid on a single trip
-
 
 # For Toilet paper, creating standardized roll
 prod <- fread(paste0(path, "prod.csv"),
@@ -28,15 +28,10 @@ prod[, c("sheet", "stdRolls", "product_module_code", "multi", "size1_amount",
 # Removing "TO GO" packages and products where size cannot be computed
 prod <- prod[!grep("TO GO", brand_descr)]
 
-
 # Getting purchases
 fullData <- getItem(prod)
 fullData[, "totVol" := size * quantity]
 fullData[, "purchase_date" := as.Date(purchase_date, format = "%Y-%m-%d")]
-# keepForLater <- fullData
-# fullData <- keepForLater[, .(household_code, upc, upc_ver_uc, trip_code_uc,
-#                              quantity, total_price_paid_real, sizeUnadj,
-#                              purchase_date, size, totVol)]
 
 ################################################################################
 ##################### COMPUTING ACTIVE SPELLS AND CONSUMPTION RATE #############
@@ -108,7 +103,7 @@ fullData <- merge(fullData, consRate, by = "household_code")
 ################################################################################
 ###################### CLEANING ################################################
 ################################################################################
-# Starting with 4,241,992 purchases across 149,272 households
+# Starting with 4,452,723 purchases across 154,918 households
 totalCount <- nrow(fullData)
 totalHH <- uniqueN(fullData$household_code)
 totRow <- c("Total HH/Observations:", totalCount, "-", totalHH, "-")
@@ -120,6 +115,10 @@ fullData[, ':=' (missing = uniqueN(activePeriod) - 1,
                  maxVol = max(totVol, na.rm = TRUE),
                  active = mean(duration)),
          by = .(household_code)]
+
+############## REPORTING, ACCURACY, AND DATA QUALITY ###########################
+# These criteria follow Orhun and Palazzolo to try to eliminate inaccuracies
+# and households that are particularly disposed to some of these issues
 
 # Excessive missingness (households with > 3 active periods <=>
 # more than 3 missing purchases)
@@ -197,8 +196,8 @@ abvol4 <- round(abvol3 / totalHH * 100, 1)
 abvolRow <- c("Abnormal Volume:", abvol1, abvol2, abvol3, abvol4)
 
 # Abnormal price
-fullData[, "abPrice" := ifelse(total_price_paid_real > max_price, 1L, 0L)]
-fullData[total_price_paid_real == 0, "abPrice" := 1L]
+fullData[, "abPrice" := ifelse(total_price_paid > max_price, 1L, 0L)]
+fullData[total_price_paid == 0, "abPrice" := 1L]
 abPrice <- fullData[abPrice == 1]
 abprice1 <- uniqueN(abPrice$trip_code_uc)
 abprice2 <- round(abprice1 / totalCount * 100, 1)
@@ -206,6 +205,19 @@ abprice3 <- uniqueN(abPrice$household_code)
 abprice4 <- round(abprice3 / totalHH * 100, 1)
 abpriceRow <- c("Abnormal Price:", abprice1, abprice2, abprice3, abprice4)
 
+####################### RESEARCH QUESTION FOCUS ################################
+# This drops trips to stores that would not represent a "normal" shopping trip
+# Dropping any trips at non top-5 stores
+stores <- c("Grocery", "Discount Store")
+fullData[, "wrongStore" := ifelse(!channel_type %in% stores, 1L, 0L)]
+wrongStore <- fullData[wrongStore == 1]
+wrong1 <- uniqueN(wrongStore$trip_code_uc)
+wrong2 <- round(wrong1 / totalCount * 100, 1)
+wrong3 <- "-"
+wrong4 <- "-"
+wrongRow <- c("Not Grocery/Discount Store", wrong1, wrong2, wrong3, wrong4)
+
+################################ TALLYING UP ###################################
 # Getting final tally
 fullData[, "drop" := 0]
 fullData[excessMissing == 1, "drop" := 1]
@@ -218,16 +230,18 @@ fullData[abVol == 1, "drop" := 1]
 fullData[abPrice == 1, "drop" := 1]
 dropHH <- fullData[drop == 1]$household_code
 fullData[household_code %in% dropHH, "drop" := 1]
-totDrop <- fullData[drop == 1]
+fullData[wrongStore == 1, "drop" := 2] # This is a criterion that only drops trips
+totDrop <- fullData[drop != 0]
 totDrop1 <- uniqueN(totDrop$trip_code_uc)
 totDrop2 <- round(totDrop1 / totalCount * 100, 1)
-totDrop3 <- uniqueN(totDrop$household_code)
+totDrop3 <- uniqueN(totDrop[drop == 1]$household_code)
 totDrop4 <- round(totDrop3 / totalHH * 100, 1)
 totDropRow <- c("Total Dropped:", totDrop1, totDrop2, totDrop3, totDrop4)
 
 # Final table tally
 cleanTable <- as.data.table(rbind(missRow, longRow, noconRow, inconsRow, noactRow,
-                                  abquanRow, abvolRow, abpriceRow, totRow, totDropRow))
+                                  abquanRow, abvolRow, abpriceRow, wrongRow,
+                                  totRow, totDropRow))
 setnames(cleanTable, c("Criteria", "Obs", "Obs %", "HH", "HH %"))
 cleanTable[, c("Obs", "HH") := lapply(.SD, as.integer), .SDcols = c("Obs", "HH")]
 stargazer(cleanTable, type = "text", rownames = FALSE, summary = FALSE,

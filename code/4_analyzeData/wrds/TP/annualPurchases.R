@@ -22,25 +22,40 @@ tpPurch[, "unitCost" := total_price_paid / totVol]
 tpPurch <- na.omit(tpPurch, cols = "unitCost")
 tpPurch <- tpPurch[unitCost > 0]
 
-# Sarah's regression looking directly at unit cost by size and income.
-reg1 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income |
-              type_of_residence + household_size + marital_status + white + child +
-              hispanic_origin + age + urban + college + panel_year + market | 0 | market,
-            weights = tpPurch$projection_factor)
-reg2 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
-               type_of_residence + household_size + marital_status + white + child +
-               hispanic_origin + age + urban + college + panel_year + market | 0 | market,
-             weights = tpPurch$projection_factor)
-reg3 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
-              type_of_residence + household_size + marital_status + white + child +
-              hispanic_origin + age + urban + college + panel_year + market +
-               brand_code_uc | 0 | market,
-            weights = tpPurch$projection_factor)
-reg4 <- felm(data = tpPurch, log(unitCost) ~ log(size) + log(size) * household_income + rate |
-              type_of_residence + household_size + marital_status + white + child +
-              hispanic_origin + age + urban + college + panel_year + market +
-               + brand_code_uc + retailer_code | 0 | market,
-            weights = tpPurch$projection_factor)
+# Sarah's regression looking directly at average unit cost paid by income.
+# Running this on a purchase level gives positive income coefficients (mostly due to brand preferences)
+# Adding store and brand fixed effects then gets slight negative coefficients,
+# but I think it ends up being a little underpowered.
+# If it's not underpowered, then there's no difference in unit prices paid between
+# different households. In the context of my paper, this is okay because while the
+# stylized fact is interesting, I focus on the first-best that households could achieve
+# which is different than the difference between the richest and poorest.
+tpPurch[, "unitCostUnadj" := total_price_paid / sizeUnadj]
+topBrands <- c("ANGEL SOFT", "CHARMIN", "COTTONELLE", "QUILTED NORTHERN", "SCOTT", "CTL BR")
+tpPurch[, "brandStore" := paste0(brand_descr, retailer_code)]
+reg1 <- felm(data = tpPurch[brand_descr %in% topBrands], log(unitCost) ~ as.factor(household_income) |
+               brand_code_uc + retailer_code | 0 | market,
+             weights = tpPurch[brand_descr %in% topBrands]$projection_factor)
+summary(reg1)
+
+incomes <- c(2.5, 6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100)
+betas <- c(0, reg1$coefficients[1:15])
+se <- c(0, reg1$cse[1:15])
+graphData <- data.table(income = incomes, beta = betas, se = se)
+ggplot(graphData, aes(x = incomes, y = betas)) +
+  geom_errorbar(aes(ymin = betas - 1.96 * se, ymax = betas + 1.96 * se), width = 1) +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  labs(title = "Package Size Purchased Increases in Income", x = "Household Income",
+       y = "Log TP Rolls Per Package",
+       caption = paste0("Source: Author calulations using Nielsen Consumer Panel.\n",
+                        "Note: TP rolls are standardized to 225-sheet, 2-ply rolls.\n",
+                        "Midpoints of household income bins are plotted above.")) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text())
+ggsave(filename = "./figures/tpCoefficients.png")
+
+
 stargazer(reg1, reg2, reg3, reg4, type = "text",
           single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,

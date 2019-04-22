@@ -9,13 +9,13 @@ library(knitr)
 library(stargazer)
 path <- "/scratch/upenn/hossaine/"
 threads <- 8
-yr <- 2006:2016
+yr <- 2006:2014
 diffTol <- 0 # Tolerance for generic price mismatch. 0 is the strictest and minDiff is the loosest
 top5 <- c("CHARMIN", "ANGEL SOFT", "QUILTED NORTHERN", "KLEENEX COTTONELLE", "SCOTT 1000")
 brandCode <- c(526996, 506045, 624459, 581898, 635074)
 
 # Quickly summarize the data and where observations get dropped
-tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
+tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop %in% c(0, 2) & panel_year %in% yr]
 tpPurch[, "brand_code_uc" := as.integer(substr(brand_code_uc, 1, 6))]
 row1 <- c("Starting", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
 
@@ -23,16 +23,16 @@ row1 <- c("Starting", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_c
 tpPurch <- na.omit(tpPurch, cols = "size")
 row2 <- c("Cannot be standardized", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
 
-# # Dropping stores without a store_code_uc
-# tpPurch <- tpPurch[store_code_uc != 0]
-# row3 <- c("Dropping stores without ID", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
+# Only single purchase trips
+multiUPC <- tpPurch[, .(count = .N), by = trip_code_uc][count > 1]$trip_code_uc
+tpPurch <- tpPurch[!trip_code_uc %in% multiUPC]
+tpPurch <- tpPurch[quantity == 1]
+row3 <- c("Single purchases only", uniqueN(tpPurch$trip_code_uc), uniqueN(tpPurch$household_code))
 
 # Adding variables to enable merging with the retail scanner data
-tpPurch[, "generic" := ifelse(brand_descr == "CTL BR", 1L, 0L)]
 tpPurch[, "purchase_date" := as.Date(purchase_date, format = "%Y-%m-%d")]
 tpPurch[, "week_end" := ceiling_date(purchase_date, "week",
                                      week_start = getOption("lubridate.week.start", 6))]
-tpPurch[, "purchase_date" := NULL]
 tpPurch[, "week_end" := as.character(week_end)]
 tpPurch[, "week_end" := as.integer(gsub("-", "", week_end))]
 tpPurch[, "pCents" := as.integer(round(total_price_paid * 100))]
@@ -50,224 +50,188 @@ fullPanel <- NULL
 for (i in yr) {
   print(i)
   # Getting master lists
-  trips <- unique(tpPurch[panel_year == i, .(trip_code_uc, household_code, panel_year)])
+  trips <- unique(tpPurch[panel_year == i, .(trip_code_uc, household_code, panel_year,
+                                             total_spent, cumSpend)])
   panel <- unique(tpPurch[panel_year == i, .(household_code, panel_year, projection_factor,
-                                             household_income, household_size,
-                                             type_of_residence, marital_status,
-                                             hispanic_origin, market, age, college,
-                                             white, child, rate)])
-  purch <- unique(tpPurch[panel_year == i, .(trip_code_uc,
+                                             household_income, type_of_residence,
+                                             market, college, white, rate)])
+  purch <- unique(tpPurch[panel_year == i, .(trip_code_uc, week_end, store_code_uc,
                                              choice_upc = upc,
                                              choice_upc_ver_uc = upc_ver_uc,
-                                             store_code_uc, retailer_code, dma_code,
-                                             week_end, generic)])
+                                             choice_brand = brand_code_uc,
+                                             choice_size = sizeUnadj,
+                                             choice_ply = ply,
+                                             choice_pCents = pCents,
+                                             choice_unitCost = unitCost)])
+  setkey(purch, store_code_uc, week_end)
 
-  # Getting store assortment
-  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = threads)
-  assort[, "unitCost" := round(pCents / size)]
-
-  # Remove NA unit costs
+  # Getting store assortment and remove NA unit costs
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = threads,
+                  key = c("store_code_uc", "week_end"))
+  assort[, ':=' (unitCost = round(pCents / size))]
   assort <- na.omit(assort, cols = "unitCost")
 
-  # Combining with non-generic purchases. Can only match about 50% of stores and
-  # only about 35% of shopping trips in 2010 for non-generics
-  nonGeneric <- purch[generic != 1][, c("dma_code", "retailer_code") := NULL]
-  choiceLong <- merge(nonGeneric, assort, by = c("store_code_uc", "week_end"))
+  # Matching purchases with store assortments and getting exact matches (group 1)
+  choiceLong <- merge(purch, assort, by = c("store_code_uc", "week_end"))
+  choiceLong[, c("retailer_code", "dma_code", "fips_state_code") := NULL]
   choiceLong[, "choice" := ifelse(choice_upc == upc, TRUE, FALSE)]
   choiceLong[, "match" := sum(choice), by = trip_code_uc]
-  choiceLong[, c("fips_state_code", "units") := NULL]
+  exactMatch <- choiceLong[match == 1][, "matchQual" := "Exact"]
+  exactMatch[, c("choice_upc", "choice_upc_ver_uc", "choice_brand", "choice_size",
+                 "choice_ply", "choice_pCents", "choice_unitCost", "units") := NULL]
+
+  # Approximating the match for other purchases based on brand, ply, and size.
+  # To ensure a close match, I set a cutoff for how large the price difference
+  # can be. Most of these cases are small differences in the assigned UPC, but
+  # not the underlying product characteristics. In cases where I have multiple
+  # exact matches, I collapse these to a single choice because these are the
+  # dimensions I care about and a small UPC difference is not detectable in
+  # my model (group 2)
+  approxMatch <- choiceLong[match == 0][, "match" := NULL]
+  approxMatch[, "diffPrice" := abs(choice_pCents - pCents)]
+  approxMatch[, "diffUnitCost" := abs(choice_unitCost - unitCost)]
+  approxMatch[, "possible" := ifelse(choice_brand == brand_code_uc &
+                                     choice_ply == ply &
+                                     choice_size == pkgSize, TRUE, FALSE)]
+  approxMatch[possible == TRUE, "minDiffPrice" := min(diffPrice), by = trip_code_uc]
+  approxMatch[possible == TRUE, "minDiffUnitCost" := min(diffUnitCost, na.rm = TRUE), by = trip_code_uc]
+  approxMatch[, "choice" := ifelse(possible == TRUE &
+                                   diffPrice == minDiffPrice &
+                                   diffUnitCost == minDiffUnitCost &
+                                   diffPrice <= diffTol, TRUE, FALSE)]
+  approxMatch[, "match" := sum(choice), by = trip_code_uc]
+  choiceUPC <- approxMatch[match > 1 & choice == TRUE, .(upc = head(upc, 1)), by = trip_code_uc]$upc
+  approxMatch[match > 1 & choice == TRUE & !upc %in% choiceUPC, "choice" := FALSE]
+  approxMatch[, "match" := sum(choice), by = trip_code_uc]
+  approxMatch1 <- approxMatch[match == 1][, "matchQual" := "Approx"]
+  approxMatch1[, c("choice_brand", "choice_size", "choice_ply", "choice_pCents",
+                   "choice_unitCost", "diffPrice", "diffUnitCost", "possible",
+                   "minDiffPrice", "minDiffUnitCost","choice_upc",
+                   "choice_upc_ver_uc", "units") := NULL]
 
   # For some reason, there are instances where the product purchased is not
   # recorded in the scanner data. In these cases, I input the data from the
   # purchase occasion.
-  noMatch <- unique(choiceLong[match == 0]$trip_code_uc)
-  newDat <- tpPurch[trip_code_uc %in% noMatch,
-                    .(store_code_uc, week_end, trip_code_uc, choice_upc = upc,
-                      choice_upc_ver_uc = upc_ver_uc, generic, upc, upc_ver_uc,
-                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
-                      unitCost, choice = TRUE, match = 1, dma_code, retailer_code)]
-  choiceLong <- rbind(choiceLong, newDat, use.names = TRUE)
-  choiceLong[, "match" := NULL]
-  choiceLong[, "match" := sum(choice), by = trip_code_uc]
-  choiceLong[, c("choice_upc", "choice_upc_ver_uc", "generic", "match") := NULL]
-
-  # Adding generic purchases
-  # As with non-generics, I can only match about 50% of stores and about 50% of trips in 2010
-  # I match primary based on matching the ply, package size, and ply of the generic product
-  # For unmatched trips, these are primarily due to mismatches in price (difference
-  # between avg weekly price and price reported by household), I assign the chosen
-  # product to the one with the minimum difference between price reported and Scanner price
-  # About 25% of generic purchases don't match exactly. However, given a positive
-  # discrepancy, the median discrepancy is 12 cents with 75% of discrepancies being
-  # below 50 cents, and 90% being below 1 dollar.
-  # In cases where there are multiple possibilities, I choose the option with the
-  # closes unit cost.
-  genericTrips <- purch[generic == 1]$trip_code_uc
-  generic <- tpPurch[trip_code_uc %in% genericTrips,
-                     .(choice_ply = ply, pCents_choice = pCents,
-                       choice_size = sizeUnadj, choice_unitCost = unitCost,
-                       store_code_uc, trip_code_uc, week_end, coupon)]
-  genericChoice <- merge(generic, assort, by = c("store_code_uc", "week_end"))
-  genericChoice[, "diff" := abs(pCents_choice - pCents)]
-  genericChoice[, "possible" := ifelse(brand_code_uc == 536746 &
-                                         choice_ply == ply &
-                                         choice_size == pkgSize, TRUE, FALSE)]
-  genericChoice[possible == TRUE, "minDiff" := min(diff), by = trip_code_uc]
-  genericChoice[, "choice" := ifelse(possible == TRUE & diff <= diffTol, TRUE, FALSE)]
-  genericChoice[, c("diff", "possible", "minDiff") := NULL]
-  multiples <- genericChoice[, .(choice = sum(choice)), by = trip_code_uc][choice > 1]$trip_code_uc
-  genericChoice[, "diff" := abs(choice_unitCost - unitCost)]
-  genericChoice[, "possible" := ifelse(brand_code_uc == 536746 &
-                                         choice_ply == ply &
-                                         choice_size == pkgSize, TRUE, FALSE)]
-  genericChoice[possible == TRUE, "minDiff" := min(diff), by = trip_code_uc]
-  genericChoice[trip_code_uc %in% multiples & possible == TRUE, "choice" := ifelse(diff <= minDiff + 0.01, TRUE, FALSE)]
-  genericChoice[, "match" := sum(choice), by = trip_code_uc]
-  genericChoice[, c("choice_ply", "pCents_choice", "choice_size", "choice_unitCost",
-                    "coupon", "diff", "possible", "minDiff", "fips_state_code", "units") := NULL]
-
-  # For some reason, there are instances where the product purchased is not
-  # recorded in the scanner data. For generics, there are a variety of explanations
-  # To fix this, I just add in the record from the consumer panel
-  noMatch <- unique(genericChoice[match == 0]$trip_code_uc)
-  newDat <- tpPurch[trip_code_uc %in% noMatch,
-                    .(store_code_uc, week_end, trip_code_uc, upc, upc_ver_uc,
-                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
-                      unitCost, choice = TRUE, match = 1, dma_code, retailer_code)]
-  genericChoice <- rbind(genericChoice, newDat, use.names = TRUE)
-  genericChoice[, "match" := NULL]
-  genericChoice[, "match" := sum(choice), by = trip_code_uc]
-  genericChoice[, c("match") := NULL]
+  noMatch <- approxMatch[match == 0, .(week_end, trip_code_uc, upc, upc_ver_uc,
+                                       pCents, brand_code_uc, pkgSize, ply,
+                                       size, unitCost, choice, store_code_uc)]
+  noMatchID <- unique(noMatch$trip_code_uc)
+  newDat <- tpPurch[trip_code_uc %in% noMatchID,
+                    .(week_end, trip_code_uc, upc, upc_ver_uc, pCents, store_code_uc,
+                      brand_code_uc, pkgSize = sizeUnadj, ply, size, unitCost,
+                      choice = TRUE)]
+  noMatch <- rbindlist(list(noMatch, newDat), use.names = TRUE)
+  noMatch[, "match" := sum(choice), by = trip_code_uc]
+  noMatch[, "matchQual" := "Append"]
 
   # Combining exact store id matches
-  fullChoice <- rbindlist(list(fullChoice, choiceLong, genericChoice), use.names = TRUE)
+  combineData <- rbindlist(list(exactMatch, approxMatch1, noMatch), use.names = TRUE)
+  print(prop.table(table(unique(combineData[, .(trip_code_uc, matchQual)])$matchQual)))
+
+  fullChoice <- rbindlist(list(fullChoice, combineData), use.names = TRUE)
 
   # Combining choice sets and expanding to full possibility set
   fullTrips <- rbindlist(list(fullTrips, trips), use.names = TRUE)
   fullPanel <- rbindlist(list(fullPanel, panel), use.names = TRUE)
 }
-fullChoice[, "exactMatch" := 1]
 
 ##############################################################################
-############################ MATCHING BY RETAILER-DMA-WEEK ###################
+############################ MATCHING BY RETAILER-WEEK #######################
 ##############################################################################
-approxChoice <- NULL
+matchedTrips <- unique(fullChoice$trip_code_uc)
 for (i in yr) {
   print(i)
-  purch <- unique(tpPurch[panel_year == i, .(trip_code_uc,
-                                             choice_upc = upc,
-                                             choice_upc_ver_uc = upc_ver_uc,
-                                             store_code_uc, retailer_code, dma_code,
-                                             week_end, generic)])
+  # Getting master lists
+  purch <- unique(tpPurch[panel_year == i & !trip_code_uc %in% matchedTrips,
+                          .(trip_code_uc, week_end, retailer_code,
+                            choice_upc = upc,
+                            choice_upc_ver_uc = upc_ver_uc,
+                            choice_brand = brand_code_uc,
+                            choice_size = sizeUnadj,
+                            choice_ply = ply,
+                            choice_pCents = pCents,
+                            choice_unitCost = unitCost)])
 
-  # Generating representative chain-DMA-week assortments for Consumer Panel
-  # stores that do not have an ID. This representative store contains
-  # the union of products offered by that chain in that DMA in that week
-  # and the price is the quantity weighted average of the price across all stores.
-  # Getting store assortment
+  # Getting full assortment for a retailer and remove NA unit costs
   assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = threads)
-  assort[, "unitCost" := round(pCents / size)]
-
-  # Remove NA unit costs
-  assort <- na.omit(assort, cols = "unitCost")
-  dmaAssort <- assort[, .(pCents = weighted.mean(pCents, w = units),
+  assort[, ':=' (unitCost = round(pCents / size))]
+  assort <- na.omit(assort, cols = c("unitCost", "retailer_code"))
+  retAssort <- assort[, .(pCents = weighted.mean(pCents, w = units),
                           unitCost = weighted.mean(unitCost, w = units)),
-                      by = .(upc, upc_ver_uc, week_end, brand_code_uc,
-                             pkgSize, ply, size, retailer_code, dma_code)]
-  dmaAssort[, "store_code_uc" := 0]
+                      by = .(retailer_code, upc, upc_ver_uc, week_end,
+                             brand_code_uc, pkgSize, ply, size)]
 
-  # Combining with non-generic purchases. Can only match about 50% of stores and
-  # only about 35% of shopping trips in 2010 for non-generics
-  nonGeneric <- purch[generic != 1 & store_code_uc == 0]
-  choiceLong <- merge(nonGeneric, dmaAssort, by = c("retailer_code", "dma_code",
-                                                    "store_code_uc", "week_end"))
+  # Matching purchases with store assortments and getting exact matches (group 1)
+  choiceLong <- merge(purch, retAssort, by = c("retailer_code", "week_end"), allow.cartesian = TRUE)
   choiceLong[, "choice" := ifelse(choice_upc == upc, TRUE, FALSE)]
   choiceLong[, "match" := sum(choice), by = trip_code_uc]
+  exactMatch <- choiceLong[match == 1][, "matchQual" := "RetExact"]
+  exactMatch[, c("choice_upc", "choice_upc_ver_uc", "choice_brand", "choice_size",
+                 "choice_ply", "choice_pCents", "choice_unitCost", "retailer_code") := NULL]
+
+  # Approximating the match for other purchases based on brand, ply, and size.
+  # To ensure a close match, I set a cutoff for how large the price difference
+  # can be. Most of these cases are small differences in the assigned UPC, but
+  # not the underlying product characteristics. In cases where I have multiple
+  # exact matches, I collapse these to a single choice because these are the
+  # dimensions I care about and a small UPC difference is not detectable in
+  # my model (group 2)
+  approxMatch <- choiceLong[match == 0][, "match" := NULL]
+  approxMatch[, "diffPrice" := abs(choice_pCents - pCents)]
+  approxMatch[, "diffUnitCost" := abs(choice_unitCost - unitCost)]
+  approxMatch[, "possible" := ifelse(choice_brand == brand_code_uc &
+                                       choice_ply == ply &
+                                       choice_size == pkgSize, TRUE, FALSE)]
+  approxMatch[possible == TRUE, "minDiffPrice" := min(diffPrice), by = trip_code_uc]
+  approxMatch[possible == TRUE, "minDiffUnitCost" := min(diffUnitCost, na.rm = TRUE), by = trip_code_uc]
+  approxMatch[, "choice" := ifelse(possible == TRUE &
+                                     diffPrice == minDiffPrice &
+                                     diffUnitCost == minDiffUnitCost &
+                                     diffPrice <= diffTol, TRUE, FALSE)]
+  approxMatch[, "match" := sum(choice), by = trip_code_uc]
+
+  if (nrow(approxMatch[match > 1]) > 0) {
+    choiceUPC <- approxMatch[match > 1 & choice == TRUE, .(upc = head(upc, 1)), by = trip_code_uc]$upc
+    approxMatch[match > 1 & choice == TRUE & !upc %in% choiceUPC, "choice" := FALSE]
+    approxMatch[, "match" := sum(choice), by = trip_code_uc]
+  }
+
+  approxMatch1 <- approxMatch[match == 1][, "matchQual" := "RetApprox"]
+  approxMatch1[, c("choice_brand", "choice_size", "choice_ply", "choice_pCents",
+                   "choice_unitCost", "diffPrice", "diffUnitCost", "possible",
+                   "minDiffPrice", "minDiffUnitCost", "choice_upc",
+                   "choice_upc_ver_uc", "retailer_code") := NULL]
 
   # For some reason, there are instances where the product purchased is not
   # recorded in the scanner data. In these cases, I input the data from the
   # purchase occasion.
-  noMatch <- unique(choiceLong[match == 0]$trip_code_uc)
-  newDat <- tpPurch[trip_code_uc %in% noMatch,
-                    .(store_code_uc, week_end, trip_code_uc, choice_upc = upc,
-                      choice_upc_ver_uc = upc_ver_uc, generic, upc, upc_ver_uc,
-                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
-                      unitCost, choice = TRUE, match = 1, dma_code, retailer_code)]
-  choiceLong <- rbind(choiceLong, newDat, use.names = TRUE)
-  choiceLong[, "match" := NULL]
-  choiceLong[, "match" := sum(choice), by = trip_code_uc]
-  choiceLong[, c("choice_upc", "choice_upc_ver_uc", "generic", "match") := NULL]
-
-  # Adding generic purchases
-  # As with non-generics, I can only match about 50% of stores and about 50% of trips in 2010
-  # I match primary based on matching the ply, package size, and ply of the generic product
-  # For unmatched trips, these are primarily due to mismatches in price (difference
-  # between avg weekly price and price reported by household), I assign the chosen
-  # product to the one with the minimum difference between price reported and Scanner price
-  # About 25% of generic purchases don't match exactly. However, given a positive
-  # discrepancy, the median discrepancy is 12 cents with 75% of discrepancies being
-  # below 50 cents, and 90% being below 1 dollar.
-  # In cases where there are multiple possibilities, I choose the option with the
-  # closes unit cost.
-  genericTrips <- purch[generic == 1 & store_code_uc == 0]$trip_code_uc
-  generic <- tpPurch[trip_code_uc %in% genericTrips,
-                     .(choice_ply = ply, pCents_choice = pCents,
-                       choice_size = sizeUnadj, choice_unitCost = unitCost,
-                       store_code_uc, trip_code_uc, week_end, coupon, dma_code, retailer_code)]
-  genericChoice <- merge(generic, dmaAssort, by = c("retailer_code", "dma_code",
-                                                    "store_code_uc", "week_end"))
-  genericChoice[, "diff" := abs(pCents_choice - pCents)]
-  genericChoice[, "possible" := ifelse(brand_code_uc == 536746 &
-                                         choice_ply == ply &
-                                         choice_size == pkgSize, TRUE, FALSE)]
-  genericChoice[possible == TRUE, "minDiff" := min(diff), by = trip_code_uc]
-  genericChoice[, "choice" := ifelse(possible == TRUE & diff <= diffTol, TRUE, FALSE)]
-  genericChoice[, c("diff", "possible", "minDiff") := NULL]
-  multiples <- genericChoice[, .(choice = sum(choice)), by = trip_code_uc][choice > 1]$trip_code_uc
-  genericChoice[, "diff" := abs(choice_unitCost - unitCost)]
-  genericChoice[, "possible" := ifelse(brand_code_uc == 536746 &
-                                         choice_ply == ply &
-                                         choice_size == pkgSize, TRUE, FALSE)]
-  genericChoice[possible == TRUE, "minDiff" := min(diff), by = trip_code_uc]
-  genericChoice[trip_code_uc %in% multiples & possible == TRUE, "choice" := ifelse(diff <= minDiff + 0.01, TRUE, FALSE)]
-  genericChoice[, "match" := sum(choice), by = trip_code_uc]
-  genericChoice[, c("choice_ply", "pCents_choice", "choice_size", "choice_unitCost",
-                    "coupon", "diff", "possible", "minDiff") := NULL]
-
-  # For some reason, there are instances where the product purchased is not
-  # recorded in the scanner data. For generics, there are a variety of explanations
-  # To fix this, I just add in the record from the consumer panel
-  noMatch <- unique(genericChoice[match == 0]$trip_code_uc)
-  newDat <- tpPurch[trip_code_uc %in% noMatch,
-                    .(store_code_uc, week_end, trip_code_uc, upc, upc_ver_uc,
-                      pCents, brand_code_uc, pkgSize = sizeUnadj, ply, size,
-                      unitCost, choice = TRUE, match = 1, dma_code, retailer_code)]
-  genericChoice <- rbind(genericChoice, newDat, use.names = TRUE)
-  genericChoice[, "match" := NULL]
-  genericChoice[, "match" := sum(choice), by = trip_code_uc]
-  genericChoice[, c("match") := NULL]
+  noMatch <- approxMatch[match == 0, .(week_end, trip_code_uc, upc, upc_ver_uc,
+                                       pCents, brand_code_uc, pkgSize, ply,
+                                       size, unitCost, choice)]
+  noMatchID <- unique(noMatch$trip_code_uc)
+  newDat <- tpPurch[trip_code_uc %in% noMatchID,
+                    .(week_end, trip_code_uc, upc, upc_ver_uc, pCents,
+                      brand_code_uc, pkgSize = sizeUnadj, ply, size, unitCost,
+                      choice = TRUE)]
+  noMatch <- rbindlist(list(noMatch, newDat), use.names = TRUE)
+  noMatch[, "match" := sum(choice), by = trip_code_uc]
+  noMatch[, "matchQual" := "RetAppend"]
 
   # Combining exact store id matches
-  approxChoice <- rbindlist(list(approxChoice, choiceLong, genericChoice), use.names = TRUE)
+  fullChoice <- rbindlist(list(fullChoice, exactMatch, approxMatch1, noMatch), use.names = TRUE)
 }
-approxChoice[, "exactMatch" := 0]
 
-masterChoice <- rbind(fullChoice, approxChoice, use.names = TRUE)
-masterChoice <- merge(masterChoice, fullTrips, by = "trip_code_uc")
+masterChoice <- fullChoice
+fullTrips <- unique(fullTrips)
+masterChoice <- merge(masterChoice, fullTrips, by = c("trip_code_uc"))
 
 # Matched to Retail Scanner Data
-row3 <- c("Matched to Scanner", uniqueN(masterChoice$trip_code_uc), uniqueN(masterChoice$household_code))
+row4 <- c("Matched to Scanner", uniqueN(masterChoice$trip_code_uc), uniqueN(masterChoice$household_code))
 
-# Identifying purchases of the top 5 brands and in 3 sizes
+# Identifying purchases of the top 5 brands
 masterChoice[, "topBrand" := ifelse(brand_code_uc %in% brandCode, brand_code_uc, 536746)]
-masterChoice[, "sizeCat" := cut(pkgSize, c(0, 6, 12, 100), labels = c("small", "medium", "large"))]
 madePurch <- masterChoice[, .(madePurch = sum(choice)), by = trip_code_uc][madePurch > 0]$trip_code_uc
 masterChoice <- masterChoice[trip_code_uc %in% madePurch]
-
-# Only single-unit purchases
-unitCount <- masterChoice[, .(quantity = sum(choice)), by = trip_code_uc][quantity == 1]$trip_code_uc
-masterChoice <- masterChoice[trip_code_uc %in% unitCount]
-row4 <- c("Single packages", uniqueN(masterChoice$trip_code_uc), uniqueN(masterChoice$household_code))
 
 # Dropping packages that are outside the interval [0.75, 30] (<1% of options)
 masterChoice <- masterChoice[pCents >= 75 & pCents <= 3000]
@@ -282,30 +246,52 @@ stargazer(cleanTable, type = "text", summary = FALSE,
           out = "tables/scannerClean.tex")
 
 # Assigning choice id's
-sizes <- c("small", "medium", "large")
 tripCodes <- unique(masterChoice$trip_code_uc)
-fullSet <- expand.grid(topBrand = c(brandCode, 536746), sizeCat = sizes, trip_code_uc = tripCodes)
-fullSet <- cbind(alt = 1:18, fullSet)
+fullSet <- expand.grid(topBrand = c(brandCode, 536746),
+                       pkgSize = c(4, 6, 12, 24),
+                       trip_code_uc = tripCodes)
+fullSet <- cbind(alt = 1:24, fullSet)
 
 # Getting selection
 masterChoice <- merge(masterChoice, fullSet,
-                      by = c("trip_code_uc", "topBrand", "sizeCat"), all.y = TRUE)
+                      by = c("trip_code_uc", "topBrand", "pkgSize"), all.y = TRUE)
 
 # Adding in demographics and making income and household size continuous
-masterChoice[, c("p", "pCents") := .(pCents / 100, NULL)]
-masterChoice[, "unitCost" := unitCost / 100]
 fullPanel[, "household_income_cts" :=
             factor(household_income, levels = c(3, 4, 6, 8, 10, 11, 13, 15:19, 21, 23, 26, 27),
                     labels = c("2.5", "6.5", "9", "11", "13.5", "17.5", "22.5",
                                "27.5", "32.5", "37.5", "42.5", "47.5", "55",
                                "65", "85", "100"))]
 fullPanel[, "household_income_cts" := as.numeric(as.character(household_income_cts))]
+masterChoice <- merge(masterChoice, fullPanel, by = c("household_code", "panel_year"))
 
-masterChoice <- merge(masterChoice, fullPanel, by = c("household_code", "panel_year"),
-                      all.x = TRUE)
+# Adding size categories
+masterChoice[, "sizeCat" := cut(pkgSize, c(0, 6, 12, 100), c("small", "medium", "large"))]
 
-# Collapsing ply and package size
-masterChoice[, "multiPly" := ifelse(ply == 1, 0L, 1L)]
+# Table of available product assortments
+stores <- c("Grocery", "Discount Store")
+fullChoice <- na.omit(masterChoice, cols = "household_code")
+tripAssort <- fullChoice[, .(sizeAssort = uniqueN(sizeCat),
+                             brandAssort = uniqueN(topBrand),
+                             altAssort = uniqueN(alt)),
+                         by = trip_code_uc]
+trips <- fread("/scratch/upenn/hossaine/trips.csv", nThread = threads,
+               select = c("trip_code_uc", "store_code_uc", "retailer_code"))
+tripAssort <- merge(tripAssort, trips, by = "trip_code_uc")
+retailers <- fread("/scratch/upenn/hossaine/retailers.csv")
+tripAssort <- merge(tripAssort, retailers, by = "retailer_code")
+tripAssort <- tripAssort[channel_type %in% stores]
+for (i in stores) {
+  print(i)
+  print(quantile(tripAssort[channel_type == i]$altAssort, seq(0, 1, 0.01)))
+}
+
+masterChoice[, c("ply", "match", "matchQual", "brand_code_uc", "panel_year", "upc_ver_uc") := NULL]
+masterChoice[, "topBrand" := as.integer(topBrand)]
+masterChoice[, "pkgSize" := as.integer(pkgSize)]
 
 # Saving data
 fwrite(masterChoice, "/scratch/upenn/hossaine/TPMLogit.csv", nThread = threads)
+# cd /scratch/upenn/hossaine
+# tar -cvzf TPMLogit.tgz TPMLogit.csv
+# cp TPMLogit.tgz /home/upenn/hossaine/TPMLogit.tgz

@@ -4,8 +4,9 @@ library(purrr)
 library(stringr)
 library(readxl)
 library(furrr)
+library(stargazer)
 plan(multiprocess)
-yr <- 2006:2016
+yr <- 2004:2017
 path <- "/scratch/upenn/hossaine/nielsen_extracts/HMS/"
 threads <- 8
 
@@ -15,7 +16,7 @@ threads <- 8
 
 ######################## STEP 2: UNZIP #########################################
 # cd /scratch/upenn/hossaine
-# tar -xvzf Consumer_Panel_Data_2004-2016.tgz
+# tar -xvzf Consumer_Panel_Data_2004_2017.tgz
 ################################################################################
 
 ######################## STEP 3: CLEAN PANELIST FILE ###########################
@@ -41,15 +42,14 @@ getPanel <- function(yr) {
   return(panel)
 }
 
-# There are 653,554 total households
+# Initial sample
 panel <- rbindlist(map(yr, getPanel))
+row1 <- c("Starting HH:", uniqueN(panel$household_code))
 
-# I remove 3,511 households where the head is in the military
-# I remove 5,974 households where the head is a student
-# This removes a total of 9,325 households (there is some overlap)
-# Total left is 644,229 households
+# Removing military and students
 panel <- panel[!male_head_occupation %in% c(7, 10)]
 panel <- panel[!female_head_occupation %in% c(7, 10)]
+row2 <- c("Exclude military and students:", uniqueN(panel$household_code))
 
 # Adding income factors
 panel[, "household_income_coarse" := cut(household_income, c(0, 13, 19, 26, 30),
@@ -57,18 +57,10 @@ panel[, "household_income_coarse" := cut(household_income, c(0, 13, 19, 26, 30),
                                          ordered_result = TRUE)]
 panel[, "household_income" := ifelse(household_income >= 27, 27, household_income)]
 
-# Adding household size factors
-panel[, "household_size_coarse" := cut(household_size, c(0, 1, 2, 3, 4, 9),
-                                       labels = c("1", "2", "3", "4", "5+"),
-                                       ordered_result = TRUE)]
-
-# Adding age factors
+# Adding age
 panel[, "age" := panel_year - (female_head_birth + male_head_birth) / 2]
 panel[is.na(age), "age" := as.numeric(panel_year - female_head_birth)]
 panel[is.na(age), "age" := as.numeric(panel_year - male_head_birth)]
-panel[, "age_coarse" := cut(age, c(0, 44, 64, 150),
-                            labels = c("<45", "45-64", "65+"),
-                            ordered_result = TRUE)]
 
 # Adding college indicator if at least 1 HoH has graduated college
 panel[, "college" := 0]
@@ -77,62 +69,33 @@ panel[female_head_education >= 5 | male_head_education >= 5, "college" := 1]
 # Making race binary
 panel[, "white" := ifelse(race == 1, 1L, 0L)]
 
-# Adjusting type of home to be single-family home, mobile home, and other (likely apt)
-# 7 households do not report type of residence and are dropped
-# Total remaining is 721,863
+# Collapsing type of residence to single-family home, mobile home, and other (likely apt)
+# Drop any NA's
 panel <- panel[!is.na(type_of_residence)]
 panel[, "type_of_residence" := cut(type_of_residence, c(0, 2, 6, 10),
                                    labels = c("Single-Family", "Multi-Family", "Mobile"))]
+row3 <- c("Drop Missing Housing:", uniqueN(panel$household_code))
 
 # Adding child indicator
 panel[, "child" := ifelse(age_and_presence_of_children == 9, 0L, 1L)]
 
-# Getting income switchers
-switchers <- unique(panel[, .(household_code, household_income)])
-switchers <- switchers[duplicated(household_code), .(household_code)]
-panel[, "switchers" := ifelse(household_code %in% switchers$household_code, 1L, 0L)]
-
-# Getting income switchers (coarse)
-switchers_coarse <- unique(panel[, .(household_code, household_income_coarse)])
-switchers_coarse <- switchers_coarse[duplicated(household_code), .(household_code)]
-panel[, "switchers_coarse" := ifelse(household_code %in% switchers_coarse$household_code, 1L, 0L)]
-
-# Add urban-rural classification
-# 4 HHs are dropped here because the fips do not have a corresponding match.
-# Total remaining is 721,859
-# download.file("https://www.ers.usda.gov/webdocs/DataFiles/53251/ruralurbancodes2013.xls?v=0",
-#               destfile = "./code/0_data/ruralUrban.xls")
-# scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/ruralUrban.xls hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
-ruralUrban <- setDT(read_xls("/home/upenn/hossaine/Nielsen/Data/ruralUrban.xls"))[, .(FIPS, RUCC_2013)]
-ruralUrban[, c("urban", "RUCC_2013") := .(ifelse(RUCC_2013 <= 3, 1L, 0L), NULL)]
-setnames(ruralUrban, "FIPS", "fips")
-panel <- merge(panel, ruralUrban, by = "fips")
+# Adding marriage indicator
+panel[, "married" := ifelse(marital_status == 1, 1L, 0L)]
 
 # Adding in lat and lon
-# 4110 households cannot be geocoded, but they are still in the dataset.
 # scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/zipLatLon.csv hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
 zipLatLon <- fread("/home/upenn/hossaine/Nielsen/Data/zipLatLon.csv")
-panel <- merge(panel, zipLatLon, by = "zip_code", all.x = TRUE)
+panel <- merge(panel, zipLatLon, by = "zip_code")
 panel[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
 panel[, "state" := substr(fips, 1, 2)]
+row4 <- c("Drop ZIPs Not Geocoded:", uniqueN(panel$household_code))
 
-# Add PUMA Code
-# 4129 households cannot be matched to a PUMA. Similar number to the non-geocoded ones.
-# scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/PumaZIP.csv hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
-puma <- fread("/home/upenn/hossaine/Nielsen/Data/PumaZIP.csv")[-1, .(state, zcta5, puma12, afact)]
-puma <- puma[zcta5 != 99999]
-puma <- puma[puma[, .I[which.max(afact)], by = .(state, zcta5)]$V1]
-puma[, "afact" := NULL]
-setnames(puma, "zcta5", "zip_code")
-panel <- merge(panel, puma, by = c("state", "zip_code"), all.x = TRUE)
-
-# Adding car ownership
-# 243,107 households cannot be matched to car ownership by puma.
+# Adding car ownership and median home size
 # scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/carOwnership.csv hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
-own <- fread("/home/upenn/hossaine/Nielsen/Data/carOwnership.csv")
-own[, ':=' (state = str_pad(state, 2, "left", "0"),
-            puma12 = str_pad(puma12, 5, "left", "0"))]
-panel <- merge(panel, own, by = c("panel_year", "state", "puma12"), all.x = TRUE)
+own <- fread("/home/upenn/hossaine/Nielsen/Data/carAndHome.csv")
+own[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
+panel <- merge(panel, own, by = "zip_code")
+row5 <- c("Cannot Be Matched to Car Access:", uniqueN(panel$household_code))
 
 # Add Unit pricing indicators
 # scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/nist130.csv hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
@@ -149,39 +112,33 @@ nistLong[, "panel_year" := as.integer(gsub("law", "", panel_year))]
 panel <- merge(panel, nistLong, by = c("state", "panel_year"))
 
 # Housekeeping
-panel[, c("state", "puma12", "age_and_presence_of_children", "female_head_education",
+panel[, c("state", "age_and_presence_of_children", "female_head_education",
           "male_head_education", "male_head_occupation", "female_head_occupation",
-          "male_head_birth", "female_head_birth", "race") := NULL]
-intCols <- c("zip_code", "fips", "household_income", "college")
+          "male_head_birth", "female_head_birth", "race", "marital_status") := NULL]
+intCols <- c("zip_code", "fips", "household_income", "college", "married")
 panel[, (intCols) := lapply(.SD, as.integer), .SDcols = intCols]
 fwrite(panel, "/home/upenn/hossaine/Nielsen/Data/fullPanel.csv")
 
-############# CLEANING TALLY ###################################################
-# STARTING HH:                          731,994
-# REMOVING STUDENTS AND VETERANS:       721,870
-# REMOVING NA HOUSING:                  721,863
-# REMOVING NON-CLASSIFIED URBAN/RURAL:  721,859
-################################################################################
+cleanTable <- as.data.table(rbind(row1, row2, row3, row4, row5))
+setnames(cleanTable, c("Step", "HH"))
+cleanTable[, "HH" := as.integer(HH)]
+stargazer(cleanTable, type = "text", summary = FALSE,
+          title = "Homescan Sample",
+          label = "tab:homeScanClean", digits = 2, rownames = FALSE,
+          out = "tables/homeScanClean.tex")
 
 ######################## STEP 4: CLEAN PRODUCTS FILE ###########################
-# For storage purposes, only keep the following products:
+# Generating master purchase file for products that will be specifically analyzed
 # 3625: Milk
 # 7260: Toilet paper
-# 7265: Sanitary Napkins
 # 7270: Tampons
-# 7870: Batteries
-# 7734, 7255, 7256: Paper Towels
-# 4100: Eggs
-# 7012, 7008, 7003: Detergent
-# 7020: Dishwasher detergent
+# 7734: Paper Towels
 # 8444: Diapers
-# 7245: Tissue
-keyProds <- c(3625, 4100, 7260, 7265, 7270, 7734, 7255, 7256, 7870, 7012, 7008,
-              8444, 7003, 7020, 7245)
+keyProds <- c(3625, 7260, 7270, 7734, 8444)
 
 # Remove NAs and keep key products
-prod <- na.omit(fread(paste0(path, "Master_Files/Latest/products.tsv"), quote = ""))
-prod <- prod[product_module_code %in% keyProds]
+prod <- fread(paste0(path, "Master_Files/Latest/products.tsv"), quote = "", nThread = threads)
+prod <- na.omit(prod[product_module_code %in% keyProds])
 
 # Cleaning toilet paper observations ###########################################
 # Recoding based on manual inspection and purchases
@@ -296,6 +253,7 @@ getPurch <- function(yr) {
   return(purch)
 }
 fullPurch <- rbindlist(map(yr, getPurch), use.names = TRUE, fill = TRUE)
+tripCodes <- unique(fullPurch$trip_code_uc)
 fwrite(fullPurch, file = "/home/upenn/hossaine/Nielsen/Data/purchase.csv", nThread = threads)
 ################################################################################
 
@@ -313,8 +271,12 @@ getTrips <- function(yr) {
 fullTrips <- rbindlist(map(yr, getTrips), use.names = TRUE, fill = TRUE)
 setkey(fullTrips, household_code, panel_year)
 fullTrips <- merge(fullTrips, panel, by = c("household_code", "panel_year"))
-fwrite(fullTrips, "/scratch/upenn/hossaine/trips.csv", nThread = threads)
-system("tar -czvf /home/upenn/hossaine/Nielsen/Data/trips.tgz /scratch/upenn/hossaine/trips.csv")
+fullTripsSave <- fullTrips[trip_code_uc %in% tripCodes]
+fwrite(fullTripsSave, "/scratch/upenn/hossaine/trips.csv", nThread = threads)
+# cd /scratch/upenn/hossaine
+# Compress: tar -czvf trips.tgz trips.csv
+# Move to home: cp trips.tgz /home/upenn/hossaine/Nielsen/Data/
+# Extract: tar -xzvf trips.tgz
 
 ######################## STEP 7: RETAILERS FILE ################################
 retailers <- fread(paste0(path, "Master_Files/Latest/retailers.tsv"))
@@ -332,18 +294,12 @@ Mode <- function(x) {
   ux[which.max(tabulate(match(x, ux)))]
 }
 
-purch <- unique(fread(paste0(path, "purchase.csv"), select = c("trip_code_uc")))
-trips <- fread(paste0(path, "trips.csv"), nThread = threads,
-               select = c("trip_code_uc", "household_code", "panel_year",
-                          "retailer_code", "store_code_uc", "store_zip3"))
-trips <- trips[store_code_uc != 0]
-purch <- merge(trips, purch, by = "trip_code_uc")
-purch[, "trip_code_uc" := NULL]
+fullTrips <- fullTrips[store_code_uc != 0, .(household_code, panel_year, retailer_code,
+                                             store_code_uc, store_zip3)]
+fullTrips <- merge(fullTrips, panel, by = c("household_code", "panel_year"))
 
-fullData <- merge(purch, panel, by = c("household_code", "panel_year"))
-
-zipImpute <- fullData[, .(zipImpute = Mode(zip_code)),
-                      by = .(retailer_code, store_code_uc)]
+zipImpute <- fullTrips[, .(zipImpute = Mode(zip_code)),
+                       by = .(retailer_code, store_code_uc)]
 zipImpute <- merge(zipImpute, zipLatLon, by.x = "zipImpute", by.y = "zip_code")
 setnames(zipImpute, c("lat", "lon"), c("store_lat", "store_lon"))
 fwrite(zipImpute, file = "/home/upenn/hossaine/Nielsen/Data/zipImpute.csv")

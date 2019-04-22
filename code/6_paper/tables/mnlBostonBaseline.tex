@@ -1,31 +1,51 @@
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Fri, Mar 22, 2019 - 03:56:56 PM
+% Date and time: Mon, Apr 01, 2019 - 07:56:40 PM
 \begin{table}[!htbp] \centering 
-  \caption{Multinomial Logit Estimation: Boston} 
+  \caption{Standard and Mixed Logit Estimation with Normal Coefficients: Boston} 
   \label{tab:mnlBostonBaseline} 
-\begin{tabular}{@{\extracolsep{5pt}}lcccc} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & \multicolumn{4}{c}{\textit{Dependent variable:}} \\ 
-\cline{2-5} 
-\\[-1.8ex] & \multicolumn{4}{c}{choice} \\ 
-\\[-1.8ex] & (1) & (2) & (3) & (4)\\ 
+\\[-1.8ex] & \multicolumn{2}{c}{} \\ 
+ & Standard Logit & Mixed Logit \\ 
 \hline \\[-1.8ex] 
- Price & $-$0.20$^{***}$ & $-$0.20$^{***}$ & $-$0.33$^{***}$ & $-$0.24$^{***}$ \\ 
-  & (0.002) & (0.002) & (0.01) & (0.01) \\ 
-  Std. Rolls &  &  & 0.06$^{***}$ & 0.08$^{***}$ \\ 
-  &  &  & (0.002) & (0.002) \\ 
-  Small Size &  &  &  & 1.07$^{***}$ \\ 
-  &  &  &  & (0.03) \\ 
+ Price & $-$0.25$^{***}$ & $-$0.28$^{***}$ \\ 
+  & (0.01) & (0.004) \\ 
+  Price (SD) &  & 0.16$^{***}$ \\ 
+  &  & (0.01) \\ 
+  Std. Rolls & 0.06$^{***}$ & 0.06$^{***}$ \\ 
+  & (0.003) & (0.002) \\ 
+  Std. Rolls (SD) &  & $-$0.004 \\ 
+  &  & (0.003) \\ 
+  Small Size &  & 0.04$^{***}$ \\ 
+  &  & (0.003) \\ 
+  Small Size (SD) & $-$0.64$^{***}$ & $-$0.79$^{***}$ \\ 
+  & (0.03) & (0.02) \\ 
+  Large Size &  & 0.53$^{***}$ \\ 
+  &  & (0.03) \\ 
+  Large Size (SD) &  & 0.29$^{***}$ \\ 
+  &  & (0.03) \\ 
+  chol.small:small &  & 0.31$^{***}$ \\ 
+  &  & (0.02) \\ 
+  large & $-$0.77$^{***}$ & $-$0.87$^{***}$ \\ 
+  & (0.03) & (0.03) \\ 
+  chol.p:large &  & 0.45$^{***}$ \\ 
+  &  & (0.03) \\ 
+  chol.size:large &  & $-$0.11$^{***}$ \\ 
+  &  & (0.03) \\ 
+  chol.small:large &  & 0.13$^{***}$ \\ 
+  &  & (0.03) \\ 
+  chol.large:large &  & 0.15$^{***}$ \\ 
+  &  & (0.03) \\ 
  \hline \\[-1.8ex] 
-Brand FE & N & Y & Y & Y \\ 
-Observations & 33,537 & 33,537 & 33,537 & 33,537 \\ 
-Log Likelihood & $-$74,061.84 & $-$70,665.89 & $-$70,262.43 & $-$69,605.86 \\ 
+Brand FE & Y & Y \\ 
+Observations & 24,321 & 24,321 \\ 
+Log Likelihood & $-$65,655.39 & $-$64,303.75 \\ 
 \hline 
 \hline \\[-1.8ex] 
-\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
- & \multicolumn{4}{l}{Small size is 12 rolls or less.} \\ 
- & \multicolumn{4}{l}{Standard rolls are defined as 225-sheet, 2-ply equivalents.} \\ 
+\textit{Note:}  & \multicolumn{2}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+ & \multicolumn{2}{l}{Standard rolls are defined as 225-sheet, 2-ply equivalents.} \\ 
+ & \multicolumn{2}{l}{Actual rolls are the number of rolls marketed in the package.} \\ 
 \end{tabular} 
 \end{table} 

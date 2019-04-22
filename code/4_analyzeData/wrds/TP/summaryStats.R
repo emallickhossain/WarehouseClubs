@@ -28,3 +28,22 @@ stargazer(finalTable, summary = FALSE, type = "text",
           notes = "Sizes are in standardized 225-sheet, 2-ply rolls.",
           label = "tab:sizeSummary",
           out = "./tables/sizeSummary.tex")
+
+# Making Table 1 of Khan and Jain 2005 (JMR)
+sizes <- c(4, 6, 12, 24)
+brands <- c("CHARMIN", "ANGEL SOFT", "KLEENEX COTTONELLE", "QUILTED NORTHERN", "SCOTT 1000", "CTL BR")
+
+tpPurch[sizeUnadj %in% sizes & brand_descr %in% brands, "chosen" := 1L]
+tpPurch[is.na(chosen), "chosen" := 0L]
+tpPurch[, "brandSize" := ifelse(chosen == 1, paste0(brand_descr, sizeUnadj), "NOTCHOSEN")]
+tableData <- tpPurch[chosen == 1, .(shares = .N / nrow(tpPurch) * 100,
+                                    unitPrice = mean(total_price_paid / size, na.rm = TRUE)),
+                     keyby = .(brand_descr, sizeUnadj)]
+setnames(tableData, c("Brand", "Package Size", "% of Purchases", "Unit Price"))
+stargazer(tableData, summary = FALSE, type = "text", digits = 2,
+          rownames = FALSE,
+          title = "Product Descriptive Statistics",
+          notes = "Unit prices are in terms of standard 225-sheet, 2-ply rolls.",
+          label = "tab:prodSummary",
+          out = "./tables/prodSummary.tex")
+

@@ -7,8 +7,78 @@ library(glmnet)
 library(lfe)
 library(doMC)
 library(knitr)
+library(Hmisc)
 registerDoMC(cores = 4)
 threads <- 8
+path <- "/scratch/upenn/hossaine/"
+
+top5 <- c("CHARMIN", "ANGEL SOFT", "QUILTED NORTHERN", "KLEENEX COTTONELLE", "SCOTT 1000")
+brandCode <- c(526996, 506045, 624459, 581898, 635074)
+fullSet <- expand.grid(brand_code_uc = c(brandCode, 536746),
+                       pkgSize = c(4, 6, 12, 24))
+fullSet <- cbind(alt = 1:24, fullSet)
+
+# Plotting residual histograms of prices after controlling for brands or stores
+scanner <- NULL
+for (i in 2006:2014) {
+  print(i)
+  # Getting store assortment
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16)
+  scanner <- rbind(scanner, assort)
+}
+rm(assort)
+
+scanner <- merge(scanner, fullSet, by = c("brand_code_uc", "pkgSize"), all.x = TRUE)
+scanner[, "unitCost" := pCents / size]
+scanner[, "storeWeekMean" := mean(unitCost), by = .(store_code_uc, week_end)]
+scanner[, "demeanUnitCost" := unitCost - storeWeekMean]
+reg <- lm(demeanUnitCost ~ as.factor(alt), data = scanner)
+summary(reg)
+
+
+
+
+
+# Getting average between store variance
+upcs <- scanner[, .(units = sum(units),
+                    var = wtd.var(pCents, units),
+                    mean = weighted.mean(pCents, units)), by = upc]
+upcs[, .(cv = weighted.mean(sqrt(var) / mean, units, na.rm = TRUE))]
+
+# Natural variation
+var0 <- var(scanner$pCents)
+row0 <- c("No Controls", 0)
+
+# Variation captured by UPC
+reg1 <- felm(data = scanner, pCents ~ 1 | upc)
+var1 <- var(reg1$residuals)
+row1 <- c("UPC", round((1 - (var1 / var0)) * 100, digits = 2))
+rm(reg1)
+
+# Variation captured by retailer and UPC
+reg2 <- felm(data = scanner, pCents ~ 1 | upc + retailer_code)
+var2 <- var(reg2$residuals)
+row2 <- c("UPC + Retailer", round((1 - (var2 / var0)) * 100, digits = 2))
+rm(reg2)
+
+# Variation captured by brand and UPC
+reg3 <- felm(data = scanner, pCents ~ 1 | upc + brand_code_uc)
+var3 <- var(reg3$residuals)
+row3 <- c("UPC + Brand", round((1 - (var3 / var0)) * 100, digits = 2))
+rm(reg3)
+
+# Variation captured by retailer and brand
+reg4 <- felm(data = scanner, pCents ~ 1 | upc + brand_code_uc + retailer_code)
+var4 <- var(reg4$residuals)
+row4 <- c("UPC + Brand + Retailer", round((1 - (var4 / var0)) * 100, digits = 2))
+rm(reg4)
+
+tableDat <- rbind(row0, row1, row2, row3, row4)
+kable(tableDat, type = "markdown", col.names = c("Controls", "Percent Explained"),
+      row.names = FALSE)
+
+
+
 
 fullChoice <- fread("/scratch/upenn/hossaine/TPMLogit.csv", nThread = threads)
 

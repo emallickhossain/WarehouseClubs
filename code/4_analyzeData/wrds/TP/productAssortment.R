@@ -2,15 +2,15 @@
 # Condenses to top brands and other to reduce dimensionality
 library(data.table)
 library(stringr)
-pathName <- "/home/mallick/Desktop/Nielsen/Data/Scanner/"
-yr <- 2006:2016
+pathName <- "/home/mallick/Desktop/Nielsen/Data/Scanner/toiletpaper_hossain/nielsen_extracts/RMS/"
+yr <- 2006:2017
 prodCode <- 7260
 threads <- 4
 
-prod <- fread(paste0(pathName, "products.tsv"), nThread = threads,
+prod <- fread(paste0(pathName, "Master_Files/Latest/products.tsv"), nThread = threads,
               select = c("upc", "upc_ver_uc", "upc_descr", "product_module_code",
                          "brand_code_uc", "brand_descr", "multi", "size1_amount"),
-              quote = "")[product_module_code %in% prodCode]
+              quote = "")[product_module_code %in% prodCode][, "product_module_code" := NULL]
 
 # Cleaning toilet paper observations ###########################################
 # Recoding based on manual inspection and purchases
@@ -97,19 +97,18 @@ prod[, "sheet" := str_extract_all(upc_descr, "\\d{2,}S\\s")]
 prod[, "sheet" := as.integer(gsub("S", "", sheet))]
 prod[, "stdRolls" := ply * sheet / 550]
 prod[, "size" := multi * size1_amount * stdRolls]
-prod[, c("sheet", "stdRolls", "product_module_code", "multi", "upc_descr",
-         "size1_amount", "brand_descr") := NULL]
+prod[, c("sheet", "stdRolls", "multi", "upc_descr", "size1_amount", "brand_descr") := NULL]
 
 getAssortment <- function(yr) {
-  tp <- unique(fread(paste0(pathName, "Movement_Files/7260_", yr, ".tsv"),
-                     select = c("store_code_uc", "upc", "week_end", "price", "units"),
-                     key = c("upc"), nThread = threads))
-  tp[, c("pCents", "price") := .(as.integer(round(price * 100)), NULL)]
-  rms <- fread(paste0(pathName, "Annual_Files/rms_versions_", yr, ".tsv"),
+  tp <- fread(paste0(pathName, yr, "/Movement_Files/4507_", yr, "/7260_", yr, ".tsv"),
+              select = c("store_code_uc", "upc", "week_end", "price", "units"),
+              key = c("upc"), nThread = threads)
+  tp[, c("pCents", "price") := .(as.integer(price * 100), NULL)]
+  rms <- fread(paste0(pathName, yr, "/Annual_Files/rms_versions_", yr, ".tsv"),
                key = c("upc"))[, "panel_year" := NULL]
   tp <- merge(tp, rms, by = "upc")
   tp <- merge(tp, prod, by = c("upc", "upc_ver_uc"))
-  stores <- fread(paste0(pathName, "Annual_Files/stores_", yr, ".tsv"),
+  stores <- fread(paste0(pathName, yr, "/Annual_Files/stores_", yr, ".tsv"),
                   select = c("store_code_uc", "retailer_code", "dma_code", "fips_state_code"))
   tp <- merge(tp, stores, by = "store_code_uc")
   fwrite(tp, paste0("/home/mallick/Desktop/Nielsen/Data/Scanner/Assortment/",

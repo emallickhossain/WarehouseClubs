@@ -12,7 +12,6 @@ path <- "/scratch/upenn/hossaine/"
 retailers <- fread(paste0(path, "retailers.csv"))
 panel <- fread(paste0(path, "fullPanel.csv"))
 zipImpute <- fread(paste0(path, "zipImpute.csv"))
-pce <- fread("Nielsen/pce.csv")
 
 #' Gets purchase data for item from Nielsen
 #'
@@ -26,26 +25,20 @@ getItem <- function(prod) {
   print("Getting purchases")
   itemPurch <- getPurch(prod)
   itemPurch <- merge(itemPurch, zipImpute, by = c("retailer_code", "store_code_uc"), all.x = TRUE)
-  itemPurch[, c("store_zip3", "total_spent") := NULL]
+  itemPurch[, c("store_zip3") := NULL]
   itemPurch <- merge(itemPurch, prod, by = c("upc", "upc_ver_uc"))
   itemPurch <- merge(itemPurch, panel, by = c("household_code", "panel_year"))
   itemPurch[, "brand_code_uc" := ifelse(brand_code_uc == 536746,
                                       paste0(brand_code_uc, retailer_code),
                                       as.character(brand_code_uc))]
 
-  # Getting real spending
-  itemPurch[, "month" := as.integer(substr(purchase_date, 6, 7))]
-  itemPurch <- merge(itemPurch, pce, by = c("panel_year", "month"))
-  setnames(itemPurch, "value", "pce")
-  itemPurch[, "total_price_paid_real" := total_price_paid / pce * 100]
-
-  # # Computing distances
-  # print("Computing distances")
-  # hh <- as.matrix(itemPurch[, .(lon, lat)])
-  # store <- as.matrix(itemPurch[, .(store_lon, store_lat)])
-  # coords <- cbind(hh, store)
-  # distance <- apply(coords, 1, function(x) distm(x = x[1:2], y = x[3:4]))
-  # itemPurch[, "distKM" := distance / 1000]
+  # Computing distances
+  print("Computing distances")
+  hh <- as.matrix(itemPurch[, .(lon, lat)])
+  store <- as.matrix(itemPurch[, .(store_lon, store_lat)])
+  coords <- cbind(hh, store)
+  distance <- apply(coords, 1, function(x) distm(x = x[1:2], y = x[3:4]))
+  itemPurch[, "distKM" := distance / 1000]
   return(itemPurch)
 }
 
@@ -70,8 +63,17 @@ getPurch <- function(prod) {
                              c("No Deal", "Sale Only", "Sale and/or Coupon"))]
   purch[, "deal_type_ind" := NULL]
 
+  # Computing trip total and cumulative sum by month for each household
+  # Cumulative spending excludes current trip
   trips <- fread(paste0(path, "trips.csv"), nThread = threads)
+  trips[, c("year", "month") := tstrsplit(purchase_date, "-", fixed = TRUE, keep = 1:2)]
+  trips[, c("year", "month") := .(as.integer(year), as.integer(month))]
+  setorder(trips, household_code, purchase_date)
+  trips[, "cumSpend" := cumsum(total_spent) - total_spent, by = .(household_code, year, month)]
+  trips[, c("year", "month") := NULL]
   fullData <- merge(purch, trips, by = "trip_code_uc")
+
+  # Adding in stores
   fullData <- merge(fullData, retailers, by = "retailer_code")
   return(fullData)
 }

@@ -16,6 +16,8 @@ tpPurch <- fread(paste0(path, "7260Purch.csv"), nThread = threads)[drop == 0]
 tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "upc_descr") := NULL]
 tpPurch[, "deal_type" := relevel(as.factor(deal_type), ref = "No Deal")]
 tpPurch[, "purchWeek" := week(purchase_date)]
+tpPurch[, "unitCost" := total_price_paid / size]
+tpPurch[, "unitCostUnadj" := total_price_paid / sizeUnadj]
 
 # Bulk discount (logs) for unit cost
 y <- "log(unitCost)"
@@ -26,14 +28,6 @@ cluster <- "market"
 reg1 <- runReg(x, y, tpPurch, controls, cluster)
 reg2 <- runReg(x, y, tpPurch, paste0(controls, "+brand_code_uc"), cluster)
 reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg4 <- runReg(x, y, tpPurch[channel_type == "Discount Store"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg5 <- runReg(x, y, tpPurch[channel_type == "Grocery"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg6 <- runReg(x, y, tpPurch[channel_type == "Dollar Store"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg7 <- runReg(x, y, tpPurch[channel_type == "Warehouse Club"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
 
 # Making regression table
 stargazer(reg1, reg2, reg3, type = "text",
@@ -42,17 +36,42 @@ stargazer(reg1, reg2, reg3, type = "text",
                            c("Retailer FE", "N", "N", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
-          column.labels = c("Full Sample"),
-          column.separate = c(3),
           dep.var.caption = "Log(Unit Cost)", dep.var.labels.include = FALSE,
           covariate.labels = c("Log(Size)"),
           notes.align = "l",
-          notes = c("Standard errors are clustered at",
-                    "the market level."),
+          notes = c("Standard errors are clustered at market level."),
           digits = 2,
           label = "tab:bulkDiscountUnitCost",
           title = "Bulk Discounts Generate Substantial Savings",
           out = "tables/bulkDiscountUnitCost.tex")
+
+# Plotting bulk discount savings coefficient
+logSize <- log(seq(1, 50, by = 1))
+logUnitCost <- reg3$coefficients[1] * logSize
+se <- reg3$cse[1]
+graphData <- data.table(size = exp(logSize), unitCost = exp(logUnitCost), se = se)
+fwrite(graphData, file = "./figures/unitCostSizeCoef.csv")
+ggplot(graphData, aes(x = size, y = unitCost)) +
+  geom_errorbar(aes(ymin = exp(log(unitCost) - 1.96 * se), ymax = exp(log(unitCost) + 1.96 * se)), width = 0.2) +
+  geom_line() +
+  geom_hline(yintercept = 0) +
+  labs(title = "Unit Prices Decrease in Quantity", x = "Quantity",
+       y = "Unit Price ($)",
+       caption = paste0("Source: Author calulations using Nielsen Consumer Panel.\n",
+                        "Note: Quantity is in units of standardized to 225-sheet, 2-ply rolls.")) +
+  theme_fivethirtyeight() +
+  theme(axis.title = element_text())
+ggsave(filename = "./code/5_figures/unitCostSizeCoef.png")
+
+# Redoing with actual package sizes
+# Bulk discount coefficient is about 0.29 -> 10% increase in (non-standard)
+# rolls lowers unit cost by 2.9%
+y <- "log(unitCostUnadj)"
+x <- "log(sizeUnadj)"
+controls <- "panel_year + month + purchWeek + market"
+cluster <- "market"
+
+reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster)
 
 # Adding in sales/deals
 y <- "log(unitCost)"
@@ -60,17 +79,9 @@ x <- "log(size) + deal_type"
 controls <- paste0("panel_year + month + purchWeek + market")
 cluster <- "market"
 
-reg1 <- runReg(x, y, tpPurch, controls, cluster)
-reg2 <- runReg(x, y, tpPurch, paste0(controls, "+brand_code_uc"), cluster)
-reg3 <- runReg(x, y, tpPurch, paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg4 <- runReg(x, y, tpPurch[channel_type == "Discount Store"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg5 <- runReg(x, y, tpPurch[channel_type == "Grocery"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg6 <- runReg(x, y, tpPurch[channel_type == "Dollar Store"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
-reg7 <- runReg(x, y, tpPurch[channel_type == "Warehouse Club"],
-               paste0(controls, "+retailer_code+brand_code_uc"), cluster)
+reg1 <- runReg(x, y, tpPurch[deal_type != ""], controls, cluster)
+reg2 <- runReg(x, y, tpPurch[deal_type != ""], paste0(controls, "+brand_code_uc"), cluster)
+reg3 <- runReg(x, y, tpPurch[deal_type != ""], paste0(controls, "+retailer_code+brand_code_uc"), cluster)
 
 # Making regression table
 stargazer(reg1, reg2, reg3, type = "text",
@@ -122,7 +133,7 @@ ggsave("./figures/tpUnitCostSize.png")
 
 # Redoing bulk discounts for scanner data
 scanner <- NULL
-for (i in 2006:2016) {
+for (i in 2006:2014) {
   print(i)
   # Getting store assortment
   assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16)
@@ -184,7 +195,22 @@ stargazer(reg4, type = "text", single.row = FALSE, no.space = TRUE,
           title = "Bulk Discounts Are Common Across Retailers",
           out = "tables/bulkDiscountScanner4.tex")
 
-reg5 <- felm(lcost ~ lsize | week_end + brand_code_uc * store_code_uc, data = scanner,
+# Looking at bulk discounts after controlling for brand * retailer
+# Estimate of about -0.1875
+scanner <- NULL
+for (i in 2006:2014) {
+  print(i)
+  # Getting store assortment
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16)
+  scanner <- rbind(scanner, assort)
+}
+scanner[, "unitCost" := pCents / size]
+scanner[, c("lcost", "lsize") := .(log(unitCost), log(size))]
+scanner[, c("upc", "upc_ver_uc", "pkgSize", "ply", "pCents") := NULL]
+rm(assort)
+
+scanner[, "brandRetailer" := as.numeric(paste0(retailer_code, brand_code_uc))]
+reg5 <- felm(lcost ~ lsize | brandRetailer + week_end, data = scanner,
              keepX = FALSE, keepCX = FALSE, keepModel = FALSE)
 stargazer(reg5, type = "text", single.row = FALSE, no.space = TRUE,
           omit.stat = c("ser", "rsq"), out.header = FALSE,
@@ -195,6 +221,25 @@ stargazer(reg5, type = "text", single.row = FALSE, no.space = TRUE,
           label = "tab:bulkDiscountScanner5",
           title = "Bulk Discounts Are Common Across Retailers",
           out = "tables/bulkDiscountScanner5.tex")
+
+# Robustness check with just unadjusted package size
+# Coefficient is about 0.22 -> a 10% increase in rolls (unstandardized) is
+# assocated with a 2.2% decrease in per-roll costs
+scanner <- NULL
+for (i in 2006:2014) {
+  print(i)
+  # Getting store assortment
+  assort <- fread(paste0(path, "Assortment/", i, ".csv"), nThread = 16)
+  assort[, "unitCostUnadj" := pCents / pkgSize]
+  assort[, c("lcostUnadj", "lsizeUnadj") := .(log(unitCostUnadj), log(pkgSize))]
+  assort[, c("upc", "upc_ver_uc", "units", "pCents", "pkgSize", "ply", "size",
+              "retailer_code", "dma_code", "fips_state_code", "unitCostUnadj") := NULL]
+  scanner <- rbindlist(list(scanner, assort), use.names = TRUE)
+}
+rm(assort)
+reg6 <- felm(lcostUnadj ~ lsizeUnadj | week_end + brand_code_uc + store_code_uc,
+             data = scanner, keepX = FALSE, keepCX = FALSE, keepModel = FALSE)
+summary(reg6)
 
 ###### Table 1 of Orhun and Palazzolo
 tpPurch <- na.omit(tpPurch, cols = "size")
@@ -212,7 +257,7 @@ tableDatWide[, ':=' (disc6 = round(unitCost_6 / unitCost_4 - 1, digits = 2),
                      disc12 = round(unitCost_12 / unitCost_4 - 1, digits = 2),
                      disc24 = round(unitCost_24 / unitCost_4 - 1, digits = 2))]
 finalTable <- tableDatWide[, .(brand_descr, round(price_4, digits = 2), disc6, disc12, disc24)]
-finalTable[, "Brand" := c("Angel Soft", "Charmin", "Cottonelle", "Qltd Ntn", "Scott")]
+finalTable[, "brand_descr" := c("Angel Soft", "Charmin", "Cottonelle", "Qltd Ntn", "Scott")]
 setnames(finalTable, c("Brand", "4 Roll Price", "6 Roll Discount", "12 Roll Discount", "24 Roll Discount"))
 stargazer(finalTable, type = "text", summary = FALSE,
           title = "Prices and Bulk Discounts of Top 5 Brands",
