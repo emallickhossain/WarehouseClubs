@@ -1,35 +1,24 @@
 \begin{table}[!htbp] \centering
-  \caption{Prices and Bulk Discounts of Top 5 Brands}
-  \label{tab:bulkDiscountTable}
-\begin{tabular}{@{\extracolsep{5pt}} ccccc}
+  \caption{Warehouse Club Opening}
+  \label{tab:clubOpening}
+\begin{tabular}{@{\extracolsep{5pt}}lccccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
-Brand & 4 Roll Price & 6 Roll Discount & 12 Roll Discount & 24 Roll Discount \\
+ & All & <25k & 25-50k & 50-100k & >100k \\
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5)\\
 \hline \\[-1.8ex]
-Angel Soft & $2.11$ & $$-$0.07$ & $$-$0.28$ & $$-$0.33$ \\
-Charmin & $3.60$ & $$-$0.21$ & $$-$0.30$ & $$-$0.38$ \\
-Cottonelle & $3.41$ & $$-$0.04$ & $$-$0.20$ & $$-$0.30$ \\
-Qltd Ntn & $3.48$ & $$-$0.11$ & $$-$0.26$ & $$-$0.35$ \\
-Scott & $3.97$ & $$-$0.07$ & $$-$0.21$ & $$-$0.57$ \\
+ <20 km & 0.010$^{***}$ & 0.0003 & 0.009$^{***}$ & 0.012$^{***}$ & 0.013$^{***}$ \\
+  & (0.001) & (0.002) & (0.002) & (0.002) & (0.002) \\
+  20-40km & 0.007$^{***}$ & $-$0.001 & 0.008$^{***}$ & 0.008$^{***}$ & 0.012$^{**}$ \\
+  & (0.002) & (0.003) & (0.003) & (0.003) & (0.005) \\
+ \hline \\[-1.8ex]
+Household-Market FE & Y & Y & Y & Y & Y \\
+Market-Quarter FE & Y & Y & Y & Y & Y \\
+Observations & 3,027,655 & 424,285 & 963,860 & 1,182,324 & 457,186 \\
+Adjusted R$^{2}$ & 0.673 & 0.642 & 0.671 & 0.689 & 0.694 \\
+\hline
 \hline \\[-1.8ex]
-\multicolumn{5}{l}{Discounts are per-unit savings.} \\
-\end{tabular}
-\end{table}
-\efloatseparator
- 
-\begin{table}[!htbp] \centering
-  \caption{Package Size Statistics by Income Quantile}
-  \label{tab:sizeSummary}
-\begin{tabular}{@{\extracolsep{5pt}} ccccccc}
-\\[-1.8ex]\hline
-\hline \\[-1.8ex]
-Income & 25th Pctl & 50th Pctl & 75th Pctl & M & SD & N \\
-\hline \\[-1.8ex]
-\textless 25k & $4.160$ & $7.680$ & $13.090$ & $10$ & $8.750$ & $612,739$ \\
-25-50k & $4.680$ & $8.290$ & $14.400$ & $11.230$ & $9.820$ & $1,200,978$ \\
-50-100k & $5.760$ & $8.730$ & $15.360$ & $12.910$ & $11.330$ & $1,397,074$ \\
-\textgreater 100k & $6.720$ & $11.200$ & $19.640$ & $15.140$ & $12.920$ & $454,864$ \\
-\hline \\[-1.8ex]
-\multicolumn{7}{l}{Sizes are in standardized 225-sheet, 2-ply rolls.} \\
+\textit{Note:}  & \multicolumn{5}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+ & \multicolumn{5}{l}{Standard errors are clustered at the household-market level.} \\
 \end{tabular}
 \end{table}
