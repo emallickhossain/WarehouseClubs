@@ -8,6 +8,14 @@
  
 \begin{figure}
 \centering
+\includegraphics{../5_figures/savingsStoreBrand.png}
+\caption{}
+\label{fig:savingsStoreBrand}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
 \includegraphics{../5_figures/savingsBehavior.png}
 \caption{}
 \label{fig:savingsBehavior}
@@ -16,9 +24,17 @@
  
 \begin{figure}
 \centering
-\includegraphics{../5_figures/savingsStoreBrand.png}
+\includegraphics{../5_figures/savingsBehaviorModules.png}
 \caption{}
-\label{fig:savingsStoreBrand}
+\label{fig:savingsBehaviorModules}
+\end{figure}
+\efloatseparator
+ 
+\begin{figure}
+\centering
+\includegraphics{../5_figures/priceDecomp2.png}
+\caption{}
+\label{fig:priceDecomp}
 \end{figure}
 \efloatseparator
  

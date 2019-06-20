@@ -1,4 +1,70 @@
 \begin{table}[!htbp] \centering
+  \caption{Descriptive Statistics}
+  \label{tab:homescanSummaryStats}
+\begin{tabular}{lcc}
+\hline
+Variable & Mean & Standard Deviation\\
+\hline
+Household income (\$000s) & 57.36 & 30.50\\
+Household size & 2.58 & 1.45\\
+Hispanic & 1.89 & 0.32\\
+Age & 52.59 & 14.39\\
+College Educated & 0.38 & 0.49\\
+White & 0.77 & 0.42\\
+Child present & 0.33 & 0.47\\
+Married & 0.51 & 0.50\\
+\hline
+\hline
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Missed Savings}
+\begin{tabular}{lcccc}
+\hline
+            & \multicolumn{2}{c}{Non-Perishable} & \multicolumn{2}{c}{Perishable} \\
+              \cline{2-3}                             \cline{4-5}
+Income      & Toilet Paper  & Diapers & Milk  & Eggs \\
+\hline
+<\$25k      & 0.36          & 0.33    & 0.31  & 0.17 \\
+\$25-50k    & 0.35          & 0.33    & 0.30  & 0.17 \\
+\$50-100k   & 0.34          & 0.33    & 0.31  & 0.17 \\
+>\$100k     & 0.33          & 0.31    & 0.33  & 0.18  \\
+\hline
+\hline
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
+  \caption{Rich Households Miss Out on Less Savings}
+  \label{tab:lowestPrice}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & Diapers & Toilet Paper & Eggs & Milk \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
+\hline \\[-1.8ex]
+ 25-50k & $-$0.010$^{**}$ & $-$0.005$^{***}$ & 0.001 & $-$0.002 \\
+  & (0.005) & (0.001) & (0.001) & (0.001) \\
+  50-100k & $-$0.015$^{***}$ & $-$0.013$^{***}$ & 0.004$^{***}$ & 0.002$^{**}$ \\
+  & (0.005) & (0.001) & (0.001) & (0.001) \\
+  >100k & $-$0.018$^{***}$ & $-$0.017$^{***}$ & 0.018$^{***}$ & 0.010$^{***}$ \\
+  & (0.005) & (0.002) & (0.002) & (0.001) \\
+ \hline \\[-1.8ex]
+Demographics & Y & Y & Y & Y \\
+Market-Year FE & Y & Y & Y & Y \\
+Observations & 36,903 & 182,415 & 194,413 & 247,451 \\
+Adjusted R$^{2}$ & 0.012 & 0.071 & 0.117 & 0.231 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\end{table}
+\efloatseparator
+ 
+\begin{table}[!htbp] \centering
   \caption{Warehouse Club Opening}
   \label{tab:clubOpening}
 \begin{tabular}{@{\extracolsep{5pt}}lccccc}
