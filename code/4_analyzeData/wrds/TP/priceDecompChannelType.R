@@ -3,9 +3,10 @@ library(data.table)
 library(ggplot2)
 library(ggthemes)
 library(stargazer)
-critValue <- 2
+library(purrr)
 threads <- 8
 yrs <- 2004:2017
+critValue <- 1.96
 
 # Getting CPI to deflate values to Jan-2010 base
 cpi <- fread("/scratch/upenn/hossaine/cpi.csv")
@@ -51,18 +52,18 @@ for (yr in yrs) {
   mergedData[, c("coupon_value", "packagePrice", "newIndex") := NULL]
   mergedData[, ':=' (unitPriceReal = packagePriceReal / totalAmount,
                      unitCouponReal = couponValueReal / totalAmount,
-                     totalSpendReal = (packagePriceReal - couponValueReal) * quantity)]
+                     totalSpendReal = packagePriceReal * quantity)]
   mergedData[, c("couponValueReal", "packagePriceReal", "totalAmount", "deal_flag_uc") := NULL]
 
   # Generating factors
   # Reference group is the 2nd quantile generic brand sold at the
   # most popular discount retailer
   mergedData[, "brand_code_uc" := as.character(brand_code_uc)]
-  mergedData[brand_code_uc == 536746, "brand_code_uc" := paste0(channel_type, brand_code_uc)]
-  mergedData[, c("brand_code_uc", "channel_type", "quartile") :=
+  mergedData[brand_code_uc == "536746", "brand_code_uc" := paste0(channel_type, brand_code_uc)]
+  mergedData[, c("brand_code_uc", "channel_type", "quintile") :=
                .(relevel(as.factor(brand_code_uc), ref = "Discount Store536746"),
                  relevel(as.factor(channel_type), ref = "Discount Store"),
-                 relevel(as.factor(quartile), ref = "4"))]
+                 relevel(as.factor(quintile), ref = "2"))]
 
   # Looping over all product modules which have a generic brand
   fullData <- NULL
@@ -76,7 +77,7 @@ for (yr in yrs) {
     prodMod <- mergedData[product_module_code == modCode]
 
     # Running hedonic regression and organizing coefficients
-    reg1 <- lm(unitPriceReal ~ brand_code_uc + channel_type + quartile, data = prodMod)
+    reg1 <- lm(unitPriceReal ~ brand_code_uc + channel_type + quintile, data = prodMod)
     coefs <- as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE)
     coefs[abs(`t value`) < critValue, "Estimate" := 0]
 
@@ -88,20 +89,20 @@ for (yr in yrs) {
     retailers[, c("channel_type", "rn") := .(gsub("channel_type", "", rn), NULL)]
     setnames(retailers, "Estimate", "retailComp")
 
-    quartiles <- coefs[grepl("quartile", rn), .(rn, Estimate)]
-    quartiles[, c("quartile", "rn") := .(gsub("quartile", "", rn), NULL)]
-    setnames(quartiles, "Estimate", "quartComp")
+    quintiles <- coefs[grepl("quintile", rn), .(rn, Estimate)]
+    quintiles[, c("quintile", "rn") := .(gsub("quintile", "", rn), NULL)]
+    setnames(quintiles, "Estimate", "quintComp")
 
     # Merging in coefficients with purchases
     prodMod[, "Intercept" := coefs[rn == "(Intercept)"]$Estimate]
     prodMod <- merge(prodMod, brands, by = "brand_code_uc", all.x = TRUE)
     prodMod <- merge(prodMod, retailers, by = "channel_type", all.x = TRUE)
-    prodMod <- merge(prodMod, quartiles, by = "quartile", all.x = TRUE)
+    prodMod <- merge(prodMod, quintiles, by = "quintile", all.x = TRUE)
 
     # Generating 0s
     prodMod[is.na(brandComp), "brandComp" := 0]
     prodMod[is.na(retailComp), "retailComp" := 0]
-    prodMod[is.na(quartComp), "quartComp" := 0]
+    prodMod[is.na(quintComp), "quintComp" := 0]
 
     # Generating channel specific factors
     prodMod[, "DollarComp" := ifelse(channel_type == "Dollar Store", retailComp, 0)]
@@ -111,8 +112,8 @@ for (yr in yrs) {
     prodMod[, "PrivateLabel" := ifelse(grepl("*536746", brand_code_uc), brandComp, 0)]
     prodMod[PrivateLabel > 0, "brandComp" := 0]
     prodMod[, "residual" := (unitPriceReal - Intercept - unitCouponReal -
-                               brandComp - retailComp - quartComp - PrivateLabel)]
-    prodMod[, "unitPriceEst" := brandComp + retailComp + quartComp + PrivateLabel +
+                               brandComp - retailComp - quintComp - PrivateLabel)]
+    prodMod[, "unitPriceEst" := brandComp + retailComp + quintComp + PrivateLabel +
               residual - unitCouponReal]
 
     # Averaging components by household
@@ -122,7 +123,7 @@ for (yr in yrs) {
                              GroceryComp = weighted.mean(GroceryComp / Intercept, w = totalSpendReal),
                              OtherComp = weighted.mean(OtherComp / Intercept, w = totalSpendReal),
                              retailComp = weighted.mean(retailComp / Intercept, w = totalSpendReal),
-                             quartComp = weighted.mean(quartComp / Intercept, w = totalSpendReal),
+                             quintComp = weighted.mean(quintComp / Intercept, w = totalSpendReal),
                              PrivateLabel = weighted.mean(PrivateLabel / Intercept, w = totalSpendReal),
                              couponComp = weighted.mean(-unitCouponReal / Intercept, w = totalSpendReal),
                              residual = weighted.mean(residual / Intercept, w = totalSpendReal),
@@ -139,13 +140,21 @@ for (yr in yrs) {
 }
 
 # Computing shares
-fullData <- fread("/scratch/upenn/hossaine/priceDecompChannel.csv", nThread = threads)
+getData <- function(yr) {
+  data <- fread(paste0("/scratch/upenn/hossaine/priceDecompChannel", yr, ".csv"),
+                nThread = threads,
+                select = c("household_code", "panel_year", "household_income",
+                           "household_income_coarse", "projection_factor",
+                           "product_module_code", "brandComp", "retailComp",
+                           "quintComp", "PrivateLabel", "couponComp", "residual",
+                           "unitPriceEst", "modSpending"))
+  return(data)
+}
+fullData <- rbindlist(map(yrs, getData), use.names = TRUE)
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
-               select = c("household_code", "panel_year", "projection_factor",
-                          "household_income", "household_income_coarse",
-                          "household_size", "age", "child", "white"))
-fullData <- merge(fullData, panel, by = c("household_code", "panel_year", "projection_factor",
-                                          "household_income", "household_income_coarse"))
+               select = c("household_code", "panel_year", "household_size",
+                          "age", "child", "white"))
+fullData <- merge(fullData, panel, by = c("household_code", "panel_year"))
 prod <- fread("/scratch/upenn/hossaine/fullProd.csv", nThread = threads)
 prod <- unique(prod[, .(product_module_code, storable)])
 fullData <- merge(fullData, prod, by = "product_module_code")
@@ -153,12 +162,8 @@ fullData <- merge(fullData, prod, by = "product_module_code")
 # Averaging over all products
 hhAvg <- fullData[!is.na(retailComp) & !is.infinite(retailComp),
                   .(brandComp = weighted.mean(brandComp, w = modSpending),
-                    DollarComp = weighted.mean(DollarComp, w = modSpending),
-                    WarehouseComp = weighted.mean(WarehouseComp, w = modSpending),
-                    GroceryComp = weighted.mean(GroceryComp, w = modSpending),
-                    OtherComp = weighted.mean(OtherComp, w = modSpending),
                     retailComp = weighted.mean(retailComp, w = modSpending),
-                    quartComp = weighted.mean(quartComp, w = modSpending),
+                    quintComp = weighted.mean(quintComp, w = modSpending),
                     PrivateLabel = weighted.mean(PrivateLabel, w = modSpending),
                     couponComp = weighted.mean(couponComp, w = modSpending),
                     residual = weighted.mean(residual, w = modSpending),
@@ -175,42 +180,49 @@ for (i in 0:1) {
   brandReg <- lm(brandComp ~ household_income_coarse + household_size + age + child + white,
                          data = hhAvg[storable == i], weights = projection_factor)
   brandComp <- as.data.table(summary(brandReg)$coefficients, keep.rownames = TRUE)
-  brandComp[abs(`t value`) < critValue, "Estimate" := 0]
-  finalComponents <- data.table(income = c("<25k", ">100k", "25-50k", "50-100k"),
-                                Brand = c(brandComp$Estimate[1:4]))
+  brandComp[, "comp" := "Brand"]
 
   retailReg <- lm(storeAndPrivate ~ household_income_coarse + household_size + age + child + white,
                   data = hhAvg[storable == i], weights = projection_factor)
   retailComp <- as.data.table(summary(retailReg)$coefficients, keep.rownames = TRUE)
-  retailComp[abs(`t value`) < critValue, "Estimate" := 0]
-  finalComponents <- cbind(finalComponents,
-                           StoreType = c(retailComp$Estimate[1:4]))
+  retailComp[, "comp" := "Retailer"]
 
-  sizeReg <- lm(quartComp ~ household_income_coarse + household_size + age + child + white,
+  sizeReg <- lm(quintComp ~ household_income_coarse + household_size + age + child + white,
                 data = hhAvg[storable == i], weights = projection_factor)
   sizeComp <- as.data.table(summary(sizeReg)$coefficients, keep.rownames = TRUE)
-  sizeComp[abs(`t value`) < critValue, "Estimate" := 0]
-  finalComponents <- cbind(finalComponents,
-                           Size = c(sizeComp$Estimate[1:4]))
-  finalComponents[, "storable" := i]
+  sizeComp[, "comp" := "Size"]
 
-  finalComponentsFull <- rbindlist(list(finalComponentsFull, finalComponents))
+  finalComponents <- rbindlist(list(brandComp, retailComp, sizeComp), use.names = TRUE)
+  finalComponents[, "storable" := i]
+  setnames(finalComponents, c("rn", "beta", "se", "t", "p", "comp", "storable"))
+  finalComponents[, c("t", "p") := NULL]
+
+  finalComponentsFull <- rbindlist(list(finalComponentsFull, finalComponents), use.names = TRUE)
 }
 
 # Reference Table
-refTable <- data.table(finalComponentsFull)
-refTable[, "unitCost" := 1 + Brand + StoreType + Size]
-refTable[income != "<25k", "unitCost" := refTable[income == "<25k"]$unitCost - 1 + unitCost]
+finalComponentsFull <- finalComponentsFull[!rn %in% c("household_size", "age", "child", "white")]
+finalComponentsFull[rn == "(Intercept)", "rn" := "household_income_coarse<25k"]
+finalComponentsFull[, "rn" := gsub("household_income_coarse", "", rn)]
+refTable <- dcast(finalComponentsFull, rn + storable ~ comp, value.var = c("beta", "se"))
+refTable[, "beta_unitCost" := 1 + beta_Brand + beta_Retailer + beta_Size]
+refTable[, "se_unitCost" := se_Brand + se_Retailer + se_Size]
+
+refTable[rn != "<25k",
+         "beta_unitCost" := refTable[rn == "<25k"]$beta_unitCost - 1 + beta_unitCost]
 refTable[, "storable" := ifelse(storable == 0, "Non-Storable", "Storable")]
-refTable[, "income" := factor(income,
+refTable[, "income" := factor(rn,
                               levels = c("<25k", "25-50k", "50-100k", ">100k"),
                               ordered = TRUE)]
-ggplot(refTable, aes(x = income, y = unitCost, fill = storable)) +
+ggplot(refTable, aes(x = income, y = beta_unitCost, fill = storable)) +
   geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(aes(ymin = beta_unitCost - 1.96 * se_unitCost,
+                    ymax = beta_unitCost + 1.96 * se_unitCost),
+                width = 0.2, position = position_dodge(0.9)) +
   theme_fivethirtyeight() +
   labs(title = "Unit Prices Paid by Income Group",
        x = "Household Income",
-       y = "Unit Price (Smallest Quartile, All Generic Basket = 1)",
+       y = "Unit Price (Largest Quartile, All Generic Basket = 1)",
        caption = paste0("Note: The unit price of a basket composed of the smallest \n",
                         "quantile package of a private-label good offered at a discount \n",
                         "retailer is normalized to $1. Components are adjusted for \n",
@@ -222,13 +234,13 @@ ggsave(filename = "./figures/unitCostGap.png")
 
 
 # Plotting
-finalComponentsFull[, "total" := Brand + StoreType + Size]
-finalComponentsFull[, "storable" := ifelse(storable == 0, "Non-Storable", "Storable")]
-finalComponentsLong <- melt(finalComponentsFull[income != "<25k"],
-                            id.vars = c("income", "storable", "total"),
+refTable[, "beta_total" := beta_Brand + beta_Retailer + beta_Size]
+finalComponentsLong <- melt(refTable[income != "<25k"], id.vars = c("income", "storable", "beta_total"),
+                            measure.vars = c("beta_Brand", "beta_Retailer", "beta_Size"),
                             variable.name = "Component")
+finalComponentsLong[, "Component" := gsub("beta_", "", Component)]
 finalComponentsLong[, "Component" := factor(Component,
-                                            levels = c("Size", "StoreType", "Brand"),
+                                            levels = c("Size", "Retailer", "Brand"),
                                             ordered = TRUE)]
 finalComponentsLong[, "income" := factor(income,
                                          levels = c("25-50k", "50-100k", ">100k"),
@@ -238,7 +250,7 @@ finalComponentsLong[, "income" := factor(income,
 ggplot(finalComponentsLong[Component != "Size"],
        aes(x = income, y = value, fill = Component)) +
   geom_bar(stat = "identity") +
-  scale_y_continuous(limits = c(-0.05, 0.20)) +
+  #scale_y_continuous(limits = c(-0.05, 0.20)) +
   theme_fivethirtyeight() +
   scale_color_fivethirtyeight() +
   facet_wrap(vars(storable)) +
@@ -247,7 +259,7 @@ ggplot(finalComponentsLong[Component != "Size"],
        y = "Gap Explained (Percentage Points)") +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_fill_manual("legend", values = c("Brand" = "#FF2700",
-                                         "StoreType" = "#008FD5",
+                                         "Retailer" = "#008FD5",
                                          "Size" = "#77AB43"))
 ggsave(filename = "./figures/priceDecomp1.png")
 #ggsave(filename = "./figures/priceDecompTP1.png") # Change scale and title
@@ -257,17 +269,16 @@ ggsave(filename = "./figures/priceDecomp1.png")
 ggplot(finalComponentsLong,
        aes(x = income, y = value, fill = Component)) +
   geom_bar(stat = "identity") +
-  geom_point(aes(y = total)) +
-  scale_y_continuous(limits = c(-0.05, 0.20)) +
+  #scale_y_continuous(limits = c(-0.05, 0.20)) +
   theme_fivethirtyeight() +
   scale_color_fivethirtyeight() +
-  #facet_wrap(vars(storable)) +
+  facet_wrap(vars(storable)) +
   labs(title = "Contributors to Unit Price Inequality",
        x = "Household Income",
        y = "Gap Explained (Percentage Points)") +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_fill_manual("legend", values = c("Brand" = "#FF2700",
-                                         "StoreType" = "#008FD5",
+                                         "Retailer" = "#008FD5",
                                          "Size" = "#77AB43"))
 ggsave(filename = "./figures/priceDecomp2.png")
 #ggsave(filename = "./figures/priceDecompTP2.png") # Change scale and title

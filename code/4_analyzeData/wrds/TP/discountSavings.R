@@ -38,16 +38,16 @@ getSavings <- function(yr) {
   print(yr)
   purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", yr, ".csv"),
                  nThread = threads,
-                 select = c("trip_code_uc", "coupon_value", "deal_flag_uc",
+                 select = c("trip_code_uc", "coupon_value",
                             "product_module_code", "brand_code_uc", "storable",
-                            "packagePrice", "totalAmount", "quartile", "quantity"),
+                            "packagePrice", "totalAmount", "quintile", "quantity"),
                  key = "trip_code_uc")
   purch[, ':=' (coupon = as.integer(coupon_value > 0),
-                sale = as.integer(deal_flag_uc > 0 & coupon_value == 0),
                 generic = as.integer(brand_code_uc == 536746),
                 totalExpenditure = (packagePrice - coupon_value) * quantity,
                 unitPrice = (packagePrice - coupon_value) / totalAmount)]
-  purch[, c("coupon_value", "deal_flag_uc", "packagePrice", "totalAmount", "quantity") := NULL]
+  purch[, "quintile" := relevel(factor(quintile), ref = "2")]
+  purch[, c("coupon_value", "packagePrice", "totalAmount", "quantity") := NULL]
 
   # Deflating expendtures
   setkey(purch, trip_code_uc)
@@ -61,25 +61,19 @@ getSavings <- function(yr) {
   regData[, "retailerBrand" := paste0(retailer_code, product_module_code, brand_code_uc)]
 
   # Running regression to see how prices are affected by different factors
-  reg <- felm(data = regData, logRealUnitPrice ~ coupon + sale + generic +
-                as.factor(quartile) | retailerModule,
-              weights = regData$realExp)
-  reg2 <- felm(data = regData, logRealUnitPrice ~ coupon + sale +
-                 as.factor(quartile) | retailerBrand,
-               weights = regData$realExp)
-  reg3 <- felm(data = regData[storable == 1], logRealUnitPrice ~ coupon + sale +
-                 as.factor(quartile) | retailerBrand,
-               weights = regData[storable == 1]$realExp)
-  reg4 <- felm(data = regData[storable == 0], logRealUnitPrice ~ coupon + sale +
-                 as.factor(quartile) | retailerBrand,
-               weights = regData[storable == 0]$realExp)
-  stargazer(reg, reg2, reg3, reg4, type = "text",
-            add.lines = list(c("Fixed Effect", "Retailer-Module", "Retailer-Brand",
+  reg2 <- felm(data = regData, logRealUnitPrice ~ coupon + quintile |
+                 retailerBrand, weights = regData$realExp)
+  reg3 <- felm(data = regData[storable == 1], logRealUnitPrice ~ coupon + quintile |
+                 retailerBrand, weights = regData[storable == 1]$realExp)
+  reg4 <- felm(data = regData[storable == 0], logRealUnitPrice ~ coupon + quintile |
+                 retailerBrand, weights = regData[storable == 0]$realExp)
+  stargazer(reg2, reg3, reg4, type = "text",
+            add.lines = list(c("Fixed Effect", "Retailer-Brand",
                                "Retailer-Brand", "Retailer-Brand")),
             single.row = TRUE, no.space = TRUE, omit.stat = c("ser", "rsq"),
             out.header = FALSE,
             column.labels = c("All Products", "Storable", "Non-Storable"),
-            column.separate = c(2, 1, 1),
+            column.separate = c(1, 1, 1),
             dep.var.caption = "Log(Unit Price)", dep.var.labels.include = FALSE,
             notes.align = "l",
             digits = 2,
@@ -99,31 +93,28 @@ coefsAll <- rbindlist(map(2004:2017, getSavings))
 # Getting coefficients to graph
 coefsAll[, "storable" := factor(storable, levels = c(0, 1),
                                 labels = c("Non-Storable", "Storable"))]
-coefsAll[, "rn" := gsub("as\\.factor\\(quartile\\)", "Quartile ", rn)]
+coefsAll[, "rn" := gsub("quintile", "Quintile ", rn)]
 coefsAll[rn == "coupon", "rn" := "Coupon"]
-coefsAll[rn == "sale", "rn" := "Sale"]
-coefsAll[rn == "generic", "rn" := "Generic"]
 setnames(coefsAll, c("rn", "beta", "se", "t", "p", "Storable", "Year"))
-fwrite(coefsAll, "/home/upenn/hossaine/coefsAll.csv")
+fwrite(coefsAll, "/scratch/upenn/hossaine/coefsAll.csv")
 
 # Making graphs
-discounts <- c("Coupon", "Quartile 2", "Quartile 3", "Quartile 4")
+coefsAll <- fread("/scratch/upenn/hossaine/coefsAll.csv")
+discounts <- c("Coupon", "Quintile 3", "Quintile 4", "Quintile 5")
 coefsAll[abs(t) < critValue, "beta" := 0]
-graphData <- coefsAll[, .(beta = mean(beta),
+graphData <- coefsAll[rn != "Quintile 1", .(beta = mean(beta),
                           se = mean(se)), by = .(rn, Storable)]
 ggplot(data = graphData, aes(x = as.factor(rn), y = beta, fill = Storable)) +
   geom_bar(position = position_dodge(), stat = "identity") +
   geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se),
                 width = 0.2, position = position_dodge(0.9)) +
   scale_x_discrete(limits = discounts) +
-  scale_y_continuous(limits = c(-1, 0)) +
   labs(title = "Bulk Discounts Provide Largest Savings",
        subtitle = "Storable Items Offer Larger Quantity Discounts than Non-Storable Items",
        x = NULL,
        y = "Unit Price Savings",
        caption = paste0("Note: Black bars denote standard errors. Bars denote estimate ",
-                        "of unit price discount \nafter controlling for year-month, market, ",
-                        "and retailer-brand fixed effects.")) +
+                        "of unit price discount \nafter controlling for retailer-brand fixed effects.")) +
   theme_fivethirtyeight() +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_fill_grey()

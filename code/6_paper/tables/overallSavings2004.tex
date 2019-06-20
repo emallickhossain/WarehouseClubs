@@ -1,6 +1,6 @@
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Sun, Apr 21, 2019 - 02:09:47 PM
+% Date and time: Tue, Jun 11, 2019 - 04:13:30 PM
 \begin{table}[!htbp] \centering 
   \caption{} 
   \label{tab:overallSavings} 
@@ -8,18 +8,19 @@
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
  & \multicolumn{3}{c}{Log(Unit Price)} \\ 
+\cline{2-4} 
+ & All Products & Storable & Non-Storable \\ 
 \\[-1.8ex] & (1) & (2) & (3)\\ 
 \hline \\[-1.8ex] 
- coupon & $-$0.41$^{***}$ (0.0003) & $-$0.46$^{***}$ (0.0002) & $-$0.45$^{***}$ (0.0002) \\ 
-  sale & $-$0.17$^{***}$ (0.0002) & $-$0.14$^{***}$ (0.0001) & $-$0.11$^{***}$ (0.0001) \\ 
-  generic & $-$0.35$^{***}$ (0.0002) &  &  \\ 
-  as.factor(quartile)2 & $-$0.31$^{***}$ (0.0003) & $-$0.24$^{***}$ (0.0002) &  \\ 
-  as.factor(quartile)3 & $-$0.53$^{***}$ (0.0003) & $-$0.45$^{***}$ (0.0002) &  \\ 
-  as.factor(quartile)4 & $-$0.80$^{***}$ (0.0003) & $-$0.63$^{***}$ (0.0003) &  \\ 
+ coupon & $-$0.26$^{***}$ (0.0003) & $-$0.25$^{***}$ (0.0003) & $-$0.29$^{***}$ (0.0004) \\ 
+  quintile1 & 0.27$^{***}$ (0.0003) & 0.30$^{***}$ (0.0004) & 0.16$^{***}$ (0.0004) \\ 
+  quintile3 & $-$0.20$^{***}$ (0.0003) & $-$0.27$^{***}$ (0.0004) & $-$0.08$^{***}$ (0.0004) \\ 
+  quintile4 & $-$0.34$^{***}$ (0.0003) & $-$0.42$^{***}$ (0.0004) & $-$0.23$^{***}$ (0.0003) \\ 
+  quintile5 & $-$0.55$^{***}$ (0.0003) & $-$0.64$^{***}$ (0.0004) & $-$0.39$^{***}$ (0.0004) \\ 
  \hline \\[-1.8ex] 
-Fixed Effect & Retailer-Module & Retailer-Brand & Retailer-UPC \\ 
-Observations & 35,490,949 & 35,490,949 & 35,490,949 \\ 
-Adjusted R$^{2}$ & 0.86 & 0.93 & 0.97 \\ 
+Fixed Effect & Retailer-Brand & Retailer-Brand & Retailer-Brand \\ 
+Observations & 35,368,668 & 22,730,348 & 12,638,320 \\ 
+Adjusted R$^{2}$ & 0.95 & 0.96 & 0.93 \\ 
 \hline 
 \hline \\[-1.8ex] 
 \textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
