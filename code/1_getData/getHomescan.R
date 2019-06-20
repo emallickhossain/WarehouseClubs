@@ -169,18 +169,19 @@ prod <- prod[, .(upc, upc_ver_uc, product_module_code, brand_code_uc, totalAmoun
                  size1_units, storable)]
 
 # Classifying bulk sizes in product file
-quartiles <- prod[, .(cutoff = quantile(totalAmount, c(0.25, 0.5, 0.75, 1))),
+quintiles <- prod[, .(cutoff = quantile(totalAmount, c(0.2, 0.4, 0.6, 0.8, 1))),
                   by = .(product_module_code)]
-quartiles[, "quartile" := 1:4]
-quarWide <- dcast(data = quartiles, product_module_code ~ quartile, value.var = "cutoff")
-setnames(quarWide, c("product_module_code", "q1", "q2", "q3", "q4"))
+quintiles[, "quintile" := 1:5]
+quarWide <- dcast(data = quintiles, product_module_code ~ quintile, value.var = "cutoff")
+setnames(quarWide, c("product_module_code", "q1", "q2", "q3", "q4", "q5"))
 prod <- merge(prod, quarWide, by = "product_module_code")
-rm(quartiles, quarWide)
-prod[totalAmount > q3 & totalAmount <= q4, "quartile" := 4L]
-prod[totalAmount > q2 & totalAmount <= q3, "quartile" := 3L]
-prod[totalAmount > q1 & totalAmount <= q2, "quartile" := 2L]
-prod[totalAmount > 0 & totalAmount <= q1, "quartile" := 1L]
-prod[, c("q1", "q2", "q3", "q4") := NULL]
+rm(quintiles, quarWide)
+prod[totalAmount > q4 & totalAmount <= q5, "quintile" := 5L]
+prod[totalAmount > q3 & totalAmount <= q4, "quintile" := 4L]
+prod[totalAmount > q2 & totalAmount <= q3, "quintile" := 3L]
+prod[totalAmount > q1 & totalAmount <= q2, "quintile" := 2L]
+prod[totalAmount > 0 & totalAmount <= q1, "quintile" := 1L]
+prod[, c("q1", "q2", "q3", "q4", "q5") := NULL]
 fwrite(prod, "/scratch/upenn/hossaine/fullProd.csv", nThread = threads)
 
 ######################## STEP 5: CLEAN PURCHASES FILE ##########################
@@ -205,7 +206,7 @@ for (yr in yrs) {
   purch[, "coupon_value" := coupon_value / quantity]
   purch[, c("total_price_paid") := NULL]
   purch <- merge(purch, prod, by = c("upc", "upc_ver_uc"))[packagePrice > 0]
-  purch <- purch[, .(trip_code_uc, coupon_value, deal_flag_uc, packagePrice, quartile,
+  purch <- purch[, .(trip_code_uc, coupon_value, deal_flag_uc, packagePrice, quintile,
                      product_module_code, brand_code_uc, totalAmount, storable, quantity)]
   setkey(purch, trip_code_uc)
 
