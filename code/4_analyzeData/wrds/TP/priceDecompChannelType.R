@@ -222,20 +222,24 @@ ggplot(refTable, aes(x = income, y = beta_unitCost, fill = storable)) +
   theme_fivethirtyeight() +
   labs(title = "Unit Prices Paid by Income Group",
        x = "Household Income",
-       y = "Unit Price (Largest Quartile, All Generic Basket = 1)",
-       caption = paste0("Note: The unit price of a basket composed of the smallest \n",
-                        "quantile package of a private-label good offered at a discount \n",
+       y = "Unit Price (2nd Smallest Quintile, All Generic Basket = 1)",
+       caption = paste0("Note: The unit price of a basket composed of the 2nd-smallest \n",
+                        "quintile package of a private-label good offered at a discount \n",
                         "retailer is normalized to $1. Components are adjusted for \n",
                         "household demographics of size, age, presence of children, and race.")) +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0))
+  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
+  scale_fill_grey()
+
 ggsave(filename = "./figures/unitCostGap.png")
-# ggsave(filename = "./figures/unitCostGapTP.png") #7260. Rerun hhAvg with product module
-# ggsave(filename = "./figures/unitCostGapMilk.png") #4000
+# ggsave(filename = "./figures/unitCostGapTP.png") #7260. Rerun hhAvg with product module specified (to save computation time)
+# ggsave(filename = "./figures/unitCostGapMilk.png") #3625
 
 
 # Plotting
 refTable[, "beta_total" := beta_Brand + beta_Retailer + beta_Size]
-finalComponentsLong <- melt(refTable[income != "<25k"], id.vars = c("income", "storable", "beta_total"),
+refTable[, "beta_bias" := beta_Size / (beta_Brand + beta_Retailer)]
+finalComponentsLong <- melt(refTable[income != "<25k"],
+                            id.vars = c("income", "storable", "beta_total", "beta_bias"),
                             measure.vars = c("beta_Brand", "beta_Retailer", "beta_Size"),
                             variable.name = "Component")
 finalComponentsLong[, "Component" := gsub("beta_", "", Component)]
@@ -245,6 +249,10 @@ finalComponentsLong[, "Component" := factor(Component,
 finalComponentsLong[, "income" := factor(income,
                                          levels = c("25-50k", "50-100k", ">100k"),
                                          ordered = TRUE)]
+
+# Estimating bias
+biasTable <- dcast(refTable[rn != "<25k"], rn ~ storable, value.var = "beta_bias")
+stargazer(biasTable, type = "text", summary = FALSE)
 
 # Plot 1: No Size Component
 ggplot(finalComponentsLong[Component != "Size"],
@@ -258,9 +266,11 @@ ggplot(finalComponentsLong[Component != "Size"],
        x = "Household Income",
        y = "Gap Explained (Percentage Points)") +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-  scale_fill_manual("legend", values = c("Brand" = "#FF2700",
-                                         "Retailer" = "#008FD5",
-                                         "Size" = "#77AB43"))
+  # scale_fill_manual("legend", values = c("Brand" = "#FF2700",
+  #                                        "Retailer" = "#008FD5",
+  #                                        "Size" = "#77AB43")) +
+  scale_fill_grey()
+
 ggsave(filename = "./figures/priceDecomp1.png")
 #ggsave(filename = "./figures/priceDecompTP1.png") # Change scale and title
 #ggsave(filename = "./figures/priceDecompMilk1.png") # Change scale and title
@@ -277,9 +287,11 @@ ggplot(finalComponentsLong,
        x = "Household Income",
        y = "Gap Explained (Percentage Points)") +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-  scale_fill_manual("legend", values = c("Brand" = "#FF2700",
-                                         "Retailer" = "#008FD5",
-                                         "Size" = "#77AB43"))
+  # scale_fill_manual("legend", values = c("Brand" = "#FF2700",
+  #                                        "Retailer" = "#008FD5",
+  #                                        "Size" = "#77AB43")) +
+  scale_fill_grey()
+
 ggsave(filename = "./figures/priceDecomp2.png")
 #ggsave(filename = "./figures/priceDecompTP2.png") # Change scale and title
 #ggsave(filename = "./figures/priceDecompMilk2.png") # Change scale and title

@@ -34,7 +34,7 @@ library(ggthemes)
 yrs <- 2006:2016
 threads <- 8
 moduleCode <- 7260 #tp
-path <- "/home/mallick/Desktop/Nielsen/Data/Scanner/tp/"
+path <- "/scratch/upenn/hossaine/nielsen_extracts/RMS/"
 
 # Getting number of rolls per package
 prod <- fread(paste0(path, "Master_Files/Latest/products.tsv"), nThread = threads,
@@ -134,14 +134,7 @@ for (yr in yrs) {
   fullTP <- rbindlist(list(fullTP, tp), use.names = TRUE)
 }
 
-fwrite(fullTP, "/home/mallick/Downloads/fullTP.csv", nThread = threads)
-
-# Save and upload to WRDS
-# cd Downloads/
-# tar -czvf fullTP.tar.gz fullTP.csv
-# scp /home/mallick/Downloads/fullTP.tar.gz hossaine@wrds-cloud.wharton.upenn.edu:/scratch/upenn/hossaine
-# cd /scratch/upenn/hossaine
-# tar -xzvf fullTP.tar.gz
+fwrite(fullTP, "/scratch/upenn/hossaine/fullTP.csv", nThread = threads)
 
 # Getting trips and adding in week_end date
 trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,

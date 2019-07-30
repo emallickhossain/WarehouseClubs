@@ -20,10 +20,6 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv",
                           "projection_factor", "household_income", "household_size",
                           "age", "child", "market", "lat", "lon"))
 
-# Getting products
-prod <- na.omit(fread("/scratch/upenn/hossaine/fullProd.csv", nThread = threads,
-                      key = c("upc", "upc_ver_uc")))
-
 # Getting monthly bulk and warehouse "share" by household-month
 # Getting all purchases by year
 trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
@@ -54,11 +50,11 @@ for (i in 2004:2017) {
 quarterShares <- merge(quarterShares, panel, by = c("household_code", "panel_year"))
 quarterShares[, "household_income" := factor(household_income)]
 quarterShares[, "YQ" := as.yearqtr(paste(panel_year, quarter, sep = "-"))]
-fwrite(quarterShares, "/scratch/upenn/hossaine/quarterShares.csv")
-
+fwrite(quarterShares, "/scratch/upenn/hossaine/quarterShares.csv", nThread = threads)
 
 # Geocoding households
 quarterShares <- fread("/scratch/upenn/hossaine/quarterShares.csv")
+quarterShares[, "YQ" := as.yearqtr(YQ)]
 setorder(quarterShares, household_code, YQ)
 hhGeos <- na.omit(unique(quarterShares[, .(household_code, lat, lon)]))
 hhGeos[, "hhGeoID" := 1:.N]
@@ -108,29 +104,25 @@ quarterShares[household_income %in% 15:19, "household_income_coarse" := "25-50k"
 quarterShares[household_income %in% 21:26, "household_income_coarse" := "50-100k"]
 quarterShares[household_income %in% 27:30, "household_income_coarse" := ">100k"]
 
-reg1 <- felm(data = quarterShares, bulk ~ nearby1 + nearby2 + household_income_coarse +
+reg1 <- felm(data = quarterShares, bulk ~ nearby1 + nearby2 +
                household_size + age + child | HHMarket + marketQuarter | 0 | HHMarket)
-reg2 <- felm(data = quarterShares[household_income_coarse == "<25k"],
-             bulk ~ nearby1 + nearby2 + household_size + age + child |
-               HHMarket + marketQuarter | 0 | HHMarket)
-reg3 <- felm(data = quarterShares[household_income_coarse == "25-50k"],
-             bulk ~ nearby1 + nearby2 + household_size + age + child |
-               HHMarket + marketQuarter | 0 | HHMarket)
-reg4 <- felm(data = quarterShares[household_income_coarse == "50-100k"],
-             bulk ~ nearby1 + nearby2 + household_size + age + child |
-               HHMarket + marketQuarter | 0 | HHMarket)
-reg5 <- felm(data = quarterShares[household_income_coarse == ">100k"],
-             bulk ~ nearby1 + nearby2 + household_size + age + child |
-               HHMarket + marketQuarter | 0 | HHMarket)
-stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
-          add.lines = list(c("Household-Market FE", "Y", "Y", "Y", "Y", "Y"),
-                           c("Market-Quarter FE", "Y", "Y", "Y", "Y", "Y")),
+reg2 <- felm(data = quarterShares, bulk ~ nearby1 * household_income_coarse +
+               nearby2 * household_income_coarse +
+               household_size + age + child | HHMarket + marketQuarter | 0 | HHMarket)
+
+stargazer(reg1, reg2, type = "text",
+          add.lines = list(c("Household-Market FE", "Y", "Y"),
+                           c("Market-Quarter FE", "Y", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
-          column.labels = c("All", "<25k", "25-50k", "50-100k", ">100k"),
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          keep = c("nearby*"),
-          covariate.labels = c("<20 km", "20-40km"),
+          keep = c("nearby*", "household_income*"),
+          order = c(1, 10, 11, 9, 5, 13, 14, 12, 3, 4, 2),
+          covariate.labels = c("<20 km", "<20 km : 25-50k",
+                               "<20 km : 50-100k", "<20 km : >100k",
+                               "20-40 km", "20-40 km : 25-50k",
+                               "20-40 km : 50-100k", "20-40 km : >100k",
+                               "25-50k", "50-100k", ">100k"),
           notes.align = "l",
           notes = c("Standard errors are clustered at the household-market level."),
           digits = 3,
@@ -141,8 +133,7 @@ stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
 # Running event study regression
 quarterShares[, "BQ" := ifelse(B == 1, quartersAfterOpen, -99)]
 quarterShares[, "BQ" := relevel(factor(BQ), ref = "-1")]
-reg1 <- felm(data = quarterShares, bulk ~ BQ +
-               household_income_coarse +
+reg1 <- felm(data = quarterShares, bulk ~ BQ + household_income_coarse +
                household_size + age + child | HHMarket + marketQuarter | 0 | HHMarket)
 reg2 <- felm(data = quarterShares[household_income_coarse == "<25k"], bulk ~ BQ +
                household_size + age + child | HHMarket + marketQuarter | 0 | HHMarket)

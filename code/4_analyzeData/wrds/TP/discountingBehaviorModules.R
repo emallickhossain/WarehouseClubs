@@ -55,7 +55,7 @@ for (yr in 2004:2017) {
   purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", yr, ".csv"),
                  nThread = threads,
                  select = c("trip_code_uc", "coupon_value",
-                            "brand_code_uc", "product_module_code", "storable",
+                            "brand_code_uc", "product_module_code", "food",
                             "packagePrice", "quintile", "quantity"),
                  key = "trip_code_uc")
   purch[, ':=' (coupon = as.integer(coupon_value > 0),
@@ -82,7 +82,7 @@ for (yr in 2004:2017) {
   householdAvgModule <- purch[, lapply(.SD, weighted.mean, w = realExp),
                               .SDcols = cols,
                               by = .(household_code, panel_year,
-                                     product_module_code, storable)]
+                                     product_module_code, food)]
 
   # Combining
   discBehaviorModule <- rbindlist(list(discBehaviorModule, householdAvgModule),
@@ -99,7 +99,7 @@ discBehaviorModule <- fread("/scratch/upenn/hossaine/discBehaviorModule.csv",
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "household_size", "age", "child",
-                          "dma_cd", "household_income_coarse"),
+                          "dma_cd", "household_income_coarse", "married"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
 
@@ -112,7 +112,7 @@ discBehaviorModule <- merge(discBehaviorModule, panel,
 # to change the overall picture of increasing bulk with income.
 runRegAll <- function(y, module) {
   regForm <- as.formula(paste0(y, "~", "household_income + as.factor(panel_year) +",
-                               "age + household_size + child + as.factor(dma_cd) + 0"))
+                               "age + household_size + child + married + as.factor(dma_cd) + 0"))
 
   # All products
   regData <- discBehaviorModule[product_module_code == module]
@@ -122,7 +122,7 @@ runRegAll <- function(y, module) {
   return(coefsAll)
 }
 
-discounts <- c("coupon", "generic", "bulk", "none", "one", "two", "three")
+discounts <- c("coupon", "generic", "bulk")
 modules <- c(7260, 7734, 8444, 7270, 3625, 4100)
 toRun <- expand.grid(y = discounts, module = modules)
 finalCoefs <- rbindlist(map2(toRun$y, toRun$module, runRegAll), use.names = TRUE)
@@ -142,8 +142,8 @@ finalCoefs[module == 4100, "Product" := "Eggs"]
 # Organizing graph data
 graphData <- finalCoefs[grepl("household_income", rn)]
 graphData[, "rn" := gsub("household_income", "", rn)]
-graphData[, "rn" := factor(rn, levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
-                           labels = c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
+graphData[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
+                           labels = c(6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
                            ordered = TRUE)]
 graphData[, "rn" := as.numeric(as.character(rn))]
 setnames(graphData, c("rn", "beta", "se", "t", "p", "disc", "module", "Product"))
@@ -156,22 +156,24 @@ graphData[disc == "none", "disc" := "None"]
 graphData[disc == "one", "disc" := "One"]
 graphData[disc == "two", "disc" := "Two"]
 graphData[disc == "three", "disc" := "Three"]
-graphData[, "storable" := ifelse(Product %in% c("Milk", "Eggs"),
-                                 "Perishable", "Non-Perishable")]
+graphData[, "food" := ifelse(Product %in% c("Milk", "Eggs"), "Food", "Non-Food")]
 
 # Graphing
 panels <- c("Coupon", "Generic", "Bulk")
-ggplot(data = graphData[disc %in% "Bulk"], aes(x = rn, y = beta, color = Product)) +
-  geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se), width = 0.2) +
-  geom_point() +
+ggplot(data = graphData[disc %in% "Bulk"], aes(x = rn, y = beta * 100, color = Product)) +
+  geom_errorbar(aes(ymin = 100 * (beta - 1.96 * se),
+                    ymax = 100 * (beta + 1.96 * se)), width = 0.2) +
+  geom_point(aes(shape = Product), size = 3) +
   geom_vline(xintercept = 0) +
-  facet_wrap(vars(storable), scales = "fixed") +
-  labs(title = "Rich Households Bulk Buy More",
-       subtitle = "Storable Necessities Have Larger Disparities",
-       x = "Household Income", y = "Share of Purchases",
+  facet_wrap(vars(food), scales = "fixed") +
+  labs(title = "Rich Households Buy Non-Food Items In Bulk",
+       subtitle = "Disparities Disappear For Common Food Items",
+       x = "Household Income", y = "Share of Purchases (%)",
        caption = paste0("Source: Author calulations from Nielsen Consumer Panel. \n",
-                        "Note: Demographic adjustments control for household size, \n",
-                        "age, presence of children, year, and market.")) +
+                        "Note: Figure plots income coefficients from a regression of \n",
+                        "expenditure-weighted shares of bulk purchasing on household \n",
+                        "income, size, age, presence of children, year, and market. Statistical \n",
+                        "weights are used to ensure representativeness.")) +
   theme_fivethirtyeight() +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_color_grey()

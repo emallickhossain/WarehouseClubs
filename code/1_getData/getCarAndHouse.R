@@ -4,7 +4,7 @@ library(data.table)
 library(acs)
 library(stringr)
 tracts <- geo.make(state = state.abb, county = "*", tract = "*")
-carOwn <- acs.fetch(geography = tracts, endyear = 2014, table.number = "B08141")
+carOwn <- acs.fetch(geography = tracts, endyear = 2013, table.number = "B08141")
 carDT <- data.table(carOwn@geography, carOwn@estimate)
 carDT <- carDT[, .(NAME, state, county, tract, B08141_001, B08141_002, B08141_003,
                    B08141_004, B08141_005, B08141_016)]

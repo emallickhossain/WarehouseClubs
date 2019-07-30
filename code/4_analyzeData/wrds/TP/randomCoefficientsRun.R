@@ -6,7 +6,6 @@ library(car)
 library(ggplot2)
 library(ggthemes)
 library(mvtnorm)
-library(ggridges)
 threads <- 8
 fullChoice <- fread("/scratch/upenn/hossaine/TPMLogit.csv", nThread = threads)
 fullChoice <- na.omit(fullChoice, cols = "household_code")

@@ -1,27 +1,44 @@
 
 % Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
-% Date and time: Mon, Apr 22, 2019 - 11:54:03 PM
+% Date and time: Wed, Jun 19, 2019 - 09:21:53 PM
 \begin{table}[!htbp] \centering 
   \caption{Warehouse Club Opening} 
   \label{tab:clubOpening} 
-\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\begin{tabular}{@{\extracolsep{5pt}}lcc} 
 \\[-1.8ex]\hline 
 \hline \\[-1.8ex] 
- & All & <25k & 25-50k & 50-100k & >100k \\ 
-\\[-1.8ex] & (1) & (2) & (3) & (4) & (5)\\ 
+\\[-1.8ex] & (1) & (2)\\ 
 \hline \\[-1.8ex] 
- <20 km & 0.010$^{***}$ & 0.0003 & 0.009$^{***}$ & 0.012$^{***}$ & 0.013$^{***}$ \\ 
-  & (0.001) & (0.002) & (0.002) & (0.002) & (0.002) \\ 
-  20-40km & 0.007$^{***}$ & $-$0.001 & 0.008$^{***}$ & 0.008$^{***}$ & 0.012$^{**}$ \\ 
-  & (0.002) & (0.003) & (0.003) & (0.003) & (0.005) \\ 
+ <20 km & 0.008$^{***}$ & 0.004$^{**}$ \\ 
+  & (0.001) & (0.001) \\ 
+  <20 km : 25-50k &  & 0.003$^{**}$ \\ 
+  &  & (0.001) \\ 
+  <20 km : 50-100k &  & 0.006$^{***}$ \\ 
+  &  & (0.001) \\ 
+  <20 km : >100k &  & 0.011$^{***}$ \\ 
+  &  & (0.002) \\ 
+  20-40 km & 0.003$^{**}$ & $-$0.001 \\ 
+  & (0.002) & (0.002) \\ 
+  20-40 km : 25-50k &  & 0.003$^{*}$ \\ 
+  &  & (0.002) \\ 
+  20-40 km : 50-100k &  & 0.005$^{***}$ \\ 
+  &  & (0.002) \\ 
+  20-40 km : >100k &  & 0.008$^{***}$ \\ 
+  &  & (0.003) \\ 
+  25-50k &  & $-$0.001 \\ 
+  &  & (0.001) \\ 
+  50-100k &  & $-$0.001 \\ 
+  &  & (0.001) \\ 
+  >100k &  & $-$0.003$^{*}$ \\ 
+  &  & (0.002) \\ 
  \hline \\[-1.8ex] 
-Household-Market FE & Y & Y & Y & Y & Y \\ 
-Market-Quarter FE & Y & Y & Y & Y & Y \\ 
-Observations & 3,027,655 & 424,285 & 963,860 & 1,182,324 & 457,186 \\ 
-Adjusted R$^{2}$ & 0.673 & 0.642 & 0.671 & 0.689 & 0.694 \\ 
+Household-Market FE & Y & Y \\ 
+Market-Quarter FE & Y & Y \\ 
+Observations & 3,110,990 & 3,110,990 \\ 
+Adjusted R$^{2}$ & 0.647 & 0.647 \\ 
 \hline 
 \hline \\[-1.8ex] 
-\textit{Note:}  & \multicolumn{5}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
- & \multicolumn{5}{l}{Standard errors are clustered at the household-market level.} \\ 
+\textit{Note:}  & \multicolumn{2}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+ & \multicolumn{2}{l}{Standard errors are clustered at the household-market level.} \\ 
 \end{tabular} 
 \end{table} 

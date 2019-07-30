@@ -3,83 +3,94 @@ library(data.table)
 library(ggthemes)
 library(ggplot2)
 library(lfe)
+library(Hmisc)
+library(knitr)
+threads <- 8
+yrs <- 2004:2017
 path <- "/scratch/upenn/hossaine/"
 
-tpPurch <- fread(paste0(path, "7260Purch.csv"))
-tpPurch[, c("upc", "upc_ver_uc", "trip_code_uc", "quantity", "product_module_code",
-            "upc_descr", "product_module_descr", "product_group_code",
-            "product_group_descr", "department_code", "department_descr",
-            "size1_code_uc", "size1_units", "dataset_found_uc",
-            "size1_change_flag_uc", "purchase_date") := NULL]
+# Getting data
+trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
+               select = c("trip_code_uc", "household_code", "panel_year", "retailer_code"))
+retailers <- fread("/scratch/upenn/hossaine/fullRetailers.csv")
+trips <- merge(trips, retailers, by = "retailer_code")
 
-uniqueBrands <- tpPurch[, .(brands = uniqueN(brand_code_uc),
-                            stores = uniqueN(retailer_code),
-                            channels = uniqueN(channel_type)),
-                        by = .(household_code, panel_year, projection_factor,
-                               household_income, household_size, marital_status,
-                               race, hispanic_origin, market, age, college, urban)]
+panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
+               select = c("household_code", "panel_year", "projection_factor",
+                          "household_income", "household_size", "age", "college",
+                          "child", "married", "white"))
 
-reg1 <- felm(data = uniqueBrands, brands ~ household_income |
-               panel_year + market +
-               household_size + marital_status + race + hispanic_origin + age +
-               college + urban, weights = uniqueBrands$projection_factor)
-reg2 <- felm(data = uniqueBrands, stores ~ household_income |
-               panel_year + market +
-               household_size + marital_status + race + hispanic_origin + age +
-               college + urban, weights = uniqueBrands$projection_factor)
-reg3 <- felm(data = uniqueBrands, channels ~ household_income |
-               panel_year + market +
-               household_size + marital_status + race + hispanic_origin + age +
-               college + urban, weights = uniqueBrands$projection_factor)
+fullPurch <- NULL
+for (i in yrs) {
+  print(i)
+  purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", i, ".csv"), nThread = threads,
+                 select = c("trip_code_uc", "product_module_code",
+                            "brand_code_uc", "food", "packagePrice", "quantity"))
+  fullPurch <- rbindlist(list(fullPurch, purch), use.names = TRUE)
+}
 
-# Top brands by income bracket
-hhid <- unique(tpPurch[, .(household_code, panel_year)])
-hhid[, "hhid" := paste0(household_code, "_", panel_year)]
-hhs <- setDT(expand.grid(hhid = hhid$hhid,
-                         brand_code_uc = unique(tpPurch$brand_code_uc)))
-hhs[, c("household_code", "panel_year") := tstrsplit(hhid, "_")]
-hhs[, "hhid" := NULL]
-hhs[, c("household_code", "panel_year") := .(as.integer(household_code),
-                                             as.integer(panel_year))]
+fullPurch <- merge(fullPurch, trips, by = "trip_code_uc")
+rm(trips)
 
-topBrands <- unique(tpPurch[, .(total = sum(size)),
-                            by = .(household_code, panel_year, projection_factor,
-                                   brand_code_uc, brand_descr, annualTP,
-                                   household_income_coarse)])
-rm(tpPurch, hhid)
+# Counting unique brands and store types for each household and product
+fullPurch[, "totalSpend" := packagePrice * quantity]
+fullPurch[, c("packagePrice", "quantity") := NULL]
+setkey(fullPurch, household_code, panel_year, product_module_code, food)
+uniqueBrands <- fullPurch[, .(brands = uniqueN(brand_code_uc),
+                              retailers = uniqueN(retailer_code),
+                              channels = uniqueN(channel_type),
+                              trips = uniqueN(trip_code_uc),
+                              spending = sum(totalSpend)),
+                          by = .(household_code, panel_year, product_module_code, food)]
+uniqueBrands <- merge(uniqueBrands, panel, by = c("household_code", "panel_year"))
 
-apple <- merge(hhs, unique(topBrands[, .(brand_code_uc, brand_descr)]), all.x = TRUE,
-               by = c("brand_code_uc"))
+# Taking expenditure weighted average across households (all products)
+hhBrands <- uniqueBrands[, .(brands = weighted.mean(brands, w = spending),
+                             retailers = weighted.mean(retailers, w = spending),
+                             channels = weighted.mean(channels, w = spending)),
+                         by = .(household_code, panel_year, projection_factor)]
 
-rm(hhs)
-apple <- merge(apple, topBrands[, .(household_code, panel_year, brand_code_uc, brand_descr, total)],
-               by = c("household_code", "panel_year", "brand_code_uc", "brand_descr"), all.x = TRUE)
-apple[is.na(total), "total" := 0]
-apple <- merge(apple, topBrands, by = c("household_code", "panel_year"))
+hhQtile <- hhBrands[, .(Brands = wtd.quantile(brands, weights = projection_factor,
+                                              probs = c(0.25, 0.5, 0.75)),
+                        Retailers = wtd.quantile(retailers, weights = projection_factor,
+                                                 probs = c(0.25, 0.5, 0.75)),
+                        Channels = wtd.quantile(channels, weights = projection_factor,
+                                                probs = c(0.25, 0.5, 0.75)))]
+hhQtile[, "qtile" := c("25th", "Median", "75th")]
+hhQtileWide <- dcast(melt(hhQtile, id.vars = c("qtile")), variable ~ qtile)
+setnames(hhQtileWide, "variable", "Variable")
+setcolorder(hhQtileWide, c("Variable", "25th", "Median", "75th"))
+kable(hhQtileWide, format = "markdown", digits = 2)
 
-avgBrand <- apple[, .(avg = weighted.mean(total, w = projection_factor),
-                      total = weighted.mean(annualTP, w = projection_factor)),
-                  by = .(household_income_coarse, brand_code_uc, brand_descr)]
-avgBrand[, "share" := avg / total * 100]
-avgBrand[, "household_income_coarse" := factor(household_income_coarse,
-                                               levels = c("<25k", "25-50k", "50-100k", ">100k"),
-                                               ordered = TRUE)]
+# Taking expenditure weighted average across households (compare food and non-food purchases)
+hhBrands <- uniqueBrands[, .(brands = weighted.mean(brands, w = spending),
+                             retailers = weighted.mean(retailers, w = spending),
+                             channels = weighted.mean(channels, w = spending)),
+                         by = .(household_code, panel_year, projection_factor, food)]
 
-setorder(avgBrand, -share)
-brands <- avgBrand[, .SD[1:10], by = .(household_income_coarse)]
-tp <- avgBrand[brand_code_uc %in% brands$brand_code_uc]
-tp[brand_code_uc == 5367465850, "brand_descr" := "DOLLAR LABEL"]
-tp[brand_code_uc == 5367466920, "brand_descr" := "DISCOUNT LABEL"]
-tp[brand_code_uc == 5367469101, "brand_descr" := "WAREHOUSE LABEL 1"]
-tp[brand_code_uc == 5367469103, "brand_descr" := "WAREHOUSE LABEL 2"]
+hhQtile <- hhBrands[, .(Brands = wtd.quantile(brands, weights = projection_factor,
+                                               probs = c(0.25, 0.5, 0.75)),
+                         Retailers = wtd.quantile(retailers, weights = projection_factor,
+                                                  probs = c(0.25, 0.5, 0.75)),
+                         Channels = wtd.quantile(channels, weights = projection_factor,
+                                                 probs = c(0.25, 0.5, 0.75))),
+                    by = food]
+hhQtile[, "qtile" := c("25th", "Median", "75th")]
+hhQtileWide <- dcast(melt(hhQtile, id.vars = c("qtile", "food")), variable + food ~ qtile)
+setnames(hhQtileWide, "variable", "Variable")
+setcolorder(hhQtileWide, c("Variable", "25th", "Median", "75th"))
+setorder(hhQtileWide, food, Variable)
+kable(hhQtileWide, format = "latex", digits = 2)
+# Saved in brandAndStoreDiversity.tex
 
-ggplot(data = tp, aes(x = brand_descr, y = share)) +
-  geom_bar(stat = "identity", aes(fill = household_income_coarse), position = "dodge") +
-  theme_fivethirtyeight() +
-  coord_flip() +
-  labs(x = "Brand",
-       y = "Purchase Share",
-       fill = "Income",
-       title = "Brand Shares by Income",
-       caption = "Source: Nielsen Consumer Panel")
-ggsave("./figures/brandsTP.png")
+# Taking expenditure weighted average across households
+hhQtile <- uniqueBrands[, .(Brands = wtd.quantile(brands, weights = projection_factor,
+                                                  probs = 0.75),
+                            Retailers = wtd.quantile(retailers, weights = projection_factor,
+                                                     probs = 0.75),
+                            Channels = wtd.quantile(channels, weights = projection_factor,
+                                                    probs = 0.75),
+                            Trips = wtd.mean(trips, weights = projection_factor)),
+                        by = product_module_code]
+setorder(hhQtile, Brands)
+tail(hhQtile, 20)

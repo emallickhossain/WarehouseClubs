@@ -2,56 +2,78 @@
 library(data.table)
 library(ggplot2)
 library(ggthemes)
-pathName <- "/home/mallick/Desktop/Nielsen/Data/Scanner/"
-tp <- fread(paste0(pathName, "Movement_Files/7260_2010.tsv"))
-stores <- fread(paste0(pathName, "Annual_Files/stores_2010.tsv"),
-                 select = c("store_code_uc", "channel_code"))
-prod <- fread(paste0(pathName, "products.tsv"), quote = "")[product_module_code == 7260]
-prod <- unique(prod, by = "upc") # Taking only the first entry of multi-version UPCs
-prod[, "size" := multi * size1_amount]
-prod <- prod[, .(upc, brand_code_uc, brand_descr, size)]
-fullData <- merge(tp, prod, by = "upc")
-fullData <- merge(fullData, stores, by = "store_code_uc")
-rm(tp, prod, stores)
-fullData[, "sales" := price * units]
-fullData[, "unitCost" := price / size]
-fullData[, c("feature", "display") := NULL]
-fullData[, ':=' (year = substr(week_end, 1, 4),
-                 month = substr(week_end, 5, 6),
-                 day = substr(week_end, 7, 8))]
-fullData[, "date" := as.Date(paste(year, month, day, sep = "-"))]
-fullData[, c("week_end", "year", "month", "day") := NULL]
-topStores <- fullData[, .(total = sum(sales)), by = .(store_code_uc, channel_code)]
-setorder(topStores, -total)
+library(lfe)
+library(stargazer)
+threads <- 8
+saleCutoff <- 0.05
 
+# Getting products data
+prod <- fread("/scratch/upenn/hossaine/prodTP.csv", nThread = threads,
+              key = c("upc", "upc_ver_uc"))
+tp <- fread("/scratch/upenn/hossaine/fullTPAssortment.csv", nThread = threads,
+            key = c("upc", "upc_ver_uc"))
+tp <- merge(tp, prod, by = c("upc", "upc_ver_uc"))
+tp[, "week_end" := as.Date(as.character(week_end), "%Y%m%d")]
+tp[, "panel_year" := year(week_end)]
 
-# Looking at prevalence of prmult deals (2 for $5 or other similar deals)
-prop.table(table(fullData$prmult)) # 99.9% of sales do not have a mult deal
+# Looking at promotions
+# Products are rarely ever on a multi-buy promotion (< 0.01% happen)
+round(prop.table(table(tp$prmult)), 4)
 
-# Getting mean price by package size
-meanPrices <- fullData[, .(price = weighted.mean(price, w = units),
-                           unitCost = weighted.mean(unitCost, w = units)),
-                       by = .(store_code_uc, brand_code_uc, brand_descr, size, date)]
-brands <- c("CHARMIN", "CHARMIN BASIC", "SCOTT 1000", "ANGEL SOFT", "KLEENEX COTTONELLE",
-            "QUILTED NORTHERN", "CTL BR", "CHARMIN BASIC", "SCOTT EXTRA SOFT",
-            "COTTONELLE", "MARCAL SMALL STEPS")
-ggplot(data = meanPrices[brand_descr %in% brands & store_code_uc == 4544550],
-       aes(x = date, y = unitCost, color = as.factor(size))) +
-  facet_grid(cols = vars(brand_descr)) +
-  geom_line() +
-  theme_fivethirtyeight()
-ggsave(filename = "./code/5_figures/tpScanner4544550.png")
+# Identifying sales
+Mode <- function(x) {
+  ux <- unique(x)
+  ux[which.max(tabulate(match(x, ux)))]
+}
 
-ggplot(data = meanPrices[brand_descr %in% brands & store_code_uc == 1038627],
-       aes(x = date, y = unitCost, color = as.factor(size))) +
-  facet_grid(cols = vars(brand_descr)) +
-  geom_line() +
-  theme_fivethirtyeight()
-ggsave(filename = "./code/5_figures/tpScanner1038627.png")
+setorder(tp, panel_year, store_code_uc, upc, upc_ver_uc, -price)
+tp[, "modePrice" := Mode(price), by = .(upc, upc_ver_uc, store_code_uc, panel_year)]
+tp[, "priceDiff" := (modePrice - price) / modePrice]
+tp[, "sale" := (priceDiff > saleCutoff)]
 
-ggplot(data = meanPrices[brand_descr %in% brands & store_code_uc == 173082],
-       aes(x = date, y = unitCost, color = as.factor(size))) +
-  facet_grid(cols = vars(brand_descr)) +
-  geom_line() +
-  theme_fivethirtyeight()
-ggsave(filename = "./code/5_figures/tpScanner173082.png")
+# Computing share of weeks on sale for each product
+saleShare <- tp[, .(saleShare = sum(sale) / .N),
+                by = .(upc, upc_ver_uc, store_code_uc, brand_descr, rolls)]
+saleShare[, .(mean(saleShare), sd(saleShare)), keyby = .(brand_descr, rolls)]
+
+reg <- felm(saleShare ~ as.factor(rolls) | brand_descr + store_code_uc, data = saleShare)
+summary(reg)
+
+ggplot(data = saleShare[rolls < 30], aes(x = saleShare, color = as.factor(rolls))) +
+  geom_density() +
+  facet_wrap(vars(brand_descr))
+
+# Computing bulk discounts overall, during sale weeks, and during sale weeks for big sizes
+tp[, "lPrice" := log(price / sheets)]
+tp[, "lQ" := log(sheets)]
+tp[, "brandStoreWeek" := paste(brand_code_uc, store_code_uc, week_end, sep = "_")]
+tp[, "Nsale" := sum(sale), by = .(store_code_uc, week_end)]
+tp[, "saleWeek" := (Nsale > 0)]
+tp[, "bigSale" := (sale == TRUE & rolls > 12)]
+tp[, "NbigSale" := sum(bigSale), by = .(store_code_uc, week_end)]
+tp[, "bigSaleWeek" := (NbigSale > 0)]
+tp[, "smallSale" := (sale == TRUE & rolls <= 12)]
+tp[, "NsmallSale" := sum(smallSale), by = .(store_code_uc, week_end)]
+tp[, "smallSaleWeek" := (NsmallSale > 0)]
+tp[, c("")]
+
+reg1 <- felm(lPrice ~ lQ | brandStoreWeek, data = tp)
+reg2 <- felm(lPrice ~ lQ | brandStoreWeek, data = tp[saleWeek == 1])
+reg3 <- felm(lPrice ~ lQ | brandStoreWeek, data = tp[bigSaleWeek == 1])
+reg4 <- felm(lPrice ~ lQ | brandStoreWeek, data = tp[smallSaleWeek == 1])
+
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          add.lines = list(c("Brand-Store-Week FE", "Y", "Y", "Y", "Y", "Y")),
+          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          column.labels = c("All Weeks", "Sale Weeks", "Big Package Sales",
+                            "Small Package Sales"),
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          notes.align = "l",
+          notes = c("Table shows estimates of log unit prices regressed on log package quantities",
+                    "A sale is defined as a week with a price more than 5 percent below the modal price",
+                    "for a specific UPC in a given store-year."),
+          digits = 3,
+          label = "tab:bulkDiscountSales",
+          title = "Bulk Discounting and Sales",
+          out = "tables/bulkDiscountSales.tex")

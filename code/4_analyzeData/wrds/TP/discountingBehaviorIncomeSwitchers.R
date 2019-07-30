@@ -6,6 +6,7 @@ library(ggthemes)
 library(ggridges)
 library(lfe)
 library(purrr)
+library(stargazer)
 threads <- 8
 
 # Adding demographics
@@ -26,36 +27,29 @@ discBehaviorStorage <- merge(discBehaviorStorage, panel, by = c("household_code"
 switchers <- panel[, uniqueN(household_income), by = household_code]
 round(prop.table(table(switchers$V1)), digits = 2)
 
-# Adding indicator for switchers
-switchID <- switchers[V1 > 1]$household_code
-discBehaviorAll[household_code %in% switchID, "switch" := 1L]
-discBehaviorAll[is.na(switch), "switch" := 0L]
-discBehaviorStorage[household_code %in% switchID, "switch" := 1L]
-discBehaviorStorage[is.na(switch), "switch" := 0L]
-
 # Running regressions
 # If you add an interaction with panel year, you can test if there have been
 # different trends over time, but nothing seemed significant or big enough
 # to change the overall picture of increasing bulk with income.
 runRegAll <- function(y) {
-  regForm <- as.formula(paste0(y, "~", "household_income_coarse + age + ",
-                               "household_size + child + type_of_residence | ",
+  regForm <- as.formula(paste0(y, "~", "household_income + age + ",
+                               "household_size + child | ",
                                "household_code + panel_year + dma_cd"))
 
   # All products
-  regData <- discBehaviorAll[switch == 1]
+  regData <- discBehaviorAll
   regAll <- felm(data = regData, formula = regForm, weights = regData$projection_factor)
   coefsAll <- as.data.table(summary(regAll)$coefficients, keep.rownames = TRUE)
   coefsAll[, c("discount", "reg") := .(y, "All")]
 
   # Storables
-  regData <- discBehaviorStorage[storable == 1 & switch == 1]
+  regData <- discBehaviorStorage[storable == 1]
   regStorable <- felm(data = regData, formula = regForm, weights = regData$projection_factor)
   coefsStorable <- as.data.table(summary(regStorable)$coefficients, keep.rownames = TRUE)
   coefsStorable[, c("discount", "reg") := .(y, "Non-Perishable")]
 
   # Non-Storables
-  regData <- discBehaviorStorage[storable == 0 & switch == 1]
+  regData <- discBehaviorStorage[storable == 0]
   regNonStorable <- felm(data = regData, formula = regForm, weights = regData$projection_factor)
   coefsNonStorable <- as.data.table(summary(regNonStorable)$coefficients, keep.rownames = TRUE)
   coefsNonStorable[, c("discount", "reg") := .(y, "Perishable")]
@@ -67,6 +61,35 @@ runRegAll <- function(y) {
 
 discounts <- c("coupon", "generic", "bulk")
 finalCoefs <- rbindlist(map(discounts, runRegAll), use.names = TRUE)
+
+# Creating regression tables
+regForm <- as.formula(paste0("bulk ~ household_income_coarse + age + ",
+                             "household_size + child | ",
+                             "household_code + panel_year + dma_cd"))
+reg1 <- felm(data = discBehaviorAll, formula = regForm,
+             weights = discBehaviorAll$projection_factor)
+reg2 <- felm(data = discBehaviorStorage[storable == 1],
+             formula = regForm,
+             weights = discBehaviorStorage[storable == 1]$projection_factor)
+reg3 <- felm(data = discBehaviorStorage[storable == 0],
+             formula = regForm,
+             weights = discBehaviorStorage[storable == 0]$projection_factor)
+stargazer(reg1, reg2, reg3, type = "text",
+          add.lines = list(c("Household FE", "Y", "Y", "Y"),
+                           c("Year FE", "Y", "Y", "Y"),
+                           c("Market FE", "Y", "Y", "Y")),
+          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          column.labels = c("All", "Non-Perishable", "Perishable"),
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          keep = c("household_income*"),
+          order = c(2, 3, 1),
+          covariate.labels = c("25-50k", "50-100k", ">100k"),
+          notes.align = "l",
+          digits = 3,
+          label = "tab:discountingBehaviorIncomeSwitchers",
+          title = "Bulk Discounting When Income Changes",
+          out = "tables/discountingBehaviorIncomeSwitchers.tex")
 
 # Organizing graph data
 graphData <- finalCoefs[grepl("household_income", rn)]
@@ -135,12 +158,50 @@ modules <- c(7260, 7734, 8444, 7270, 3625)
 toRun <- expand.grid(y = discounts, module = modules)
 finalCoefs <- rbindlist(map2(toRun$y, toRun$module, runRegAll), use.names = TRUE)
 
+# Creating regression tables
+regForm <- as.formula(paste0("bulk ~ household_income_coarse + age + ",
+                             "household_size + child | ",
+                             "household_code + panel_year + dma_cd"))
+reg1 <- felm(data = discBehaviorModule[product_module_code == 7260],
+             formula = regForm,
+             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
+reg2 <- felm(data = discBehaviorModule[product_module_code == 7734],
+             formula = regForm,
+             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
+reg3 <- felm(data = discBehaviorModule[product_module_code == 3625],
+             formula = regForm,
+             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
+reg4 <- felm(data = discBehaviorModule[product_module_code == 4100],
+             formula = regForm,
+             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
+
+# Looking at individual modules
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          add.lines = list(c("Household FE", "Y", "Y", "Y", "Y"),
+                           c("Year FE", "Y", "Y", "Y", "Y"),
+                           c("Market FE", "Y", "Y", "Y", "Y")),
+          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          column.labels = c("Toilet Paper", "Paper Towels", "Milk", "Eggs"),
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          keep = c("household_income*"),
+          order = c(2, 3, 1),
+          covariate.labels = c("25-50k", "50-100k", ">100k"),
+          notes.align = "l",
+          digits = 3,
+          label = "tab:discountingBehaviorIncomeSwitchers",
+          title = "Bulk Discounting When Income Changes")
+
+
 # Adding in module names
 finalCoefs[module == 7260, "Product" := "Toilet Paper"]
 finalCoefs[module == 7734, "Product" := "Paper Towels"]
 finalCoefs[module == 8444, "Product" := "Diapers"]
 finalCoefs[module == 7270, "Product" := "Tampons"]
 finalCoefs[module == 3625, "Product" := "Milk"]
+finalCoefs[module == 4100, "Product" := "Eggs"]
+finalCoefs[, "storable" := ifelse(module %in% c(3625, 4100),
+                                  "Perishable", "Non-Perishable")]
 
 # Organizing graph data
 graphData <- finalCoefs[grepl("household_income", rn)]
@@ -151,7 +212,7 @@ graphData[, "rn" := factor(rn, levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19,
                                       42.5, 47.5, 55, 65, 85, 100),
                            ordered = TRUE)]
 graphData[, "rn" := as.numeric(as.character(rn))]
-setnames(graphData, c("rn", "beta", "se", "t", "p", "disc", "module", "Product"))
+setnames(graphData, c("rn", "beta", "se", "t", "p", "disc", "module", "Product", "storable"))
 
 # Housekeeping
 graphData[disc == "coupon", "disc" := "Coupon"]
@@ -160,11 +221,11 @@ graphData[disc == "generic", "disc" := "Generic"]
 
 # Graphing
 panels <- c("Coupon", "Generic", "Bulk")
-ggplot(data = graphData[disc %in% "Generic"], aes(x = rn, y = beta, color = Product)) +
+ggplot(data = graphData[disc %in% "Bulk"], aes(x = rn, y = beta, color = Product)) +
   geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se), width = 0.2) +
   geom_point() +
   geom_vline(xintercept = 0) +
-  facet_wrap(vars(Product), scales = "fixed") +
+  facet_wrap(vars(storable), scales = "fixed") +
   labs(title = "Rich Households Bulk Buy More",
        subtitle = "Storable Necessities Have Larger Disparities",
        x = "Household Income", y = "Share of Purchases",
