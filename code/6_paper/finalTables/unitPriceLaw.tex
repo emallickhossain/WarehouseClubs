@@ -1,0 +1,33 @@
+
+% Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Aug 06, 2019 - 01:43:05 PM
+\begin{table}[!htbp] \centering
+  \caption{Association of Unit Price Laws and Bulk Buying}
+  \label{tab:unitPriceLaw}
+\begin{tabular}{@{\extracolsep{5pt}}lcccccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & \multicolumn{2}{c}{Full Sample} & \multicolumn{4}{c}{Movers} \\
+ & Food & Non-Food & \multicolumn{2}{c}{Food} & \multicolumn{2}{c}{Non-Food}\\
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5) & (6)\\
+\hline \\[-1.8ex]
+ Law & $-$0.005 & $-$0.008 & 0.002$^{***}$ & 0.003 & 0.006$^{***}$ & $-$0.001 \\
+  & (0.004) & (0.005) & (0.001) & (0.002) & (0.001) & (0.004) \\
+  25-50k : Law & 0.007$^{**}$ & 0.007$^{*}$ &  & 0.001 &  & 0.009$^{**}$ \\
+  & (0.003) & (0.004) &  & (0.002) &  & (0.004) \\
+  50-100k : Law & 0.014$^{***}$ & 0.014$^{***}$ &  & $-$0.0003 &  & 0.008$^{*}$ \\
+  & (0.003) & (0.004) &  & (0.002) &  & (0.004) \\
+  >100k : Law & 0.015$^{***}$ & 0.015$^{**}$ &  & $-$0.003 &  & 0.004 \\
+  & (0.005) & (0.007) &  & (0.003) &  & (0.005) \\
+ \hline \\[-1.8ex]
+Market FE & Y & Y & N & N &  &  \\
+Year FE & Y & Y & Y & Y &  &  \\
+Household-Income FE & N & N & Y & Y &  &  \\
+Observations & 767,946 & 766,789 & 767,946 & 767,946 & 766,789 & 766,789 \\
+Adjusted R$^{2}$ & 0.097 & 0.082 & 0.781 & 0.781 & 0.668 & 0.668 \\
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{6}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\caption*{Notes: Using 2004--2017 Nielsen Consumer Panel data and @nist130, Columns (1) and (2) report the regression coefficients of Equation (\ref{eq:unitPrice}), which regresses household bulk share of purchases on an indicator for whether a state has unit-price regulations, household income, and their interaction along with household size, age, presence of children, and marital status. Market and year fixed effects are included. Standard errors are clustered at the market level and Nielsen projection weights are used to ensure national representativeness. Columns (3)--(6) use the same data and report the coefficients of Equation (\ref{eq:unitPriceMove}) which estimates the event study of bulk purchasing changes for households that move between states with and without unit-price regulations. Household bulk share of purchases are regressed on the same covariates as previously, but household-income and year fixed effects are included. Projection weights are not used in this regression}
+\end{table}

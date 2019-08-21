@@ -3,6 +3,7 @@ library(data.table)
 library(ggthemes)
 library(ggplot2)
 library(lfe)
+library(stringr)
 yrs <- 2004:2017
 threads <- 8
 stores <- c("Discount Store", "Warehouse Club", "Grocery")
@@ -36,14 +37,14 @@ for (yr in 2004:2017) {
 
 fullPurch <- merge(fullPurch, trips, by = "trip_code_uc")
 fullPurch[, "bulk" := as.integer(quintile >= 4)]
-annualSpend <- fullPurch[product_module_code == 7260, .(spend = sum(spend)),
+annualSpend <- fullPurch[, .(spend = sum(spend)),
                          by = .(household_code, panel_year, channel_type,
-                                storable, bulk, quintile)]
+                                food, bulk, quintile)]
 annualSpend[, "totalExp" := sum(spend), by = .(household_code, panel_year)]
-annualSpend[, "storableExp" := sum(spend), by = .(household_code, panel_year, storable)]
+annualSpend[, "foodExp" := sum(spend), by = .(household_code, panel_year, food)]
 annualSpend[, "bulkExp" := sum(spend), by = .(household_code, panel_year, bulk)]
-annualSpend[, "channelStorableExp" := sum(spend),
-            by = .(household_code, panel_year, channel_type, storable)]
+annualSpend[, "channelFoodExp" := sum(spend),
+            by = .(household_code, panel_year, channel_type, food)]
 
 ############## COMPUTING CHANNEL SHARES OF TOTAL EXPENDITURES ##################
 channelShare <- annualSpend[, .(spend = sum(spend),
@@ -69,11 +70,12 @@ channelShare <- channelShare[channel_type %in% stores]
 graphData <- channelShare[, .(spend = weighted.mean(spend, w = projection_factor),
                               totalExp = weighted.mean(totalExp, w = projection_factor)),
                           by = .(household_income, channel_type, panel_year)]
-graphData <- graphData[, .(share = mean(spend / totalExp)), by = .(household_income, channel_type)]
+graphData <- graphData[, .(share = mean(spend / totalExp)),
+                       by = .(household_income, channel_type)]
 graphData[, "household_income" := factor(household_income,
-                                         levels = c(8, 10, 11, 13, 15, 16, 17,
+                                         levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17,
                                                     18, 19, 21, 23, 26, 27),
-                                         labels = c(11, 13.5, 17.5, 22.5, 27.5,
+                                         labels = c(6.5, 9, 11, 13.5, 17.5, 22.5, 27.5,
                                                     32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
                                          ordered = TRUE)]
 otherStores <- graphData[, .(share = 1 - sum(share),
@@ -86,49 +88,47 @@ ggplot(data = na.omit(graphData),
   geom_point() +
   geom_point(aes(shape = channel_type), size = 3) +
   geom_hline(yintercept = 0) +
-  labs(title = "Store Choice Varies by Income",
-       subtitle = "Low-Income Prefer Discount Stores; High-Income Prefer Clubs",
-       x = "Household Income", y = "Percent of Annual Spending",
+  labs(x = "Household Income",
+       y = "Percent of Annual Spending",
        shape = "Store Type",
-       color = "Store Type",
-       caption = paste0("Note: Household income is the midpoint of income bins reported \n",
-                        "to Nielsen. 'Other' includes all other stores such as convenience \n",
-                        "stores, dollar stores, etc.")) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
+       color = "Store Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
   scale_color_grey()
-ggsave("./figures/expendituresByChannel.png", height = 6, width = 6)
+ggsave("./figures/expendituresByChannel.png", height = 4, width = 6)
 
-############## COMPUTING CHANNEL SHARES OF STORABLE/NONSTORABLE EXPENDITURES ###
-storableShare <- annualSpend[, .(spend = sum(spend),
-                                 storableExp = mean(storableExp)),
-                             keyby = .(household_code, panel_year, storable, channel_type)]
+############## COMPUTING CHANNEL SHARES OF FOOD/NONFOOD EXPENDITURES ###########
+foodShare <- annualSpend[, .(spend = sum(spend),
+                             foodExp = mean(foodExp)),
+                             keyby = .(household_code, panel_year, food, channel_type)]
 
 # Adding in zeros
-zeros <- unique(storableShare[, .(id = paste(household_code, panel_year,
-                                             storable, sep = "_"))])
+zeros <- unique(foodShare[, .(id = paste(household_code, panel_year,
+                                         food, sep = "_"))])
 zeros <- as.data.table(expand.grid(id = zeros$id, channel_type = stores))
-zeros[, c("household_code", "panel_year", "storable") := tstrsplit(id, "_")]
-zeros[, c("household_code", "panel_year", "storable", "id") :=
+zeros[, c("household_code", "panel_year", "food") := tstrsplit(id, "_")]
+zeros[, c("household_code", "panel_year", "food", "id") :=
         .(as.integer(household_code), as.integer(panel_year),
-          as.integer(storable), NULL)]
-storableShare <- merge(zeros, storableShare,
-                       by = c("household_code", "panel_year",
-                              "channel_type", "storable"), all = TRUE)
-storableShare[is.na(spend), "spend" := 0]
-storableShare[, "storableExp" := mean(storableExp, na.rm = TRUE),
-              keyby = .(household_code, panel_year, storable)]
+          as.integer(food), NULL)]
+foodShare <- merge(zeros, foodShare,
+                   by = c("household_code", "panel_year", "channel_type",
+                          "food"), all = TRUE)
+foodShare[is.na(spend), "spend" := 0]
+foodShare[, "foodExp" := mean(foodExp, na.rm = TRUE),
+          keyby = .(household_code, panel_year, food)]
 
 # Adding in household characteristics
-storableShare <- merge(storableShare, panel, by = c("household_code", "panel_year"))
-storableShare <- storableShare[channel_type %in% stores]
+foodShare <- merge(foodShare, panel, by = c("household_code", "panel_year"))
+foodShare <- foodShare[channel_type %in% stores]
 
 # Graphing
-graphData <- storableShare[, .(spend = weighted.mean(spend, w = projection_factor),
-                               storableExp = weighted.mean(storableExp, w = projection_factor)),
-                           by = .(household_income, channel_type, panel_year, storable)]
-graphData <- graphData[, .(share = mean(spend / storableExp)),
-                       by = .(household_income, channel_type, storable)]
+graphData <- foodShare[, .(spend = weighted.mean(spend, w = projection_factor),
+                               foodExp = weighted.mean(foodExp, w = projection_factor)),
+                           by = .(household_income, channel_type, panel_year, food)]
+graphData <- graphData[, .(share = mean(spend / foodExp)),
+                       by = .(household_income, channel_type, food)]
 graphData[, "household_income" := factor(household_income,
                                          levels = c(8, 10, 11, 13, 15, 16, 17,
                                                     18, 19, 21, 23, 26, 27),
@@ -137,16 +137,16 @@ graphData[, "household_income" := factor(household_income,
                                          ordered = TRUE)]
 otherStores <- graphData[, .(share = 1 - sum(share),
                              channel_type = "Other"),
-                         by = .(household_income, storable)]
+                         by = .(household_income, food)]
 graphData <- rbindlist(list(graphData, otherStores), use.names = TRUE)
-graphData[, "storableC" := ifelse(storable == 1, "Non-Perishable", "Perishable")]
+graphData[, "foodC" := ifelse(food == 1, "Food", "Non-Food")]
 ggplot(data = na.omit(graphData),
        aes(x = as.numeric(as.character(household_income)),
            y = share * 100, color = channel_type)) +
   geom_point() +
   geom_point(aes(shape = channel_type), size = 3) +
   geom_hline(yintercept = 0) +
-  facet_wrap(vars(storableC)) +
+  facet_wrap(vars(foodC)) +
   labs(title = "Perishables Are Purchased at Grocery Stores",
        subtitle = "Clubs and Discount Expenditure Shares Do Not Differ by Product",
        x = "Household Income", y = "Percent of Annual Spending",
@@ -220,59 +220,3 @@ ggplot(data = na.omit(graphData),
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_color_grey()
 ggsave("./figures/expendituresByChannelBulk.png", height = 6, width = 6)
-
-############## COMPUTING QUINTILE SHARES OF BY CHANNEL #########################
-quintileShare <- annualSpend[, .(spend = sum(spend),
-                                 channelStorableExp = mean(channelStorableExp)),
-                            by = .(household_code, panel_year, channel_type,
-                                   quintile, storable)]
-
-# Adding in zeros
-zeros <- unique(quintileShare[, .(id = paste(household_code, panel_year, sep = "_"))])
-zeros <- as.data.table(expand.grid(id = zeros$id, channel_type = stores,
-                                   quintile = 1:5, storable = 0:1))
-zeros[, c("household_code", "panel_year") := tstrsplit(id, "_")]
-zeros[, c("household_code", "panel_year", "id") :=
-        .(as.integer(household_code), as.integer(panel_year), NULL)]
-quintileShare <- merge(zeros, quintileShare,
-                       by = c("household_code", "panel_year", "channel_type",
-                              "quintile", "storable"), all = TRUE)
-quintileShare[is.na(spend), "spend" := 0]
-quintileShare[, "channelStorableExp" := mean(channelStorableExp, na.rm = TRUE),
-              by = .(household_code, panel_year, channel_type, storable)]
-quintileShare[is.nan(channelStorableExp), "channelStorableExp" := 0]
-
-# Adding in household characteristics
-quintileShare <- merge(quintileShare, panel, by = c("household_code", "panel_year"))
-quintileShare <- quintileShare[channel_type %in% stores]
-
-# Graphing
-graphData <- quintileShare[, .(spend = weighted.mean(spend, w = projection_factor),
-                               channelStorableExp = weighted.mean(channelStorableExp, w = projection_factor)),
-                       by = .(household_income, channel_type, panel_year, quintile, storable)]
-graphData <- graphData[, .(share = mean(spend / channelStorableExp)),
-                       by = .(household_income, channel_type, quintile, storable)]
-graphData[, "household_income" := factor(household_income,
-                                         levels = c(8, 10, 11, 13, 15, 16, 17,
-                                                    18, 19, 21, 23, 26, 27),
-                                         labels = c(11, 13.5, 17.5, 22.5, 27.5,
-                                                    32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
-                                         ordered = TRUE)]
-
-ggplot(data = na.omit(graphData),
-       aes(x = as.numeric(as.character(quintile)),
-           y = share * 100, fill = as.factor(household_income))) +
-  geom_bar(position = "dodge", stat = "identity") +
-  facet_grid(rows = vars(storable), cols = vars(channel_type)) +
-  labs(title = "Bulk Buying Within Stores",
-       x = "Size Quintile", y = "Percent of Store Spending",
-       fill = "Household Income",
-       caption = paste0("Note: Household income is the midpoint of income bins reported \n",
-                        "to Nielsen. 'Other' includes all other stores such as convenience \n",
-                        "stores, dollar stores, etc. 'Bulk' sizes are sizes that are in the \n",
-                        "top two quintiles of that product category's size distribution. Each \n",
-                        "panel shows share of bulk or non-bulk expenditures made at each store type.")) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-  scale_color_grey()
-ggsave("./figures/expendituresByChannel.png", height = 6, width = 6)

@@ -5,6 +5,7 @@ library(purrr)
 library(ggplot2)
 library(ggthemes)
 library(stringr)
+library(foreach)
 threads <- 8
 path <- "/scratch/upenn/hossaine/nielsen_extracts/RMS/"
 
@@ -21,32 +22,57 @@ rms <- fread(paste0("/scratch/upenn/hossaine/nielsen_extracts/RMS/2016/",
 fileNames <- list.files("/scratch/upenn/hossaine/nielsen_extracts/RMS/2016/Movement_Files",
                         recursive = TRUE, full.names = TRUE)
 
-fullBetas <- NULL
-for (i in fileNames) {
+getBetas <- function(fileName) {
   tryCatch({
-    assort <- fread(i, select = c("upc", "store_code_uc", "week_end", "price"), nThread = threads)
+    print(fileName)
+    assort <- fread(fileName, nThread = threads,
+                    select = c("upc", "store_code_uc", "week_end", "price"))
     assort <- merge(assort, rms, by = "upc")
     assort <- merge(assort, prod, by = c("upc", "upc_ver_uc"))[, c("upc", "upc_ver_uc") := NULL]
     assort[, "storeWeekBrand" := paste(store_code_uc, week_end, brand_code_uc, sep = "_")]
-    assort[, c("store_code_uc", "week_end", "brand_code_uc") := NULL]
     assort[, c("lunitPrice", "lq", "price") := .(log(price / totalAmount), log(totalAmount), NULL)]
     modCode <- unique(assort$product_module_code)
-    reg <- felm(data = assort, lunitPrice ~ lq | storeWeekBrand)
-    betaCoef <- as.data.table(summary(reg)$coefficients)
+    assort[, c("totalAmount", "product_module_code") := NULL]
+
+    # Running regressions
+    reg1 <- felm(data = assort, lunitPrice ~ lq)
+    reg1Coef <- as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE)
+    reg1Coef[, "reg" := "No FE"]
+
+    reg2 <- felm(data = assort, lunitPrice ~ lq | store_code_uc)
+    reg2Coef <- as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE)
+    reg2Coef[, "reg" := "Store FE"]
+
+    reg3 <- felm(data = assort, lunitPrice ~ lq | store_code_uc + brand_code_uc)
+    reg3Coef <- as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE)
+    reg3Coef[, "reg" := "Store and Brand FE"]
+
+    reg4 <- felm(data = assort, lunitPrice ~ lq | store_code_uc + week_end)
+    reg4Coef <- as.data.table(summary(reg4)$coefficients, keep.rownames = TRUE)
+    reg4Coef[, "reg" := "Store and Week FE"]
+
+    reg5 <- felm(data = assort, lunitPrice ~ lq | store_code_uc + week_end + brand_code_uc)
+    reg5Coef <- as.data.table(summary(reg5)$coefficients, keep.rownames = TRUE)
+    reg5Coef[, "reg" := "Store, Week, Brand FE"]
+
+    reg6 <- felm(data = assort, lunitPrice ~ lq | storeWeekBrand)
+    reg6Coef <- as.data.table(summary(reg6)$coefficients, keep.rownames = TRUE)
+    reg6Coef[, "reg" := "Store-Week-Brand FE"]
+
+    betaCoef <- rbindlist(list(reg1Coef, reg2Coef, reg3Coef, reg4Coef, reg5Coef,
+                               reg6Coef), use.names = TRUE)
     betaCoef[, "mod" := modCode]
-    fullBetas <- rbindlist(list(fullBetas, betaCoef), use.names = TRUE)
-    print(modCode)
+    return(betaCoef)
   }, error = function(e){})
 }
 
-# Estimating savings of moving from 2nd quintile to 4th quintile
-prod <- fread("/scratch/upenn/hossaine/fullProd.csv",
-              select = c("product_module_code", "totalAmount", "quintile", "food"))
-quintileSize <- prod[quintile %in% c(2, 4), .(avgSize = mean(totalAmount)),
-                     by = .(quintile, food, product_module_code)]
-quintileSizeWide <- dcast(quintileSize, food + product_module_code ~ quintile)
-quintileSizeWide[, "logSizeRatio" := log(`4` / `2`)]
-fwrite(quintileSizeWide, "/scratch/upenn/hossaine/toCopy.csv")
+fullBetas <- rbindlist(map(fileNames, getBetas), use.names = TRUE)
+#fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1a.csv") #through group 514
+#fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1b.csv") #through group 1021
+fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1c.csv") #through group 1508
+#fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas2.csv")
+
+
 
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1x.csv")
 # tampons and pads
@@ -59,7 +85,6 @@ fwrite(quintileSizeWide, "/scratch/upenn/hossaine/toCopy.csv")
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1b.csv")
 # 1b only ran through 1362, 4000:4009, 4011, 4012, 1484, and 1553
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas1c.csv")
-#fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas2.csv")
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas3-4.csv")
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas5-6.csv")
 #fwrite(fullBetas, "/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas7.csv")
@@ -76,7 +101,8 @@ getCoefs <- function(i) {
   data <- fread(paste0("/home/mallick/Downloads/scannerBulkDiscountBetas", i, ".csv"))
   return(data)
 }
-coefs <- rbindlist(map(c("1a", "1b", "1c", "1x", "1y", "1z", "2", "3-4", "5-6", "7"), getCoefs), use.names = TRUE)
+coefs <- rbindlist(map(c("1a", "1b", "1c", "2", "3", "4", "5", "6", "7"), getCoefs),
+                   use.names = TRUE)
 coefs[abs(`t value`) <= 3, "Estimate" := 0]
 
 # Getting food classification
@@ -90,45 +116,17 @@ sum(coefs$Estimate < 0) / nrow(prod)
 
 # Plotting distribution of betas
 ggplot(data = coefs, aes(x = Estimate, fill = foodChar)) +
-  geom_histogram(aes(y = ..density..), bins = 50, alpha = 0.5, position = "identity") +
+  geom_histogram(aes(y = ..density..), bins = 50, alpha = 0.65, position = "identity") +
   geom_density(alpha = 0.8) +
   scale_x_continuous(limits = c(-2, 1)) +
-  labs(title = "Bulk Discounts Are Common",
-       subtitle = "Discounts are Larger for Non-Food Items",
-       x = "Unit Price Change",
+  labs(x = "Unit Price Change",
        y = "Density",
-       fill = "Product Type",
-       caption = paste0("Source: Author calculations from Nielsen Scanner Data for 2016. \n",
-                        "Note: 'Unit price change' denotes percent reduction in ",
-                        "unit price per 1 percent increase \nin package size after ",
-                        "controlling for brand-store-week fixed effects.")) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
+       fill = "Product Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
   scale_fill_grey()
 
-ggsave(filename = "./code/5_figures/bulkDiscountAllProdsScanner.png", height = 6, width = 6)
-
-# Getting estimated savings of moving from 2nd to 4th quintile
-savings <- fread("/home/mallick/Downloads/toCopy.csv")
-savings <- merge(savings, coefs, by.x = "product_module_code", by.y = "mod")
-savings[, "totalSavings" := 1 - exp(Estimate * logSizeRatio)]
-savings[, "foodChar" := ifelse(food == 1, "Food", "Non-Food")]
-
-ggplot(data = savings, aes(x = totalSavings * 100, fill = foodChar)) +
-  geom_histogram(aes(y = ..density..), bins = 50, alpha = 0.5, position = "identity") +
-  geom_density(alpha = 0.8) +
-  scale_x_continuous(limits = c(-10, 100)) +
-  labs(title = "Bulk Discounts Offer Large Savings",
-       subtitle = "Discounts are Larger for Non-Food Items",
-       x = "Savings (%)",
-       y = "Density",
-       fill = "Product Type",
-       caption = str_wrap(paste0("Source: Author calculations from Nielsen Scanner ",
-                                 "Data for 2016. Note: Savings denote average percent ",
-                                 "decrease in unit price from moving from a package ",
-                                 "in the 2nd quintile of the size distribution to ",
-                                 "the 4th quintile of the size distribution"))) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-  scale_fill_grey()
-ggsave(filename = "./code/5_figures/bulkDiscountAllProdsScannerSavings.png", height = 6, width = 6)
+ggsave(filename = "./code/5_figures/bulkDiscountAllProdsScanner.png",
+       height = 4, width = 6)

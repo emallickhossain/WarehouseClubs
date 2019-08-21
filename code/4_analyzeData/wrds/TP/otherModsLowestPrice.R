@@ -28,8 +28,8 @@ getSales <- function(moduleCode, moduleName, fileNum) {
 
   # Getting number of units per package
   prod <- fread(paste0(path, "Master_Files/Latest/products.tsv"), nThread = threads,
-                select = c("upc", "upc_ver_uc", "product_module_code", "brand_code_uc",
-                           "multi", "size1_amount"),
+                select = c("upc", "upc_ver_uc", "product_module_code",
+                           "brand_code_uc", "multi", "size1_amount"),
                 quote = "")[product_module_code == moduleCode]
   prod[, "product_module_code" := NULL]
   prod[, "units" := multi * size1_amount][, c("multi", "size1_amount") := NULL]
@@ -40,7 +40,8 @@ getSales <- function(moduleCode, moduleName, fileNum) {
   for (yr in yrs) {
     print(yr)
     sales <- fread(paste0(path, yr, "/Movement_Files/", fileNum, "_", yr, "/", moduleCode, "_", yr, ".tsv"),
-                   nThread = threads, select = c("store_code_uc", "upc", "week_end", "price"))
+                   nThread = threads,
+                   select = c("store_code_uc", "upc", "week_end", "price"))
     upcVer <- fread(paste0(path, yr, "/Annual_Files/rms_versions_", yr, ".tsv"))
     sales <- merge(sales, upcVer, by = "upc")
     sales <- merge(sales, prod, by = c("upc", "upc_ver_uc"))
@@ -59,9 +60,9 @@ getSales <- function(moduleCode, moduleName, fileNum) {
 }
 
 getSales(8444, "diaper", 4502)
-getSales(4100, "eggs", 2505)
-getSales(3625, "milk", 2506)
-getSales(7270, "tampon", 6015)
+#getSales(4100, "eggs", 2505)
+#getSales(3625, "milk", 2506)
+#getSales(7270, "tampon", 6015)
 getSales(7734, "paperTowel", 4507)
 
 # Getting trips and adding in week_end date
@@ -69,7 +70,7 @@ trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
                select = c("store_code_uc", "trip_code_uc", "purchase_date",
                           "household_code", "panel_year"))
 
-moduleCodes <- c(8444, 4100, 3625, 7270, 7734)
+moduleCodes <- c(8444, 7734)
 
 fullPurch <- NULL
 for (yr in yrs) {
@@ -90,14 +91,14 @@ for (yr in yrs) {
 }
 
 # Computing total expenditures so I can properly extrapolate savings to all purchases
-fullPurch[, "totalHouseholdBasket" := sum(totalExp),
+fullPurch[, "totalAnnualSpending" := sum(totalExp),
           by = .(household_code, panel_year, product_module_code)]
 
 # Combining with Homescan data
-modKey <- data.table(modName = c("diaper", "eggs", "milk", "tampon", "paperTowel"),
-                     product_module_code = c(8444, 4100, 3625, 7270, 7734))
+modKey <- data.table(modName = c("diaper", "paperTowel"),
+                     product_module_code = c(8444, 7734))
 fullChoices <- NULL
-for (mod in c("diaper", "eggs", "milk", "tampon", "paperTowel")) {
+for (mod in c("diaper", "paperTowel")) {
   print(mod)
   fullSales <- fread(paste0("/scratch/upenn/hossaine/full", mod, ".csv"),
                      nThread = threads)
@@ -113,48 +114,47 @@ for (mod in c("diaper", "eggs", "milk", "tampon", "paperTowel")) {
 bestPrice <- fullChoices[units >= totalAmount, .(bestPrice = min(minUnitPrice)),
                          by = .(store_code_uc, week_end, trip_code_uc, quantity,
                                 totalAmount, household_code, panel_year,
-                                unitPriceChosen, totalHouseholdBasket, mod)]
-bestPrice[, "totalSavings" := unitPriceChosen - bestPrice]
-bestPrice[totalSavings < 0, "totalSavings" := 0]
+                                unitPriceChosen, totalAnnualSpending, mod)]
+bestPrice[, "savings" := (unitPriceChosen - bestPrice) / unitPriceChosen]
+bestPrice[, "savingsLevel" := (unitPriceChosen - bestPrice) * totalAmount]
 
-hhSavings <- bestPrice[, .(matchedBasket = sum(unitPriceChosen * quantity * totalAmount),
-                           totalSavings = sum(totalSavings * quantity * totalAmount)),
-                           by = .(household_code, panel_year,
-                                  totalHouseholdBasket, mod)]
-hhSavings[, "extrapolatedSavings" := totalHouseholdBasket / matchedBasket * totalSavings]
-for (m in c("diaper", "eggs", "milk", "tampon", "paperTowel")) {
-  print(m)
-  print(quantile(hhSavings[mod == m]$extrapolatedSavings))
-}
 # Combining with household characteristics
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
-                          "household_income_coarse", "household_size", "age",
-                          "child", "dma_cd", "household_income"),
+                          "household_income_coarse", "men", "women", "age",
+                          "nChildren", "dma_cd", "household_income", "married",
+                          "college"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
-hhSavings <- merge(hhSavings, panel, by = c("household_code", "panel_year"))
+bestPrice <- merge(bestPrice, panel, by = c("household_code", "panel_year"))
 
-kable(hhSavings[household_size == 4, median(extrapolatedSavings),
-                keyby = .(mod, household_income_coarse)])
-kable(hhSavings[household_size == 4, median(extrapolatedSavings / totalHouseholdBasket),
-                keyby = .(mod, household_income_coarse)])
+# Computing missed savings
+hhSavings <- bestPrice[savings >= 0,
+                       .(weekSavings = weighted.mean(savings, w = totalExp),
+                         weekSavingsLevel = sum(savingsLevel),
+                         totalExp = sum(totalExp)),
+                       by = .(household_code, panel_year, household_income_coarse,
+                              men, women, age, nChildren, dma_cd, projection_factor,
+                              household_income, totalAnnualSpending, married,
+                              college)]
+
+kable(hhSavings[men == 1 & women == 1 & nChildren == 2,
+                mean(weekSavings), by = household_income_coarse])
+
+# Getting savings levels (inflated to match full annual expenditures)
+hhSavings[, "fullSavingsLevel" := weekSavingsLevel * totalAnnualSpending / totalExp]
+kable(hhSavings[men == 1 & women == 1 & nChildren == 2,
+                mean(fullSavingsLevel), by = household_income_coarse])
 
 # Computing savings by income group for each module
 reg1 <- felm(data = hhSavings[mod == "diaper"],
-             weekSavings ~ household_income_coarse + age + child +
-               household_size | as.factor(dma_cd) * as.factor(panel_year))
-reg2 <- felm(data = hhSavings[mod == "tampon"],
-             weekSavings ~ household_income_coarse + age + child +
-               household_size | as.factor(dma_cd) * as.factor(panel_year))
-reg3 <- felm(data = hhSavings[mod == "eggs"],
-             extrapolatedSavings ~ household_income_coarse + age + child +
-               household_size | as.factor(dma_cd) * as.factor(panel_year))
-reg4 <- felm(data = hhSavings[mod == "milk"],
-             weekSavings ~ household_income_coarse + age + child +
-               household_size | as.factor(dma_cd) * as.factor(panel_year))
+             weekSavings ~ household_income_coarse + age + nChildren +
+               men + women | as.factor(dma_cd) * as.factor(panel_year))
+reg1 <- felm(data = hhSavings[mod == "paperTowel"],
+             weekSavings ~ household_income_coarse + age + nChildren +
+               men + women | as.factor(dma_cd) * as.factor(panel_year))
 
-stargazer(reg1, reg2, reg3, reg4, type = "text",
+stargazer(reg1, reg2, type = "text",
           add.lines = list(c("Demographics", "Y", "Y", "Y", "Y"),
                            c("Market-Year FE", "Y", "Y", "Y", "Y")),
           omit = c("age", "child", "household_size"),

@@ -96,12 +96,35 @@ fullPurch[, "drop" := multiUPC + uncommonStore + uncommonBrand + uncommonSize + 
 fwrite(fullPurch, "/scratch/upenn/hossaine/fullTPPurchases.csv", nThread = threads)
 
 ################################################################################
-# Step 2: Getting store assortments for TP
+########## Step 2: Getting product characteristics
+################################################################################
+prod <- fread("/scratch/upenn/hossaine/fullProd.csv", nThread = threads,
+              select = c("upc", "upc_ver_uc", "upc_descr", "product_module_code",
+                         "multi", "size1_amount", "brand_code_uc", "brand_descr"))[product_module_code == moduleCode]
+prod[, "product_module_code" := NULL]
+
+# Getting rolls and sheets for each product
+prod[, "rolls" := as.integer(multi * size1_amount)]
+prod[, "ply" := str_extract_all(upc_descr, "\\s\\dP\\s")]
+prod[, "ply" := as.integer(gsub("P", "", ply))]
+prod[, "sheet" := str_extract_all(upc_descr, "\\d{2,}S\\s")]
+prod[, "sheet" := as.integer(gsub("S", "", sheet)) * ply]
+prod[, "totalSheet" := sheet * rolls]
+prod[, c("multi", "size1_amount", "ply") := NULL]
+
+# Removing over 100 rolls and packages where sheets cannot be computed
+prod <- prod[rolls < 100]
+prod <- prod[!is.na(totalSheet)]
+fwrite(prod, "/scratch/upenn/hossaine/prodTP.csv")
+
+################################################################################
+# Step 3: Getting store assortments for TP
 ################################################################################
 # Transfer data from Globus
 # cd /scratch/upenn/hossaine
 # tar -xzvf tp.tar.gz
 
+prod <- fread("/scratch/upenn/hossaine/prodTP.csv")
 fullTP <- NULL
 for (yr in yrs) {
   print(yr)
@@ -123,7 +146,7 @@ fullTPSave <- merge(fullTP, choiceUPCs[, .(upc, upc_ver_uc)], by = c("upc", "upc
 fwrite(fullTPSave, "/scratch/upenn/hossaine/fullTPAssortment.csv", nThread = threads)
 
 ################################################################################
-# Step 3: Combining purchases with store assortments
+# Step 4: Combining purchases with store assortments
 ################################################################################
 # ~30% of trips can be matched to the scanner. The match rate peaked in 2011.
 # Match rates tend to increase with income, but overall, they're about 25-35%
@@ -141,33 +164,14 @@ fullChoice[, "prmult" := NULL]
 fwrite(fullChoice, "/scratch/upenn/hossaine/fullTPChoices.csv", nThread = threads)
 
 ################################################################################
-# Step 4: Matching with product characteristics
+# Step 5: Matching with product characteristics
 ################################################################################
-prod <- fread("/scratch/upenn/hossaine/fullProd.csv", nThread = threads,
-              select = c("upc", "upc_ver_uc", "upc_descr", "product_module_code",
-                         "multi", "size1_amount", "brand_code_uc", "brand_descr"))[product_module_code == moduleCode]
-prod[, "product_module_code" := NULL]
-
-# Getting rolls and sheets for each product
-prod[, "rolls" := as.integer(multi * size1_amount)]
-prod[, "ply" := str_extract_all(upc_descr, "\\s\\dP\\s")]
-prod[, "ply" := as.integer(gsub("P", "", ply))]
-prod[, "sheet" := str_extract_all(upc_descr, "\\d{2,}S\\s")]
-prod[, "sheet" := as.integer(gsub("S", "", sheet)) * ply]
-prod[, "totalSheet" := sheet * rolls]
-prod[, c("multi", "size1_amount", "ply") := NULL]
-
-# Removing over 100 rolls and packages where sheets cannot be computed
-prod <- prod[rolls < 100]
-prod <- prod[!is.na(totalSheet)]
-fwrite(prod, "/scratch/upenn/hossaine/prodTP.csv")
-
 # Merging purchase data with available choices and saving
 fullChoice <- merge(fullChoice, prod, by = c("upc", "upc_ver_uc"), all.x = TRUE)
 fwrite(fullChoice, "/scratch/upenn/hossaine/fullChoice.csv", nThread = threads)
 
 ################################################################################
-# Step 5: Identifying choices
+# Step 6: Identifying choices
 ################################################################################
 fullChoice <- unique(fread("/scratch/upenn/hossaine/fullChoice.csv", nThread = threads))
 prod <- fread("/scratch/upenn/hossaine/prodTP.csv", nThread = threads,

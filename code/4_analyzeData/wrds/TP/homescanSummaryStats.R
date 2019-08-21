@@ -5,11 +5,15 @@ library(Hmisc)
 library(forcats)
 library(ggplot2)
 library(ggthemes)
+library(stringr)
+threads <- 8
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv",
                select = c("projection_factor", "household_income",
-                          "household_size", "hispanic_origin", "age", "college",
-                          "white", "child", "married"))
+                          "hispanic_origin", "age", "college",
+                          "white", "married", "men", "women", "nChildren"))
 
+panel[, "household_size" := men + women + nChildren]
+panel[, "child" := as.integer(nChildren > 0)]
 panel[, "household_income" := factor(household_income,
                                      levels = c(3, 4, 6, 8, 10, 11, 13, 15, 16,
                                                 17, 18, 19, 21, 23, 26, 27),
@@ -45,10 +49,10 @@ finalTableWide[Variable == "Hispanic", "75th Pctile" := 1 - (`75th Pctile` - 1)]
 finalTableWide[Variable == "age", "Variable" := "Age"]
 finalTableWide[Variable == "college", "Variable" := "College Educated"]
 finalTableWide[Variable == "white", "Variable" := "White"]
-finalTableWide[Variable == "child", "Variable" := "Child present"]
+finalTableWide[Variable == "child", "Variable" := "Child Present"]
 finalTableWide[Variable == "married", "Variable" := "Married"]
 
-kable(finalTableWide, digits = 2, format = "latex")
+kable(finalTableWide, digits = 2, format = "markdown")
 # saved as homescanSummaryStats.tex
 
 
@@ -136,14 +140,16 @@ ggplot(data = transMat, aes(y = fct_rev(lagIncome), x = Income, fill = Prob)) +
             color = "white", size = 4) +
   labs(title = "Income Transitions",
        x = "Future Income", y = "Current Income",
-       caption = paste0("Note: Household income is in thousands of dollars. Values denote \n",
-                        "the probability of transitioning from the row income to the \n",
-                        "column income. Rows may not sum to 1 due to rounding.")) +
+       caption = str_wrap(paste0("Note: Household income is in thousands of ",
+                                 "dollars. Values denote the probability of ",
+                                 "transitioning from the row income to the ",
+                                 "column income. Rows may not sum to 1 due to rounding."))) +
   theme_fivethirtyeight() +
   scale_x_discrete(position = "top") +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "none")
+        legend.position = "none") +
+  scale_color_grey()
 ggsave(filename = "./figures/incomeTransitionsAll.png", height = 6, width = 8)
 
 # Income transitions between coarse bins
@@ -177,3 +183,76 @@ ggplot(data = transMatCoarse, aes(y = lagIncome, x = Income, fill = Prob)) +
         plot.caption = element_text(hjust = 0),
         legend.position = "none")
 ggsave(filename = "./figures/incomeTransitionsCoarse.png", height = 6, width = 8)
+
+# Getting top 20 categories by spending in 2017
+purch <- fread("/scratch/upenn/hossaine/fullPurch2017.csv", nThread = threads,
+               select = c("trip_code_uc", "quantity", "packagePrice",
+                          "product_module_code", "totalAmount", "food"))
+purch[, "totalSpend" := packagePrice * quantity]
+prodSpend <- purch[, .(spend = sum(totalSpend),
+                       price = mean(totalSpend),
+                       size = mean(totalAmount)), by = .(product_module_code, food)]
+setorder(prodSpend, spend)
+topMods <- tail(prodSpend, 20)$product_module_code
+
+# Restricting only to purchases of top 20 items
+purch <- purch[product_module_code %in% topMods]
+trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
+               select = c("trip_code_uc", "household_code", "panel_year"))
+purch <- merge(purch, trips, by = "trip_code_uc")
+panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
+               select = c("household_code", "panel_year", "projection_factor"))
+purch <- merge(purch, panel, by = c("household_code", "panel_year"))
+
+# Getting annual spending for each household, prices paid, and sizes
+hhSpending <- purch[, .(spend = sum(totalSpend),
+                        price = mean(totalSpend),
+                        size = mean(totalAmount)),
+                    by = .(household_code, panel_year,
+                           projection_factor, product_module_code)]
+
+avgSpending <- hhSpending[, .(spend = weighted.mean(spend, w = projection_factor),
+                              spendVar = wtd.var(spend, weights = projection_factor),
+                              size = weighted.mean(size, w = projection_factor),
+                              sizeVar = wtd.var(size, weights = projection_factor),
+                              price = weighted.mean(price, w = projection_factor),
+                              priceVar = wtd.var(price, weights = projection_factor)),
+                          by = product_module_code]
+avgSpending[, c("spendSD", "sizeSD", "priceSD", "spendVar", "sizeVar", "priceVar") :=
+              .(sqrt(spendVar), sqrt(sizeVar), sqrt(priceVar), NULL, NULL, NULL)]
+
+prod <- unique(fread(paste0("/scratch/upenn/hossaine/nielsen_extracts/HMS/",
+                            "Master_Files/Latest/products.tsv"),
+                     select = c("product_module_code", "product_module_descr")))
+avgSpending <- merge(avgSpending, prod, by = "product_module_code")
+setcolorder(avgSpending, c("product_module_descr", "spend", "spendSD", "price",
+            "priceSD", "size", "sizeSD"))
+avgSpending[, "product_module_code" := NULL]
+setorder(avgSpending, -spend)
+setnames(avgSpending, c("Product", "Annual Spending", "SD", "Avg. Price", "SD", "Avg. Size", "SD"))
+stargazer(avgSpending, summary = FALSE, type = "text", digits = 2,
+          label = "tab:homeScanProducts",
+          out = "tables/homeScanProducts.tex",
+          rownames = FALSE)
+
+# Get total spending by channel
+trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
+               select = c("channel_type", "trip_code_uc", "panel_year"))
+
+fullPurch <- NULL
+for (i in 2004:2017) {
+  print(i)
+  purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", i, ".csv"),
+                 nThread = threads,
+                 select = c("trip_code_uc", "quantity", "packagePrice"))
+  purch[, "total" := quantity * packagePrice]
+  purch <- purch[, .(total = sum(total)), by = .(trip_code_uc)]
+  purch <- merge(purch, trips, by = "trip_code_uc", all.x = TRUE)
+  purch[is.na(channel_type), "channel_type" := "Other"]
+  purch[is.na(panel_year), "panel_year" := i]
+  fullPurch <- rbindlist(list(fullPurch, purch), use.names = TRUE)
+}
+
+channelShares <- fullPurch[, .(total = sum(total)), by = .(channel_type, panel_year)]
+channelShares[, "share" := total / sum(total), by = panel_year]
+channelShares[channel_type == "Other"]

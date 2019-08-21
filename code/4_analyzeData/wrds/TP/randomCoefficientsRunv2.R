@@ -16,6 +16,7 @@ library(foreach)
 library(doParallel)
 library(ggplot2)
 library(ggthemes)
+library(stringr)
 threads <- 2
 
 ################################################################################
@@ -65,14 +66,12 @@ tp[, "priceMonthStart" := price * monthStart]
 registerDoParallel()
 getDoParWorkers()
 
-ids <- sample(unique(tp[panel_year == i]$trip_code_uc), 1000)
-
 r <- foreach(i = c(2006:2016)) %:%
   # Running MNL model
   foreach(incBin = c("<25k", "25-50k", "50-100k", ">100k")) %dopar% {
     print(c(i, incBin))
     # Creating mlogit data for analysis
-    tpML <- mlogit.data(tp[panel_year == i & trip_code_uc %in% ids],
+    tpML <- mlogit.data(tp[panel_year == i],
                         choice = "choice", shape = "long", alt.var = "brandRollSheet",
                         chid.var = "trip_code_uc", id.var = "household_code")
     reg <- mlogit(choice ~ price + priceMonthStart + brand_descr + logSheetPP + large12 + 0,
@@ -104,6 +103,14 @@ r <- foreach(i = c(2006:2016)) %:%
   }
 save(r, file = paste0("/scratch/upenn/hossaine/mlogitFullIncYearMktWeight.rda"), compress = TRUE)
 
+################################################################################
+############## STEP 1A: ELASTICITIES ###########################################
+################################################################################
+load("/scratch/upenn/hossaine/mlogit/incYearWeight/mlogit<25k2009.rda")
+cols <- c("price", "logSheetPP", "large12", "projection_factor")
+z <- tp[panel_year == 2009 & household_income_coarse == "<25k",
+        lapply(.SD, mean), .SDcols = cols, by = .(brand_descr, brandRollSheet)]
+effects(reg, covariate = "price", type = "rr", data = z)
 
 ################################################################################
 ############## STEP 2: WTP TABLE ###############################################
@@ -124,7 +131,7 @@ getTable <- function(reg) {
 # Generating WTP table for each year and income group
 combineTable <- function(yr, income) {
   print(paste(yr, income))
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/incYear/mlogit", income, yr, ".rda"))
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/incYearWeight/mlogit", income, yr, ".rda"))
   dt <- getTable(reg)
   dt[, "year" := yr]
   dt[, "income" := income]
@@ -163,6 +170,64 @@ ggplot(data = finalTable[coef %in% c("Large", "Log Sheets Per Person")],
   geom_hline(yintercept = 0) +
   facet_wrap(vars(coef), scales = "fixed") +
   scale_x_continuous(limits = c(2006, 2016)) +
+  labs(x = "Year", y = "Willingness to Pay ($)",
+       color = "Income", shape = "Income") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_color_grey() +
+  scale_shape_manual(values = c(0:2, 5:7))
+ggsave(filename = "figures/logitCoefficients.png", height = 4, width = 6)
+
+################################ Coefficient plots for each year-income-market
+# Generating WTP table for each year and income group
+mkts <- list.files("/home/upenn/hossaine/mlogit/incYearMktWeight", full.names = TRUE)
+combineTable <- function(fileN) {
+  print(fileN)
+  load(fileN)
+  dt <- NULL
+  tryCatch({
+    dt <- getTable(reg)
+    dt[, "year" := str_sub(fileN, -11, -8)]
+    dt[, "income" := str_sub(fileN, -18, -12)]
+  }, error=function(e){})
+  return(dt)
+}
+finalTable <- rbindlist(map(mkts, combineTable), use.names = TRUE)
+
+# Computing t-tests
+finalTable[, "income" := gsub("git", "", income)]
+finalTable[, "income" := gsub("it", "", income)]
+finalTable[, "income" := gsub("t", "", income)]
+
+finalTable[, ':=' (t = WTP / SE,
+                   p = 2 * (1 - pnorm(abs(WTP / SE))))]
+finalTable[p <= 0.05, "stars" := "*"]
+finalTable[p <= 0.01, "stars" := "**"]
+finalTable[p <= 0.001, "stars" := "***"]
+finalTable[is.na(stars), "stars" := ""]
+finalTable[, "WTPPrint" := paste0(round(WTP, 3), stars)]
+finalTable[, "SEPrint" := paste0("(", round(SE, 3), ")")]
+
+# Housekeeping and reshaping
+finalTable[, "coef" := gsub("brand_descr", "", coef)]
+finalTable[, "coef" := gsub("logSheetPP", "Log Sheets Per Person", coef)]
+finalTable[, "coef" := gsub("large12TRUE", "Large", coef)]
+
+finalTableWide <- dcast(finalTable, coef + year ~ income, value.var = c("WTPPrint", "SEPrint"))
+setcolorder(finalTableWide, c(1, 4, 8, 2, 6, 3, 7, 5, 9))
+stargazer(finalTableWide, summary = FALSE, type = "text", rownames = FALSE,
+          out = paste0("/home/upenn/hossaine/tables/mlogit", i, ".tex"))
+
+# Plotting WTP over time for each income group and for each variable
+finalTable[, "WTPSig" := ifelse(p < 0.05, WTP, 0)]
+ggplot(data = finalTable[coef %in% c("Large", "Log Sheets Per Person")],
+       aes(x = WTPSig, fill = coef)) +
+  geom_density() +
+  geom_vline(xintercept = 0) +
+  facet_grid(cols = vars(year), rows = vars(income)) +
+  scale_x_continuous(limits = c(-10, 10)) +
   labs(title = "Willingness To Pay Over Time",
        x = "Year", y = "Willingness to Pay ($)",
        color = "Income", shape = "Income",
@@ -173,7 +238,8 @@ ggplot(data = finalTable[coef %in% c("Large", "Log Sheets Per Person")],
   theme_fivethirtyeight() +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_color_grey()
-ggsave(filename = "figures/logitCoefficients.png")
+ggsave(filename = "figures/logitCoefficientsMkt.png")
+
 
 ################################################################################
 ################ STEP 3: Counterfactual Exercise: PREDICTING AVERAGE SHEETS ####

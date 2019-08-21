@@ -33,9 +33,13 @@ getPanel <- function(yr) {
                             "Marital_Status", "Race", "Hispanic_Origin",
                             "Panelist_ZipCd", "Fips_State_Cd", "Fips_County_Cd",
                             "Scantrack_Market_Identifier_Desc", "DMA_Cd", "DMA_Name",
-                            "Member_1_Birth", "Member_2_Birth", "Member_3_Birth",
-                            "Member_4_Birth", "Member_5_Birth", "Member_6_Birth",
-                            "Member_7_Birth"))
+                            "Member_1_Birth", "Member_1_Relationship_Sex",
+                            "Member_2_Birth", "Member_2_Relationship_Sex",
+                            "Member_3_Birth", "Member_3_Relationship_Sex",
+                            "Member_4_Birth", "Member_4_Relationship_Sex",
+                            "Member_5_Birth", "Member_5_Relationship_Sex",
+                            "Member_6_Birth", "Member_6_Relationship_Sex",
+                            "Member_7_Birth", "Member_7_Relationship_Sex"))
   setnames(panel, tolower(names(panel)))
   panel[, "fips" := paste0(str_pad(fips_state_cd, 2, "left", "0"),
                            str_pad(fips_county_cd, 3, "left", "0"))]
@@ -68,26 +72,73 @@ panel[, "household_income" := ifelse(household_income >= 27, 27, household_incom
 panel[, "age" := panel_year - (female_head_birth + male_head_birth) / 2]
 panel[is.na(age), "age" := as.numeric(panel_year - female_head_birth)]
 panel[is.na(age), "age" := as.numeric(panel_year - male_head_birth)]
+panel[, "age0Male" := as.numeric(panel_year - male_head_birth)]
+panel[, "age0Female" := as.numeric(panel_year - female_head_birth)]
+panel[, "age1" := as.numeric(panel_year - member_1_birth)]
+panel[, "age2" := as.numeric(panel_year - member_2_birth)]
+panel[, "age3" := as.numeric(panel_year - member_3_birth)]
+panel[, "age4" := as.numeric(panel_year - member_4_birth)]
+panel[, "age5" := as.numeric(panel_year - member_5_birth)]
+panel[, "age6" := as.numeric(panel_year - member_6_birth)]
+panel[, "age7" := as.numeric(panel_year - member_7_birth)]
 
-# Adding Age of other household members
-panel[, ':=' (member_1_age = panel_year - member_1_birth,
-              member_2_age = panel_year - member_2_birth,
-              member_3_age = panel_year - member_3_birth,
-              member_4_age = panel_year - member_4_birth,
-              member_5_age = panel_year - member_5_birth,
-              member_6_age = panel_year - member_6_birth,
-              member_7_age = panel_year - member_7_birth)]
-panel[, c("member_1_birth", "member_2_birth", "member_3_birth", "member_4_birth",
-          "member_5_birth", "member_6_birth", "member_7_birth") := NULL]
+# Counting number of men
+panel[, "men0" := (age0Male >= 18)]
+panel[is.na(men0), "men0" := FALSE]
+panel[, "men1" := (age1 >= 18 & member_1_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men1), "men1" := FALSE]
+panel[, "men2" := (age2 >= 18 & member_2_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men2), "men2" := FALSE]
+panel[, "men3" := (age3 >= 18 & member_3_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men3), "men3" := FALSE]
+panel[, "men4" := (age4 >= 18 & member_4_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men4), "men4" := FALSE]
+panel[, "men5" := (age5 >= 18 & member_5_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men5), "men5" := FALSE]
+panel[, "men6" := (age6 >= 18 & member_6_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men6), "men6" := FALSE]
+panel[, "men7" := (age7 >= 18 & member_7_relationship_sex %in% c(1, 3, 5))]
+panel[is.na(men7), "men7" := FALSE]
+panel[, "men" := men0 + men1 + men2 + men3 + men4 + men5 + men6 + men7]
+panel[, paste0("men", 0:7) := NULL]
 
-# Identifying newborns
-panel[member_1_age <= 1, "birth" := 1]
-panel[member_2_age <= 1, "birth" := 1]
-panel[member_3_age <= 1, "birth" := 1]
-panel[member_4_age <= 1, "birth" := 1]
-panel[member_5_age <= 1, "birth" := 1]
-panel[member_6_age <= 1, "birth" := 1]
-panel[member_7_age <= 1, "birth" := 1]
+# Counting number of women
+panel[, "women0" := (age0Female >= 18)]
+panel[is.na(women0), "women0" := FALSE]
+panel[, "women1" := (age1 >= 18 & member_1_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women1), "women1" := FALSE]
+panel[, "women2" := (age2 >= 18 & member_2_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women2), "women2" := FALSE]
+panel[, "women3" := (age3 >= 18 & member_3_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women3), "women3" := FALSE]
+panel[, "women4" := (age4 >= 18 & member_4_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women4), "women4" := FALSE]
+panel[, "women5" := (age5 >= 18 & member_5_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women5), "women5" := FALSE]
+panel[, "women6" := (age6 >= 18 & member_6_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women6), "women6" := FALSE]
+panel[, "women7" := (age7 >= 18 & member_7_relationship_sex %in% c(2, 4, 6))]
+panel[is.na(women7), "women7" := FALSE]
+panel[, "women" := women0 + women1 + women2 + women3 + women4 + women5 + women6 + women7]
+panel[, paste0("women", 0:7) := NULL]
+
+# Counting number of children
+panel[, "child1" := (age1 < 18)]
+panel[is.na(child1), "child1" := FALSE]
+panel[, "child2" := (age2 < 18)]
+panel[is.na(child2), "child2" := FALSE]
+panel[, "child3" := (age3 < 18)]
+panel[is.na(child3), "child3" := FALSE]
+panel[, "child4" := (age4 < 18)]
+panel[is.na(child4), "child4" := FALSE]
+panel[, "child5" := (age5 < 18)]
+panel[is.na(child5), "child5" := FALSE]
+panel[, "child6" := (age6 < 18)]
+panel[is.na(child6), "child6" := FALSE]
+panel[, "child7" := (age7 < 18)]
+panel[is.na(child7), "child7" := FALSE]
+panel[, "nChildren" := child1 + child2 + child3 + child4 + child5 + child6 + child7]
+panel[, paste0("child", 1:7) := NULL]
 
 # Adding college indicator if at least 1 HoH has graduated college
 panel[, "college" := 0]
@@ -176,11 +227,23 @@ row1 <- c("Excluding Deferred Categories", uniqueN(prod$product_module_code))
 
 # Excluding all alcohol, tobacco, pet food and pet care, health and beauty
 # except for female hygiene products general merchandise, and magnet purchases
-prod <- prod[!department_code %in% 8:9] #alcohol and gen merch
-prod <- prod[!product_group_code %in% c(4510, 6001:6014, 6016:6018, 508, 4509)] #tobacco, health, pet food and care
+prod <- prod[department_code != 8] #alcohol
+row2 <- c("Excluding Alcohol", uniqueN(prod$product_module_code))
+
+prod <- prod[department_code != 9] #gen merch
+row3 <- c("Excluding Gen Merch.", uniqueN(prod$product_module_code))
+
+prod <- prod[product_group_code != 4510] #tobacco
+row4 <- c("Excluding Tobacco", uniqueN(prod$product_module_code))
+
+prod <- prod[!product_group_code %in% c(6001:6014, 6016:6018)] #health
+row5 <- c("Excluding Health (except Feminine Hygiene)", uniqueN(prod$product_module_code))
+
+prod <- prod[!product_group_code %in% c(508, 4509)] #health
+row6 <- c("Excluding Pet Items", uniqueN(prod$product_module_code))
+
 prod <- prod[!product_module_code %in% c(445:468, 750)]
-row2 <- c("Excluding Alcohol, Tobacco, Cosmetics, Pets, Gen. Merch. and Magnet Purchases",
-          uniqueN(prod$product_module_code))
+row7 <- c("Excluding Magnet Purchases", uniqueN(prod$product_module_code))
 
 # Fixing toilet paper products
 prod[upc == 1115032045 & upc_ver_uc %in% 1:2, "multi" := 6]
@@ -272,8 +335,9 @@ prod <- prod[, .(upc, upc_ver_uc, upc_descr, product_module_code, brand_code_uc,
 # sour cream mix, corned beef hash, canned ham patties, gift sets,
 # frozen OJ, frozen grapefruit juice, thermometers, brushes, and frozen grape juice
 prod[, "uniqueSizes" := uniqueN(totalAmount), by = product_module_code]
+print(unique(prod[uniqueSizes <= 5]$product_module_code))
 prod <- prod[uniqueSizes > 5][, "uniqueSizes" := NULL]
-row3 <- c("More than 5 Sizes", uniqueN(prod$product_module_code))
+row8 <- c("More than 5 Sizes", uniqueN(prod$product_module_code))
 
 # Classifying bulk sizes in product file
 quintiles <- prod[, .(cutoff = quantile(totalAmount, c(0.2, 0.4, 0.6, 0.8, 1))),
@@ -289,9 +353,10 @@ prod[totalAmount > q2 & totalAmount <= q3, "quintile" := 3L]
 prod[totalAmount > q1 & totalAmount <= q2, "quintile" := 2L]
 prod[totalAmount > 0 & totalAmount <= q1, "quintile" := 1L]
 prod[, c("q1", "q2", "q3", "q4", "q5") := NULL]
+
 fwrite(prod, "/scratch/upenn/hossaine/fullProd.csv", nThread = threads)
 
-cleanTable <- as.data.table(rbind(row0, row1, row2, row3))
+cleanTable <- as.data.table(rbind(row0, row1, row2, row3, row4, row5, row6, row7, row8))
 setnames(cleanTable, c("Step", "Categories"))
 cleanTable[, "Categories" := as.integer(Categories)]
 stargazer(cleanTable, type = "text", summary = FALSE,
@@ -335,16 +400,28 @@ for (yr in yrs) {
   rm(purch)
 }
 
-######################## STEP 6: CLEAN TRIPS FILE ##############################
+######################## STEP 6: RETAILERS FILE ################################
+path <- "/scratch/upenn/hossaine/nielsen_extracts/HMS/"
+retailers <- fread(paste0(path, "Master_Files/Latest/retailers.tsv"))
+fwrite(retailers, "/scratch/upenn/hossaine/fullRetailers.csv", nThread = threads)
+
+
+######################## STEP 7: CLEAN TRIPS FILE ##############################
 # Combining trips files and computing monthly cumulative spending and whether
 # purchase is at the start of the month.
+# Adding in channel types and restricting to discount, grocery, dollar, drug, and
+# warehouse clubs since these are the most common shopping outlets (>90% of spending)
 fiveFri <- fread("/scratch/upenn/hossaine/FiveFri.csv")
+retailers <- fread("/scratch/upenn/hossaine/fullRetailers.csv", nThread = threads)
+retailers <- retailers[channel_type %in% c("Discount Store", "Dollar Store",
+                                           "Drug Store", "Grocery", "Warehouse Club")]
 
 fullTrips <- NULL
 for (yr in yrs) {
   print(yr)
   trips <- fread(paste0(path, yr, "/Annual_Files/trips_", yr, ".tsv"),
                  nThread = threads, key = "trip_code_uc")
+  trips <- merge(trips, retailers, by = "retailer_code")
   trips[, c("store_zip3") := NULL]
   trips[, c("year", "month", "day") := tstrsplit(purchase_date, "-")]
   trips[, ':=' (year = as.integer(year),
@@ -407,8 +484,3 @@ fullTrips[, "dist" := dists]
 fullTrips[, "zip_code" := NULL]
 fwrite(fullTrips, "/scratch/upenn/hossaine/fullTrips.csv", nThread = threads)
 rm(fullTrips, trips)
-
-######################## STEP 7: RETAILERS FILE ################################
-path <- "/scratch/upenn/hossaine/nielsen_extracts/HMS/"
-retailers <- fread(paste0(path, "Master_Files/Latest/retailers.tsv"))
-fwrite(retailers, "/scratch/upenn/hossaine/fullRetailers.csv", nThread = threads)

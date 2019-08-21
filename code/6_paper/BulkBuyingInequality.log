@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2019.4.18)  30 JUL 2019 18:48
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2019.4.18)  20 AUG 2019 09:38
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -480,73 +480,85 @@ LaTeX Font Info:    Overwriting math alphabet `\mathbbm' in version `bold'
 (Font)                  U/bbm/m/n --> U/bbm/bx/n on input line 33.
 LaTeX Font Info:    Overwriting math alphabet `\mathbbmss' in version `bold'
 (Font)                  U/bbmss/m/n --> U/bbmss/bx/n on input line 35.
-) (/usr/share/texlive/texmf-dist/tex/latex/setspace/setspace.sty
-Package: setspace 2011/12/19 v6.7a set line spacing
-) (/usr/share/texlive/texmf-dist/tex/latex/footmisc/footmisc.sty
-Package: footmisc 2011/06/06 v5.5b a miscellany of footnote facilities
-\FN@temptoken=\toks25
-\footnotemargin=\dimen127
-\c@pp@next@reset=\count116
-
-LaTeX Warning: Command \@footnotemark  has changed.
-               Check if current package is valid.
-
-Package footmisc Info: Declaring symbol style bringhurst on input line 855.
-Package footmisc Info: Declaring symbol style chicago on input line 863.
-Package footmisc Info: Declaring symbol style wiley on input line 872.
-Package footmisc Info: Declaring symbol style lamport-robust on input line 883.
-
-Package footmisc Info: Declaring symbol style lamport* on input line 903.
-Package footmisc Info: Declaring symbol style lamport*-robust on input line 924
-.
-) (/usr/share/texlive/texmf-dist/tex/latex/endfloat/endfloat.sty
-Package: endfloat 2018/03/24 v2.6 LaTeX2e package puts figures and tables at en
-d (jdm)
-\c@postfigure=\count117
-\efloat@postfff=\write3
-\@ef@fffopen=\count118
-\c@posttable=\count119
-\efloat@postttt=\write4
-\@ef@tttopen=\count120
+) (/usr/share/texlive/texmf-dist/tex/latex/booktabs/booktabs.sty
+Package: booktabs 2016/04/27 v1.618033 publication quality tables
+\heavyrulewidth=\dimen127
+\lightrulewidth=\dimen128
+\cmidrulewidth=\dimen129
+\belowrulesep=\dimen130
+\belowbottomsep=\dimen131
+\aboverulesep=\dimen132
+\abovetopsep=\dimen133
+\cmidrulesep=\dimen134
+\cmidrulekern=\dimen135
+\defaultaddspace=\dimen136
+\@cmidla=\count116
+\@cmidlb=\count117
+\@aboverulesep=\dimen137
+\@belowrulesep=\dimen138
+\@thisruleclass=\count118
+\@lastruleclass=\count119
+\@thisrulewidth=\dimen139
 ) (/usr/share/texlive/texmf-dist/tex/latex/caption/caption.sty
 Package: caption 2018/10/06 v3.3-154 Customizing captions (AR)
 (/usr/share/texlive/texmf-dist/tex/latex/caption/caption3.sty
 Package: caption3 2018/09/12 v1.8c caption3 kernel (AR)
 Package caption3 Info: TeX engine: e-TeX on input line 64.
-\captionmargin=\dimen128
-\captionmargin@=\dimen129
-\captionwidth=\dimen130
-\caption@tempdima=\dimen131
-\caption@indent=\dimen132
-\caption@parindent=\dimen133
-\caption@hangindent=\dimen134
+\captionmargin=\dimen140
+\captionmargin@=\dimen141
+\captionwidth=\dimen142
+\caption@tempdima=\dimen143
+\caption@indent=\dimen144
+\caption@parindent=\dimen145
+\caption@hangindent=\dimen146
 )
-\c@caption@flags=\count121
-\c@ContinuedFloat=\count122
+\c@caption@flags=\count120
+\c@ContinuedFloat=\count121
 Package caption Info: hyperref package is loaded.
-) (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty
-Package: multirow 2019/01/01 v2.4 Span multiple rows of a table
-\multirow@colwidth=\skip51
-\multirow@cntb=\count123
-\multirow@dima=\skip52
-\bigstrutjot=\dimen135
 ) (/usr/share/texlive/texmf-dist/tex/latex/tools/longtable.sty
 Package: longtable 2014/10/28 v4.11 Multi-page Table package (DPC)+ FMi change
-\LTleft=\skip53
-\LTright=\skip54
-\LTpre=\skip55
-\LTpost=\skip56
-\LTchunksize=\count124
-\LTcapwidth=\dimen136
+\LTleft=\skip51
+\LTright=\skip52
+\LTpre=\skip53
+\LTpost=\skip54
+\LTchunksize=\count122
+\LTcapwidth=\dimen147
 \LT@head=\box29
 \LT@firsthead=\box30
 \LT@foot=\box31
 \LT@lastfoot=\box32
-\LT@cols=\count125
-\LT@rows=\count126
-\c@LT@tables=\count127
-\c@LT@chunks=\count128
-\LT@p@ftn=\toks26
+\LT@cols=\count123
+\LT@rows=\count124
+\c@LT@tables=\count125
+\c@LT@chunks=\count126
+\LT@p@ftn=\toks25
+) (/usr/share/texlive/texmf-dist/tex/latex/multirow/multirow.sty
+Package: multirow 2019/01/01 v2.4 Span multiple rows of a table
+\multirow@colwidth=\skip55
+\multirow@cntb=\count127
+\multirow@dima=\skip56
+\bigstrutjot=\dimen148
+) (/usr/share/texlive/texmf-dist/tex/latex/ms/ragged2e.sty
+Package: ragged2e 2009/05/21 v2.1 ragged2e Package (MS)
+(/usr/share/texlive/texmf-dist/tex/latex/ms/everysel.sty
+Package: everysel 2011/10/28 v1.2 EverySelectfont Package (MS)
+)
+\CenteringLeftskip=\skip57
+\RaggedLeftLeftskip=\skip58
+\RaggedRightLeftskip=\skip59
+\CenteringRightskip=\skip60
+\RaggedLeftRightskip=\skip61
+\RaggedRightRightskip=\skip62
+\CenteringParfillskip=\skip63
+\RaggedLeftParfillskip=\skip64
+\RaggedRightParfillskip=\skip65
+\JustifyingParfillskip=\skip66
+\CenteringParindent=\skip67
+\RaggedLeftParindent=\skip68
+\RaggedRightParindent=\skip69
+\JustifyingParindent=\skip70
+) (/usr/share/texlive/texmf-dist/tex/latex/setspace/setspace.sty
+Package: setspace 2011/12/19 v6.7a set line spacing
 ) (/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
 Package: xcolor 2016/05/11 v2.12 LaTeX color extensions (UK)
 (/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg
@@ -562,47 +574,53 @@ Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1368.
 Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1369.
 Package xcolor Info: Model `Gray' substituted by `gray' on input line 1370.
 Package xcolor Info: Model `wave' substituted by `hsb' on input line 1371.
-) (./BulkBuyingInequality.aux
+) (/usr/share/texlive/texmf-dist/tex/latex/footmisc/footmisc.sty
+Package: footmisc 2011/06/06 v5.5b a miscellany of footnote facilities
+\FN@temptoken=\toks26
+\footnotemargin=\dimen149
+\c@pp@next@reset=\count128
 
-LaTeX Warning: Label `data' multiply defined.
+LaTeX Warning: Command \@footnotemark  has changed.
+               Check if current package is valid.
 
+Package footmisc Info: Declaring symbol style bringhurst on input line 855.
+Package footmisc Info: Declaring symbol style chicago on input line 863.
+Package footmisc Info: Declaring symbol style wiley on input line 872.
+Package footmisc Info: Declaring symbol style lamport-robust on input line 883.
 
-LaTeX Warning: Label `model' multiply defined.
-
-
-LaTeX Warning: Label `conclusion' multiply defined.
-
-)
+Package footmisc Info: Declaring symbol style lamport* on input line 903.
+Package footmisc Info: Declaring symbol style lamport*-robust on input line 924
+.
+) (./BulkBuyingInequality.aux)
 \openout1 = `BulkBuyingInequality.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 104.
-LaTeX Font Info:    Try loading font information for TS1+cmr on input line 104.
-
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 94.
+LaTeX Font Info:    Try loading font information for TS1+cmr on input line 94.
 (/usr/share/texlive/texmf-dist/tex/latex/base/ts1cmr.fd
 File: ts1cmr.fd 2014/09/29 v2.5h Standard LaTeX font definitions
 )
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 104.
-LaTeX Font Info:    ... okay on input line 104.
-LaTeX Font Info:    Try loading font information for T1+lmr on input line 104.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Checking defaults for PU/pdf/m/n on input line 94.
+LaTeX Font Info:    ... okay on input line 94.
+LaTeX Font Info:    Try loading font information for T1+lmr on input line 94.
 (/usr/share/texmf/tex/latex/lm/t1lmr.fd
 File: t1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Info: Redefining \microtypecontext on input line 104.
+LaTeX Info: Redefining \microtypecontext on input line 94.
 Package microtype Info: Generating PDF output.
 Package microtype Info: Character protrusion enabled (level 2).
 Package microtype Info: Using protrusion set `basicmath'.
@@ -651,7 +669,7 @@ File: mt-cmr.cfg 2013/05/19 v2.2 microtype config. file: Computer Modern Roman
 * (1in=72.27pt=25.4mm, 1cm=28.453pt)
 
 \AtBeginShipoutBox=\box33
-Package hyperref Info: Link coloring OFF on input line 104.
+Package hyperref Info: Link coloring OFF on input line 94.
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2016/05/21 v2.44 Cross-referencing by name of section
 (/usr/share/texlive/texmf-dist/tex/generic/oberdiek/gettitlestring.sty
@@ -659,23 +677,23 @@ Package: gettitlestring 2016/05/16 v1.5 Cleanup title references (HO)
 )
 \c@section@level=\count129
 )
-LaTeX Info: Redefining \ref on input line 104.
-LaTeX Info: Redefining \pageref on input line 104.
-LaTeX Info: Redefining \nameref on input line 104.
+LaTeX Info: Redefining \ref on input line 94.
+LaTeX Info: Redefining \pageref on input line 94.
+LaTeX Info: Redefining \nameref on input line 94.
 (./BulkBuyingInequality.out) (./BulkBuyingInequality.out)
-\@outlinefile=\write5
-\openout5 = `BulkBuyingInequality.out'.
+\@outlinefile=\write3
+\openout3 = `BulkBuyingInequality.out'.
 
 (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count130
-\scratchdimen=\dimen137
+\scratchdimen=\dimen150
 \scratchbox=\box34
 \nofMPsegments=\count131
 \nofMParguments=\count132
 \everyMPshowfont=\toks27
 \MPscratchCnt=\count133
-\MPscratchDim=\dimen138
+\MPscratchDim=\dimen151
 \MPnumerator=\count134
 \makeMPintoPDFobject=\count135
 \everyMPtoPDFconversion=\toks28
@@ -700,195 +718,242 @@ Package caption Info: longtable package is loaded.
 Package: ltcaption 2018/08/26 v1.4-95 longtable captions (AR)
 )
 Package caption Info: End \AtBeginDocument code.
-LaTeX Font Info:    Try loading font information for OT1+lmr on input line 110.
+ABD: EverySelectfont initializing macros
+LaTeX Info: Redefining \selectfont on input line 94.
+LaTeX Font Info:    Try loading font information for OT1+lmr on input line 103.
 
 (/usr/share/texmf/tex/latex/lm/ot1lmr.fd
 File: ot1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 110.
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 103.
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 110
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 103
 .
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 110
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 103
 .
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <12> on input line 110.
+(Font)              <12> on input line 103.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 110.
+(Font)              <8> on input line 103.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 110.
-LaTeX Font Info:    Try loading font information for U+msa on input line 110.
+(Font)              <6> on input line 103.
+LaTeX Font Info:    Try loading font information for U+msa on input line 103.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msa.cfg
 File: mt-msa.cfg 2006/02/04 v1.1 microtype config. file: AMS symbols (a) (RS)
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 110.
+LaTeX Font Info:    Try loading font information for U+msb on input line 103.
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 ) (/usr/share/texlive/texmf-dist/tex/latex/microtype/mt-msb.cfg
 File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 )
-LaTeX Font Info:    Try loading font information for TS1+lmr on input line 110.
+LaTeX Font Info:    Try loading font information for TS1+lmr on input line 103.
 
 (/usr/share/texmf/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10> on input line 110.
+(Font)              <10> on input line 103.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <7> on input line 110.
+(Font)              <7> on input line 103.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <5> on input line 110.
+(Font)              <5> on input line 103.
 [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] [6] (./tab
-les/homescanSummaryStats.tex
-\openout4 = `BulkBuyingInequality.ttt'.
-
-(BulkBuyingInequality.ttt)) [7]
-\openout3 = `BulkBuyingInequality.fff'.
-
-(BulkBuyingInequality.fff) [8] [9] (./tables/lowestPrice.tex) (./tables/lowestP
-riceRegFin.tex) [10]
-
-LaTeX Warning: Reference `fig:' on page 11 undefined on input line 622.
-
-[11] (./tables/clubOpening.tex [12])
-
-LaTeX Warning: Reference `fig:incomeTransitionsAll' on page 13 undefined on inp
-ut line 704.
-
-(./tables/discountingBehaviorIncomeSwitchers.tex [13]) [14] (./tables/unitPrice
-Law.tex) [15] [16] [17] [18] (./tables/counterfactualMNL.tex) [19] [20] [21] (.
-/BulkBuyingInequality.fff
-<../5_figures/bulkDiscountAllProdsScanner.png, id=294, 433.62pt x 433.62pt>
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] (./finalTa
+bles/homescanSummaryStats.tex) [6] [7]
+<../5_figures/bulkDiscountAllProdsScanner.png, id=175, 433.62pt x 289.08pt>
 File: ../5_figures/bulkDiscountAllProdsScanner.png Graphic file (type png)
 <use ../5_figures/bulkDiscountAllProdsScanner.png>
 Package pdftex.def Info: ../5_figures/bulkDiscountAllProdsScanner.png  used on 
-input line 3.
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/couponSavings.png, id=295, 433.62pt x 433.62pt>
-File: ../5_figures/couponSavings.png Graphic file (type png)
-<use ../5_figures/couponSavings.png>
-Package pdftex.def Info: ../5_figures/couponSavings.png  used on input line 11.
-
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/savingsBehavior.png, id=296, 433.62pt x 433.62pt>
+input line 415.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[8 <../5_figures/bulkDiscountAllProdsScanner.png>]
+<../5_figures/couponBulkSavings.png, id=185, 433.62pt x 289.08pt>
+File: ../5_figures/couponBulkSavings.png Graphic file (type png)
+<use ../5_figures/couponBulkSavings.png>
+Package pdftex.def Info: ../5_figures/couponBulkSavings.png  used on input line
+ 454.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[9 <../5_figures/couponBulkSavings.png>]
+<../5_figures/savingsBehavior.png, id=197, 433.62pt x 289.08pt>
 File: ../5_figures/savingsBehavior.png Graphic file (type png)
 <use ../5_figures/savingsBehavior.png>
-Package pdftex.def Info: ../5_figures/savingsBehavior.png  used on input line 1
-9.
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/savingsBehaviorModules.png, id=297, 433.62pt x 433.62pt>
+Package pdftex.def Info: ../5_figures/savingsBehavior.png  used on input line 4
+96.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+<../5_figures/savingsBehaviorModules.png, id=201, 433.62pt x 289.08pt>
 File: ../5_figures/savingsBehaviorModules.png Graphic file (type png)
 <use ../5_figures/savingsBehaviorModules.png>
 Package pdftex.def Info: ../5_figures/savingsBehaviorModules.png  used on input
- line 27.
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/expendituresByChannel.png, id=298, 433.62pt x 433.62pt>
+ line 521.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[10 <../5_figures/savingsBehavior.png>] (./finalTables/lowestPrice.tex) [11 <..
+/5_figures/savingsBehaviorModules.png>] (./finalTables/lowestPriceRegFin.tex) [
+12] [13]
+<../5_figures/sizeAvailabilityAllModsChannelType.png, id=242, 433.62pt x 289.08
+pt>
+File: ../5_figures/sizeAvailabilityAllModsChannelType.png Graphic file (type pn
+g)
+<use ../5_figures/sizeAvailabilityAllModsChannelType.png>
+Package pdftex.def Info: ../5_figures/sizeAvailabilityAllModsChannelType.png  u
+sed on input line 639.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[14 <../5_figures/sizeAvailabilityAllModsChannelType.png>]
+<../5_figures/expendituresByChannel.png, id=251, 433.62pt x 289.08pt>
 File: ../5_figures/expendituresByChannel.png Graphic file (type png)
 <use ../5_figures/expendituresByChannel.png>
 Package pdftex.def Info: ../5_figures/expendituresByChannel.png  used on input 
-line 35.
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/eventStudy.png, id=299, 433.62pt x 433.62pt>
+line 682.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[15 <../5_figures/expendituresByChannel.png>]
+<../5_figures/discountingBehaviorNoWarehouse.png, id=260, 433.62pt x 289.08pt>
+File: ../5_figures/discountingBehaviorNoWarehouse.png Graphic file (type png)
+<use ../5_figures/discountingBehaviorNoWarehouse.png>
+Package pdftex.def Info: ../5_figures/discountingBehaviorNoWarehouse.png  used 
+on input line 705.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[16 <../5_figures/discountingBehaviorNoWarehouse.png>]
+Overfull \hbox (32.96066pt too wide) detected at line 755
+[]\OML/lmm/m/it/12 BulkShare[] \OT1/lmr/m/n/12 = \OML/lmm/m/it/12 ^^L[] \OMS/lm
+sy/m/n/12 ^^C \OML/lmm/m/it/12 Entry[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^L[]
+ \OMS/lmsy/m/n/12 ^^C \OML/lmm/m/it/12 ClubShopper[] \OT1/lmr/m/n/12 + \OML/lmm
+/m/it/12 ^^L[] \OMS/lmsy/m/n/12 ^^C \OML/lmm/m/it/12 Entry[] \OMS/lmsy/m/n/12 ^
+^B \OML/lmm/m/it/12 ClubShopper[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^MX[] \OT
+1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] \OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^U[] 
+\OT1/lmr/m/n/12 + \OML/lmm/m/it/12 ^^O[];
+ []
+
+[17] (./finalTables/costcoEntry.tex) [18]
+<../5_figures/eventStudy.png, id=287, 433.62pt x 289.08pt>
 File: ../5_figures/eventStudy.png Graphic file (type png)
 <use ../5_figures/eventStudy.png>
-Package pdftex.def Info: ../5_figures/eventStudy.png  used on input line 43.
-(pdftex.def)             Requested size: 433.63878pt x 433.63878pt.
-<../5_figures/logitCoefficients.png, id=300, 505.1673pt x 505.4082pt>
+Package pdftex.def Info: ../5_figures/eventStudy.png  used on input line 822.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[19 <../5_figures/eventStudy.png>]
+<../5_figures/unitPriceLaws.png, id=304, 433.62pt x 289.08pt>
+File: ../5_figures/unitPriceLaws.png Graphic file (type png)
+<use ../5_figures/unitPriceLaws.png>
+Package pdftex.def Info: ../5_figures/unitPriceLaws.png  used on input line 864
+.
+(pdftex.def)             Requested size: 390.27425pt x 260.18282pt.
+[20 <../5_figures/unitPriceLaws.png>] (./finalTables/unitPriceLaw.tex
+Overfull \hbox (3.15701pt too wide) in paragraph at lines 7--32
+ [][] 
+ []
+
+) [21] [22]
+<../5_figures/unitPriceEventStudy.png, id=334, 433.62pt x 289.08pt>
+File: ../5_figures/unitPriceEventStudy.png Graphic file (type png)
+<use ../5_figures/unitPriceEventStudy.png>
+Package pdftex.def Info: ../5_figures/unitPriceEventStudy.png  used on input li
+ne 963.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[23] [24 <../5_figures/unitPriceEventStudy.png>] [25]
+<../5_figures/tpSizeQuantityDistributionAllProds.png, id=356, 433.62pt x 289.08
+pt>
+File: ../5_figures/tpSizeQuantityDistributionAllProds.png Graphic file (type pn
+g)
+<use ../5_figures/tpSizeQuantityDistributionAllProds.png>
+Package pdftex.def Info: ../5_figures/tpSizeQuantityDistributionAllProds.png  u
+sed on input line 1068.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[26 <../5_figures/tpSizeQuantityDistributionAllProds.png>] [27]
+<../5_figures/logitCoefficients.png, id=373, 433.62pt x 289.08pt>
 File: ../5_figures/logitCoefficients.png Graphic file (type png)
 <use ../5_figures/logitCoefficients.png>
 Package pdftex.def Info: ../5_figures/logitCoefficients.png  used on input line
- 51.
-(pdftex.def)             Requested size: 469.76219pt x 469.98619pt.
-) [22
-
- <../5_figures/bulkDiscountAllProdsScanner.png>] [23 <../5_figures/couponSaving
-s.png>] [24 <../5_figures/savingsBehavior.png>] [25 <../5_figures/savingsBehavi
-orModules.png>] [26 <../5_figures/expendituresByChannel.png>] [27 <../5_figures
-/eventStudy.png>] [28 <../5_figures/logitCoefficients.png>] (./BulkBuyingInequa
-lity.ttt) [29
-
-] [30] [31] [32]
-\openout3 = `BulkBuyingInequality.fff'.
-
-(BulkBuyingInequality.fff) [33] [34] AED endfloat: Processing end Figures and T
-ables [35] (./BulkBuyingInequality.fff
-<../5_figures/annualPurchasesTP.png, id=377, 505.89pt x 505.89pt>
+ 1169.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[28] [29 <../5_figures/logitCoefficients.png>] (./finalTables/counterfactualMNL
+Days.tex) [30] [31] [32] [33] [34] [35]
+<../5_figures/annualPurchasesTP.png, id=466, 433.62pt x 289.08pt>
 File: ../5_figures/annualPurchasesTP.png Graphic file (type png)
 <use ../5_figures/annualPurchasesTP.png>
 Package pdftex.def Info: ../5_figures/annualPurchasesTP.png  used on input line
- 5.
-(pdftex.def)             Requested size: 469.76265pt x 469.76265pt.
-<../5_figures/discountingBehaviorChannelAll.png, id=378, 578.16pt x 433.62pt>
+ 1577.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[36] [37 <../5_figures/annualPurchasesTP.png>]
+<../5_figures/discountingBehaviorChannelAll.png, id=485, 433.62pt x 289.08pt>
 File: ../5_figures/discountingBehaviorChannelAll.png Graphic file (type png)
 <use ../5_figures/discountingBehaviorChannelAll.png>
 Package pdftex.def Info: ../5_figures/discountingBehaviorChannelAll.png  used o
-n input line 13.
-(pdftex.def)             Requested size: 469.75385pt x 352.31538pt.
-)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1301.
-[36
+n input line 1663.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+[38]
+<../5_figures/unitPrice.png, id=497, 1050.92625pt x 899.36pt>
+File: ../5_figures/unitPrice.png Graphic file (type png)
+<use ../5_figures/unitPrice.png>
+Package pdftex.def Info: ../5_figures/unitPrice.png  used on input line 1698.
+(pdftex.def)             Requested size: 219.56248pt x 187.89684pt.
+[39 <../5_figures/discountingBehaviorChannelAll.png>] [40 <../5_figures/unitPri
+ce.png>] (./finalTables/homeScanClean.tex) [41] (./finalTables/homeScanProducts
+Final.tex
+Overfull \hbox (4.27524pt too wide) in paragraph at lines 7--35
+ [][] 
+ []
 
-
- <../5_figures/annualPurchasesTP.png>] [37 <../5_figures/discountingBehaviorCha
-nnelAll.png>]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1301.
+) [42] [43] [44]
+<../5_figures/tpPriceDecomp.png, id=533, 433.62pt x 289.08pt>
+File: ../5_figures/tpPriceDecomp.png Graphic file (type png)
+<use ../5_figures/tpPriceDecomp.png>
+Package pdftex.def Info: ../5_figures/tpPriceDecomp.png  used on input line 193
+4.
+(pdftex.def)             Requested size: 281.84966pt x 187.89977pt.
+(./finalTables/tpPriceDecomp.tex) [45] [46 <../5_figures/tpPriceDecomp.png>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1996.
+[47]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1996.
 (./BulkBuyingInequality.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1301.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1301.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1996.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1996.
 
 Package rerunfilecheck Info: File `BulkBuyingInequality.out' has not changed.
-(rerunfilecheck)             Checksum: E075CD204C7DB4EE644066D9941D9BF0;3575.
-
-LaTeX Warning: There were undefined references.
-
-
-LaTeX Warning: There were multiply-defined labels.
-
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1301.
+(rerunfilecheck)             Checksum: 5C74A214E981842EDF89BBD6C85D93DB;4476.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1996.
  )
 (\end occurred inside a group at level 1)
 
-### semi simple group (level 1) entered at line 92 (\begingroup)
+### semi simple group (level 1) entered at line 89 (\begingroup)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 14775 strings out of 492615
- 218819 string characters out of 6131390
- 355982 words of memory out of 5000000
- 18140 multiletter control sequences out of 15000+600000
- 82868 words of font info for 155 fonts, out of 8000000 for 9000
+ 14851 strings out of 492615
+ 221373 string characters out of 6131390
+ 348640 words of memory out of 5000000
+ 18133 multiletter control sequences out of 15000+600000
+ 84085 words of font info for 168 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 36i,10n,43p,1235b,2965s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/
-texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-
-mathex.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-rm.enc}{/usr/share/texmf/fon
+ 36i,10n,39p,1389b,1517s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/
+texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-
+rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathex.enc}{/usr/share/texmf/fon
 ts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ts1.enc}</usr
 /share/texmf/fonts/type1/public/lm/lmbx10.pfb></usr/share/texmf/fonts/type1/pub
 lic/lm/lmbx12.pfb></usr/share/texmf/fonts/type1/public/lm/lmex10.pfb></usr/shar
 e/texmf/fonts/type1/public/lm/lmmi10.pfb></usr/share/texmf/fonts/type1/public/l
 m/lmmi12.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi6.pfb></usr/share/texm
-f/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10
-.pfb></usr/share/texmf/fonts/type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/
-type1/public/lm/lmr17.pfb></usr/share/texmf/fonts/type1/public/lm/lmr7.pfb></us
-r/share/texmf/fonts/type1/public/lm/lmr8.pfb></usr/share/texmf/fonts/type1/publ
-ic/lm/lmri12.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share
-/texmf/fonts/type1/public/lm/lmsy8.pfb>
-Output written on BulkBuyingInequality.pdf (37 pages, 738481 bytes).
+f/fonts/type1/public/lm/lmmi7.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi8
+.pfb></usr/share/texmf/fonts/type1/public/lm/lmr10.pfb></usr/share/texmf/fonts/
+type1/public/lm/lmr12.pfb></usr/share/texmf/fonts/type1/public/lm/lmr17.pfb></u
+sr/share/texmf/fonts/type1/public/lm/lmr7.pfb></usr/share/texmf/fonts/type1/pub
+lic/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmri12.pfb></usr/share/
+texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/
+lmsy6.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy8.pfb>
+Output written on BulkBuyingInequality.pdf (47 pages, 1026635 bytes).
 PDF statistics:
- 481 PDF objects out of 1000 (max. 8388607)
- 404 compressed objects within 5 object streams
- 131 named destinations out of 1000 (max. 500000)
- 16614 words of extra memory for PDF output out of 17280 (max. 10000000)
+ 665 PDF objects out of 1000 (max. 8388607)
+ 545 compressed objects within 6 object streams
+ 184 named destinations out of 1000 (max. 500000)
+ 16681 words of extra memory for PDF output out of 17280 (max. 10000000)
 

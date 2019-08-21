@@ -4,6 +4,8 @@ library(ggplot2)
 library(ggthemes)
 library(lfe)
 library(purrr)
+library(furrr)
+plan(multiprocess)
 threads <- 8
 
 # Getting trips and panel data for demographics and to deflate expenditures
@@ -16,8 +18,8 @@ prod <- unique(fread("/scratch/upenn/hossaine/nielsen_extracts/HMS/Master_Files/
 
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
-                          "household_income", "household_size", "age", "child",
-                          "married", "dma_cd", "household_income_coarse"),
+                          "household_income", "men", "women", "age", "nChildren",
+                          "married", "dma_cd", "household_income_coarse", "college"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
@@ -48,7 +50,6 @@ allPurchases <- fullPurch[, .(totalQ = sum(totalQ),
                           by = .(household_code, panel_year, product_module_code, food)]
 allPurchases[, "logAvgSize" := log(totalQ / totalPackages)]
 allPurchases <- merge(allPurchases, panel, by = c("household_code", "panel_year"))
-allPurchases[, "marketYear" := paste0(dma_cd, "_", panel_year)]
 
 # Getting modules purchased by more than 5000 households each year
 topMods <- allPurchases[, uniqueN(household_code), by = .(product_module_code, panel_year)]
@@ -60,10 +61,12 @@ getReg <- function(mod) {
   regData <- allPurchases[product_module_code == mod]
   tryCatch({
     reg <- felm(data = regData,
-                logAvgSize ~ household_income_coarse + household_size + age +
-                  child + married | marketYear,
+                logAvgSize ~ household_income_coarse + men + women + age +
+                  nChildren + married + college | dma_cd + panel_year,
                 weights = regData$projection_factor)
     coefs <- as.data.table(summary(reg)$coefficients, keep.rownames = TRUE)
+    confInt1 <- as.data.table(confint(reg), keep.rownames = TRUE)
+    coefs <- merge(coefs, confInt1, by = "rn")
     coefs[, "product_module_code" := mod]
   return(coefs)
   }, error = function(e){})
@@ -74,7 +77,7 @@ fullCoefs <- rbindlist(map(mods, getReg), use.names = TRUE)
 fullCoefs[, "rn" := gsub("household_income_coarse", "", rn)]
 fullCoefs <- merge(fullCoefs, unique(allPurchases[, .(food, product_module_code)]),
                    by = "product_module_code")
-setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "food"))
+setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "LCL", "UCL", "food"))
 
 # Making histogram
 histData <- na.omit(fullCoefs[rn %in% c("25-50k", "50-100k", ">100k")])
@@ -97,26 +100,20 @@ histData[, "income" := factor(rn, levels = c("25-50k", "50-100k", ">100k"), orde
 ggplot(data = histData[!mod %in% c(8602, 1483) & topMod == 1],
        aes(fill = income, y = beta, x = reorder(as.factor(mod), -beta), by = food)) +
   geom_bar(position = "identity", stat = "identity", alpha = 0.6) +
-  #geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se),
-  #             width = 0.2) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
   #facet_wrap(vars(product_group_descr), scales = "free") +
   #facet_wrap(vars(food), scales = "free_x") +
-  labs(title = "Rich Households Buy Larger Packages",
-       x = "Product Category", y = "Log-Point Increase Over Poorest Households",
-       fill = "Household Income",
-       caption = paste0("Note: Figure plots difference in average package size purchased relative to \n",
-                        "households making under $25k. Figure controls for household size, age, children, \n",
-                        "and marital status. Only coefficients significant at the 5% level are plotted. \n",
-                        "Standard errors are suppressed for clarity. Only product categories for which at \n",
-                        "least 5000 households in a year made a purchase are plotted. Bars are not stacked \n",
-                        "and represent an individual product category")) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0),
-        axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank()) +
+  labs(x = "Product Category",
+       y = "Log-Point Increase Over Poorest Households",
+       fill = "Household Income") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        axis.ticks.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = "bottom") +
   scale_fill_grey()
-ggsave("./code/5_figures/discountingBehaviorChannelAll.png", width = 8, height = 6)
+ggsave("./code/5_figures/discountingBehaviorChannelAll.png", height = 4, width = 6)
 
 # Generating table of how many categories do rich buy more, same, or less
 histData[p < 0.05, "more" := ifelse(beta > 0, 1L, 0L)]
@@ -167,32 +164,6 @@ table3NonFood <- histData[food == 0, .(Bigger = round(sum(more) / nonFoodN, 2),
                                        Smaller = round(sum(less) / nonFoodN, 2)),
                           keyby = .(income)]
 
-# Plotting only "necessities"
-graphNecessities <- graphData[product_group_code %in% c(4501, 4502, 4507, 6015)]
-ggplot(data = graphNecessities,
-       aes(fill = income, y = beta, x = reorder(as.factor(product_module_descr), -beta))) +
-  geom_bar(position = "identity", stat = "identity", alpha = 0.6) +
-  geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se),
-               width = 0.2) +
-  facet_wrap(vars(product_group_descr), scales = "free") +
-  labs(title = "Rich Households Buy Larger Packages",
-       x = "Product Category", y = "Log-Point Increase Over Poorest Households",
-       fill = "Household Income",
-       caption = paste0("Note: Figure plots difference in average package size purchased relative to \n",
-                        "households making under $25k. Figure controls for household size, age, children, \n",
-                        "and marital status. Only coefficients significant at the 5% level are plotted. \n",
-                        "Standard errors are suppressed for clarity. Only product categories for which at \n",
-                        "least 5000 households in a year made a purchase are plotted. Each bar represents \n",
-                        "an individual product category.")) +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0),
-        axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank()) +
-  scale_fill_grey()
-ggsave("./code/5_figures/discountingBehaviorChannelNecessities.png", width = 8, height = 6)
-
-
 ###################### PACKAGE SIZE BY CHANNEL AND INCOME ######################
 channelPurchases <- fullPurch[, .(totalQ = sum(totalQ),
                                   totalPackages = sum(totalPackages)),
@@ -220,9 +191,9 @@ channels <- c("Grocery", "Discount Store", "Warehouse Club", "Dollar Store")
 toRun <- expand.grid(mods = mods, channels = channels)
 fullCoefs <- rbindlist(map2(toRun$mods, toRun$channels, getReg), use.names = TRUE)
 fullCoefs[, "rn" := gsub("household_income_coarse", "", rn)]
-fullCoefs <- merge(fullCoefs, unique(channelPurchases[, .(storable, product_module_code)]),
+fullCoefs <- merge(fullCoefs, unique(channelPurchases[, .(product_module_code)]),
                    by = "product_module_code")
-setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "channel", "storable"))
+setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "channel"))
 
 # Making histogram
 histData <- fullCoefs[rn %in% c("25-50k", "50-100k", ">100k")]
@@ -235,5 +206,6 @@ histData <- fullCoefs[rn %in% c("25-50k", "50-100k", ">100k")]
 histData[p < 0.05, "beta" := 0]
 ggplot(data = histData, aes(x = beta)) +
   geom_density() +
-  facet_grid(rows = vars(rn), cols = vars(channel)) +
-  theme_fivethirtyeight()
+  scale_x_continuous(limits = c(-1, 1)) +
+  facet_grid(rows = vars(rn), cols = vars(channel), scales = "free") +
+  theme_tufte()

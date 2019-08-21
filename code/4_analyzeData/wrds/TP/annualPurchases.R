@@ -7,6 +7,7 @@ library(stargazer)
 library(glmnet)
 library(doMC)
 library(ggplot2)
+library(stringr)
 library(ggthemes)
 registerDoMC(cores = 4)
 threads <- 8
@@ -34,6 +35,7 @@ panel <- fread(paste0(path, "fullPanel.csv"), nThread = threads)
 # Getting purchase data by household year
 fullPurch <- NULL
 for (i in yrs) {
+  print(i)
   purch <- fread(paste0(path, "fullPurch", i, ".csv"), nThread = threads,
                  select = c("trip_code_uc", "upc", "upc_ver_uc", "quantity",
                             "product_module_code"))[product_module_code %in% modCode]
@@ -60,12 +62,13 @@ finalSheet[, "days" := as.integer(end_date - start_date)]
 finalSheet[, c("start_date", "end_date") := NULL]
 
 # Getting annual purchases and removing final purchase from tally
-annualPurch <- fullPurch[, .(fullQ = sum(fullQ, na.rm = TRUE)),
+annualPurch <- fullPurch[, .(fullQ = sum(fullQ, na.rm = TRUE),
+                             avgDays = mean(fullQ, na.rm = TRUE) / (57 * 2)),
                          by = .(household_code, panel_year, product_module_code)]
 annualPurch <- merge(annualPurch, finalSheet,
                      by = c("household_code", "panel_year", "product_module_code"))
 annualPurch[, "consRate" := (fullQ - final) / days]
-annualPurch[, c("fullQ", "final", "days") := NULL]
+annualPurch[, c("final", "days") := NULL]
 
 # Merging with panel data to do predictive regression
 annualPurch <- merge(annualPurch, panel, by = c("household_code", "panel_year"))
@@ -102,9 +105,13 @@ reg4 <- felm(consRate ~ household_income + household_size +
 stargazer(reg1, reg2, reg3, reg4, type = "text", omit.stat = c("f", "ser"))
 
 reg1Coef <- as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE)
+reg1ConfInt <- as.data.table(confint(reg1), keep.rownames = TRUE)
+reg1Coef <- merge(reg1Coef, reg1ConfInt, by = "rn")
 reg1Coef[, "reg" := "Income Only"]
 
 reg2Coef <- as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE)
+reg2ConfInt <- as.data.table(confint(reg2), keep.rownames = TRUE)
+reg2Coef <- merge(reg2Coef, reg2ConfInt, by = "rn")
 reg2Coef[, "reg" := "Income and Demographics"]
 
 finalCoefs <- rbindlist(list(reg1Coef, reg2Coef), use.names = TRUE)
@@ -116,24 +123,70 @@ graphData[, "rn" := factor(rn, levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19, 21,
                            labels = c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
                            ordered = TRUE)]
 graphData[, "rn" := as.numeric(as.character(rn))]
-setnames(graphData, c("rn", "beta", "se", "t", "p", "reg"))
+setnames(graphData, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "reg"))
 
 # Graphing Data
 ggplot(data = graphData, aes(x = rn, y = beta, color = reg)) +
-  geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se), width = 0.2) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
   geom_point(aes(shape = reg), size = 3) +
   geom_hline(yintercept = 0) +
-  labs(title = "TP Consumption Does Not Vary By Income",
-       x = "Household Income", y = "Average Consumption Rate (Sheets / Day)",
-       caption = paste0("Source: Author calulations from Nielsen Consumer Panel. \n",
-                        "Note: Income coefficients from regression of average daily \n",
-                        "consumption on income only and after controlling for household \n",
-                        "size, age, marital status, and presence of children."),
+  labs(x = "Household Income",
+       y = "Average Consumption Rate (Sheets / Day)",
        shape = "Covariates", color = "Covariates") +
-  theme_fivethirtyeight() +
-  theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
   scale_color_grey()
-ggsave(filename = "figures/annualPurchasesTP.png")
+ggsave(filename = "figures/annualPurchasesTP.png", height = 4, width = 6)
+
+# Running regressions of average size purchased after controlling for
+# annual consumption
+reg1 <- felm(avgDays ~ household_income, data = regData)
+reg1Coef <- as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE)
+reg1ConfInt <- as.data.table(confint(reg1), keep.rownames = TRUE)
+reg1Coef <- merge(reg1Coef, reg1ConfInt, by = "rn")
+reg1Coef[, "reg" := "Income Only"]
+
+reg2 <- felm(avgDays ~ household_income + fullQ, data = regData)
+reg2Coef <- as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE)
+reg2ConfInt <- as.data.table(confint(reg2), keep.rownames = TRUE)
+reg2Coef <- merge(reg2Coef, reg2ConfInt, by = "rn")
+reg2Coef[, "reg" := "Income and Annual Purch"]
+
+reg3 <- felm(avgDays ~ household_income + fullQ + household_size +
+              age + married + child, data = regData)
+reg3Coef <- as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE)
+reg3ConfInt <- as.data.table(confint(reg3), keep.rownames = TRUE)
+reg3Coef <- merge(reg3Coef, reg3ConfInt, by = "rn")
+reg3Coef[, "reg" := "Income, Annual Purch, and Demographics"]
+
+regCoef <- rbindlist(list(reg1Coef, reg2Coef, reg3Coef), use.names = TRUE)
+
+# Organizing graph data
+graphData <- regCoef[grepl("household_income", rn)]
+graphData[, "rn" := gsub("household_income", "", rn)]
+graphData[, "rn" := factor(rn, levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
+                           labels = c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
+                           ordered = TRUE)]
+graphData[, "rn" := as.numeric(as.character(rn))]
+setnames(graphData, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "reg"))
+
+# Graphing Data
+ggplot(data = graphData[reg == "Income, Annual Purch, and Demographics"],
+       aes(x = rn, y = beta)) +
+  geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
+  geom_point() +
+  geom_hline(yintercept = 0) +
+  geom_vline(xintercept = 0) +
+  labs(x = "Household Income",
+       y = "Days' Supply") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_color_grey()
+ggsave(filename = "figures/avgPkgSizeByIncome.png", height = 4, width = 6)
 
 # Using elastic net
 x <- sparse.model.matrix(~ -1 + as.factor(panel_year) + as.factor(household_income) +

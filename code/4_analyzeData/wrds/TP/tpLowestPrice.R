@@ -37,82 +37,14 @@ moduleCode <- 7260 #tp
 path <- "/scratch/upenn/hossaine/nielsen_extracts/RMS/"
 
 # Getting number of rolls per package
-prod <- fread(paste0(path, "Master_Files/Latest/products.tsv"), nThread = threads,
-              select = c("upc", "upc_ver_uc", "product_module_code", "brand_code_uc",
-                         "multi", "size1_amount"),
-              quote = "")[product_module_code == moduleCode]
-prod[, "product_module_code" := NULL]
-
-prod[upc == 1115032045 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 3003402434 & upc_ver_uc == 2, "multi" := 6]
-prod[upc == 3040000070 & upc_ver_uc == 1, "size1_amount" := 4]
-prod[upc == 3040076541 & upc_ver_uc == 2, "size1_amount" := 1]
-prod[upc == 3600010669 & upc_ver_uc == 1, "multi" := 3]
-prod[upc == 3600011640 & upc_ver_uc == 2, "multi" := 5]
-prod[upc == 3600011643 & upc_ver_uc == 3, "multi" := 6]
-prod[upc == 3600041605 & upc_ver_uc == 1, "multi" := 5]
-prod[upc == 3600064119 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 3600067652 & upc_ver_uc == 1, "multi" := 6]
-prod[upc == 3600067667 & upc_ver_uc == 1, "multi" := 5]
-prod[upc == 3600067794 & upc_ver_uc == 1, "multi" := 2]
-prod[upc == 3700002045 & upc_ver_uc == 1, "multi" := 2]
-prod[upc == 3700002072 & upc_ver_uc == 2, "multi" := 6]
-prod[upc == 3700006470 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 3700006474 & upc_ver_uc %in% 1:2, "multi" := 9]
-prod[upc == 3700012387 & upc_ver_uc %in% 1:3, c("multi", "size1_amount") := .(6, 4)]
-prod[upc == 3700024064 & upc_ver_uc == 1, "multi" := 5]
-prod[upc == 3700029315 & upc_ver_uc == 2, "size1_amount" := 24]
-prod[upc == 3700029319 & upc_ver_uc == 3, "multi" := 4]
-prod[upc == 3700032666 & upc_ver_uc == 2, "multi" := 4]
-prod[upc == 3700034021 & upc_ver_uc == 2, "size1_amount" := 6]
-prod[upc == 3700034030 & upc_ver_uc == 2, c("multi", "size1_amount") := .(6, 6)]
-prod[upc == 3700044975 & upc_ver_uc == 1, "multi" := 2]
-prod[upc == 3700046162 & upc_ver_uc == 1, "multi" := 4]
-prod[upc == 3700046821 & upc_ver_uc == 1, "multi" := 6]
-prod[upc == 3700047936 & upc_ver_uc == 2, "multi" := 9]
-prod[upc == 3700083747 & upc_ver_uc == 1, "multi" := 4]
-prod[upc == 3700083752 & upc_ver_uc == 2, "size1_amount" := 4]
-prod[upc == 4116344619 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 4116344624 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 4116344628 & upc_ver_uc == 1, "multi" := 1]
-prod[upc == 4127079116 & upc_ver_uc == 1, "size1_amount" := 12]
-prod[upc == 4200070066 & upc_ver_uc == 1, "multi" := 6]
-prod[upc == 4200086237 & upc_ver_uc == 1, "multi" := 5]
-prod[upc == 4200086510 & upc_ver_uc %in% 1:2, "multi" := 6]
-prod[upc == 4200087146 & upc_ver_uc == 2, "size1_amount" := 9]
-prod[upc == 4200096516 & upc_ver_uc == 1, "multi" := 4]
-prod[upc == 4200096517 & upc_ver_uc == 1, "multi" := 4]
-prod[upc == 4218739989 & upc_ver_uc == 1, "size1_amount" := 6]
-prod[upc == 4218739989 & upc_ver_uc == 2, c("multi", "size1_amount") := .(6, 4)]
-prod[upc == 4303202208 & upc_ver_uc == 2, "multi" := 1]
-prod[upc == 4303202208 & upc_ver_uc == 3, "size1_amount" := 20]
-prod[upc == 4303203408 & upc_ver_uc == 1, "size1_amount" := 1]
-prod[upc == 5400000005 & upc_ver_uc == 1, "size1_amount" := 2]
-prod[upc == 5400000009 & upc_ver_uc == 1, "multi" := 6]
-prod[upc == 5400000010 & upc_ver_uc %in% 1:2, c("multi", "size1_amount") := .(1, 16)]
-prod[upc == 5400041210 & upc_ver_uc == 1, "multi" := 20]
-prod[upc == 5400042320 & upc_ver_uc %in% 1:2, "multi" := 20]
-prod[upc == 5400042330 & upc_ver_uc == 2, "multi" := 30]
-prod[upc == 6132835112 & upc_ver_uc == 1, "size1_amount" := 12]
-prod[upc == 61429940221 & upc_ver_uc == 2, "size1_amount" := 4]
-prod[upc == 7200015561 & upc_ver_uc == 1, "multi" := 1]
-prod[upc == 7417505815 & upc_ver_uc == 1, "size1_amount" := 6]
-prod[upc == 7417505831 & upc_ver_uc == 1, "size1_amount" := 24]
-prod[upc == 7545007963 & upc_ver_uc == 2, "multi" := 1]
-prod[upc == 7789022903 & upc_ver_uc == 1, "multi" := 1]
-prod[upc == 7874201206 & upc_ver_uc == 2, "size1_amount" := 4]
-prod[upc == 88867001012 & upc_ver_uc == 2, "multi" := 1]
-prod[upc == 9661915988 & upc_ver_uc == 1, "multi" := 6]
-prod[upc == 9661915988 & upc_ver_uc == 2, "size1_amount" := 6]
-prod[upc == 18368900019 & upc_ver_uc == 2, "size1_amount" := 24]
-prod[upc == 68113172120 & upc_ver_uc == 2, "multi" := 4]
-prod[upc == 68826712833 & upc_ver_uc == 1, "size1_amount" := 4]
-prod[upc == 71754411316 & upc_ver_uc == 2, "multi" := 1]
-prod[upc == 72645900024 & upc_ver_uc == 2, "size1_amount" := 24]
-prod[upc == 72796901557 & upc_ver_uc == 1, "size1_amount" := 12]
-
-prod[, "rolls" := multi * size1_amount][, c("multi", "size1_amount") := NULL]
-prod <- prod[rolls < 96]
+prod <- fread("/scratch/upenn/hossaine/fullProd.csv")[product_module_code == moduleCode]
+prod[, "rolls" := as.integer(multi * size1_amount)]
+prod[, "ply" := str_extract_all(upc_descr, "\\s\\dP\\s")]
+prod[, "ply" := as.integer(gsub("P", "", ply))]
+prod[, "sheet" := str_extract_all(upc_descr, "\\d{2,}S\\s")]
+prod[, "sheet" := as.integer(gsub("S", "", sheet))]
+prod[, "sheets" := ply * sheet * rolls]
+prod[, c("upc_descr", "multi", "size1_amount", "ply", "sheet") := NULL]
 
 # Getting annual selection of products for each store
 # I compute the average annual price by taking the sales-weighted average price
@@ -159,6 +91,7 @@ for (yr in yrs) {
   purch[, "week_end" := as.integer(gsub("-", "", week_end))]
   fullPurch <- rbindlist(list(fullPurch, purch), use.names = TRUE)
 }
+fullPurch[, "totalAnnualSpending" := sum(totalExp), by = .(household_code, panel_year)]
 
 # Combining with Homescan data
 fullTP <- fread("/scratch/upenn/hossaine/fullTP.csv", nThread = threads)
@@ -166,35 +99,47 @@ choices <- merge(fullTP, fullPurch, by = c("store_code_uc", "week_end", "brand_c
 
 # Computing savings and focusing on those associated with larger purchases
 choices[, "savings" := (unitPriceChosen - minUnitPrice) / unitPriceChosen]
+choices[, "savingsLevel" := (unitPriceChosen - minUnitPrice) * totalAmount]
 choices[, "bigger" := (totalAmount < rolls)]
 
 # Combining with household characteristics
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
-                          "household_income_coarse", "household_size", "age",
-                          "child", "dma_cd", "household_income"),
+                          "household_income_coarse", "men", "women", "age",
+                          "nChildren", "married", "college", "dma_cd",
+                          "household_income"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
 choices <- merge(choices, panel, by = c("household_code", "panel_year"))
 
 # Computing missed savings by household
 hhSavings <- choices[bigger == TRUE & savings >= 0,
-                     .(weekSavings = weighted.mean(savings, w = totalExp)),
+                     .(savings = weighted.mean(savings, w = totalExp),
+                       savingsLevel = sum(savingsLevel),
+                       totalExp = sum(totalExp)),
                      by = .(household_code, panel_year, household_income_coarse,
-                            household_size, age, child, dma_cd, projection_factor,
-                            household_income)]
+                            men, women, age, nChildren, dma_cd, projection_factor,
+                            household_income, totalAnnualSpending, married,
+                            college)]
 
-kable(hhSavings[household_size == 4, mean(weekSavings),
+kable(hhSavings[men == 1 & women == 1 & nChildren == 2, mean(savings),
                 by = household_income_coarse])
 # Put this into lowestPrice.tex
 
+# Getting savings levels (inflated to match full annual expenditures)
+hhSavings[, "fullSavingsLevel" := savingsLevel * totalAnnualSpending / totalExp]
+kable(hhSavings[men == 1 & women == 1 & nChildren == 2,
+                mean(fullSavingsLevel), by = household_income_coarse])
+
+
 reg <- felm(data = hhSavings,
-            weekSavings ~ household_income_coarse + age + child +
-              household_size | as.factor(dma_cd) * as.factor(panel_year))
+            savings ~ household_income_coarse + age + nChildren + married +
+              men + women | as.factor(dma_cd) + as.factor(panel_year),
+            weights = hhSavings$projection_factor)
 stargazer(reg, type = "text",
           add.lines = list(c("Demographics", "Y"),
                            c("Market-Year FE", "Y")),
-          omit = c("age", "child", "household_size"),
+          omit = c("age", "nChildren", "men", "women"),
           order = c(2, 3, 1), digits = 3,
           covariate.labels = c("25-50k", "50-100k", ">100k"))
 
@@ -229,8 +174,8 @@ stargazer(reg, type = "text",
 # Computing savings by income group
 fullCoefs <- NULL
 for (yr in 2006:2016) {
-  reg <- felm(data = hhSavings[panel_year < 2014], weekSavings ~ household_income + age +
-                child + household_size + as.factor(dma_cd) + as.factor(panel_year) + 0)
+  reg <- felm(data = hhSavings[panel_year < 2014], savings ~ household_income + age +
+                nChildren + men + women + as.factor(dma_cd) + as.factor(panel_year) + 0)
   coefs <- as.data.table(summary(reg)$coefficients, keep.rownames = TRUE)
   coefs[, "panel_year" := yr]
   fullCoefs <- rbindlist(list(fullCoefs, coefs))
@@ -258,6 +203,6 @@ ggplot(data = graphData, aes(x = rn, y = beta)) +
                         "Note: Demographic adjustments control for household size, \n",
                         "age, and presence of children. Income-specific time trends \n",
                         "are also controlled for.")) +
-  theme_fivethirtyeight() +
+  theme_tufte() +
   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
   scale_color_grey()
