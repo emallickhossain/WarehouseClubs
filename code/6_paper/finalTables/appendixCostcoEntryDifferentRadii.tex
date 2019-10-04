@@ -1,0 +1,29 @@
+\begin{table}[!htbp] \centering
+  \caption{Robustness Test: Warehouse Club Entry on Bulk Buying (Different Radii)}
+  \label{tab:appendixCostcoEntryDifferentRadii}
+\begin{tabular}{@{\extracolsep{5pt}}lcccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+ & 5 Mi & 10 Mi & 15 Mi & 20 Mi \\
+\\[-1.8ex] & (1) & (2) & (3) & (4)\\
+\hline \\[-1.8ex]
+ Post-Entry & 0.003 & $-$0.001 & 0.001 & 0.012$^{***}$ \\
+  & (0.004) & (0.004) & (0.004) & (0.004) \\
+  Post-Entry : 25-50k & 0.018$^{***}$ & 0.020$^{***}$ & 0.022$^{***}$ & 0.007 \\
+  & (0.004) & (0.005) & (0.005) & (0.005) \\
+  Post-Entry : 50-100k & 0.019$^{***}$ & 0.031$^{***}$ & 0.030$^{***}$ & 0.016$^{***}$ \\
+  & (0.004) & (0.005) & (0.005) & (0.005) \\
+  Post-Entry : >100k & 0.026$^{***}$ & 0.041$^{***}$ & 0.040$^{***}$ & 0.040$^{***}$ \\
+  & (0.005) & (0.006) & (0.007) & (0.008) \\
+ \hline \\[-1.8ex]
+Household-ZIP FE's & Y & Y & Y & Y \\
+Year-Qtr FE's & Y & Y & Y & Y \\
+Demographic Controls & Y & Y & Y & Y \\
+Observations & 2,519,594 & 2,520,936 & 2,520,129 & 2,519,937 \\
+Adjusted R$^{2}$ & 0.426 & 0.426 & 0.426 & 0.426 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\caption*{Notes: This table uses 2004--2015 Nielsen Consumer Panel data at the household-quarter level. Coefficients are reported for Equation (\ref{eq:costcoEntry}) which regresses households' quarterly bulk purchase shares on an indicator for warehouse club entry, an indicator for whether the household shops at a warehouse club, and an interaction term as well as household demographics (household size, age, presence of children, and marital status). Different distance cutoffs defining an "entry" are used for each regression. Household-ZIP code and year-quarter fixed effects are included. Projection weights are not used.}
+\end{table}

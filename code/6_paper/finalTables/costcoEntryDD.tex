@@ -1,0 +1,28 @@
+\begin{table}[!htbp] \centering
+  \caption{Effect of Warehouse Club Entry on Bulk Buying}
+  \label{tab:costcoEntryDD}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ Post-Entry & 0.017$^{***}$ & 0.017$^{***}$ & $-$0.005 \\
+  & (0.004) & (0.004) & (0.007) \\
+  Post-Entry : 25-50k &  &  & 0.022$^{***}$ \\
+  &  &  & (0.008) \\
+  Post-Entry : 50-100k &  &  & 0.028$^{***}$ \\
+  &  &  & (0.009) \\
+  Post-Entry : >100k &  &  & 0.039$^{***}$ \\
+  &  &  & (0.012) \\
+ \hline \\[-1.8ex]
+Household-ZIP FE's & Y & Y & Y \\
+Year-Quarter FE's & Y & Y & Y \\
+Demographic Controls & N & Y & Y \\
+Observations & 2,520,129 & 2,520,129 & 2,520,129 \\
+Adjusted R$^{2}$ & 0.427 & 0.427 & 0.427 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\caption*{Notes: This table uses 2004--2015 Nielsen Consumer Panel data at the household-quarter level. Coefficients are reported for Equation (\ref{eq:costcoEntry}) which regresses households' quarterly bulk purchase shares on an indicator for warehouse club entry, an indicator for whether the household shops at a warehouse club, and an interaction term as well as household demographics (household size, age, presence of children, and marital status). Household-ZIP code and year-quarter fixed effects are included. Projection weights are not used.}
+\end{table}

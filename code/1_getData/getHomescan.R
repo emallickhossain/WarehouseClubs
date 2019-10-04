@@ -1,4 +1,5 @@
 # All transferring, unzipping and cleaning of Homescan data
+# find /scratch/upenn/hossaine/nielsen_extracts/RMS/2016 -exec touch {} \;
 library(data.table)
 library(purrr)
 library(stringr)
@@ -140,6 +141,9 @@ panel[is.na(child7), "child7" := FALSE]
 panel[, "nChildren" := child1 + child2 + child3 + child4 + child5 + child6 + child7]
 panel[, paste0("child", 1:7) := NULL]
 
+# Adding adults count
+panel[, "adults" := men + women]
+
 # Adding college indicator if at least 1 HoH has graduated college
 panel[, "college" := 0]
 panel[female_head_education >= 5 | male_head_education >= 5, "college" := 1]
@@ -166,12 +170,16 @@ panel[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
 panel[, "state" := substr(fips, 1, 2)]
 row4 <- c("Drop ZIPs Not Geocoded:", uniqueN(panel$household_code))
 
-# Adding car ownership and median home size
-# scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/carOwnership.csv
+# Adding car ownership
+# scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/car.csv
 # hossaine@wrds-cloud.wharton.upenn.edu:/home/upenn/hossaine/Nielsen/Data
-own <- fread("/home/upenn/hossaine/Nielsen/Data/carAndHome.csv")
+own <- fread("/home/upenn/hossaine/Nielsen/Data/car.csv")
 own[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
 panel <- merge(panel, own, by = "zip_code")
+sqft <- fread("/home/upenn/hossaine/Nielsen/Data/sqftValue.csv")
+sqft[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
+panel <- merge(panel, sqft, by.x = c("panel_year", "zip_code"),
+               by.y = c("year", "zip_code"), all.x = TRUE)
 row5 <- c("Cannot Be Matched to Car Access:", uniqueN(panel$household_code))
 
 # Add Unit pricing indicators
@@ -195,7 +203,7 @@ panel[, c("state", "female_head_education", "male_head_education",
           "male_head_birth", "female_head_birth", "race", "marital_status") := NULL]
 intCols <- c("zip_code", "fips", "household_income", "college", "married")
 panel[, (intCols) := lapply(.SD, as.integer), .SDcols = intCols]
-fwrite(panel, "/home/upenn/hossaine/Nielsen/Data/fullPanel.csv", nThread = threads)
+fwrite(panel, "/scratch/upenn/hossaine/fullPanel.csv", nThread = threads)
 
 cleanTable <- as.data.table(rbind(row1, row2, row3, row4, row5))
 setnames(cleanTable, c("Step", "HH"))

@@ -1,0 +1,39 @@
+
+% Table created by stargazer v.5.2.2 by Marek Hlavac, Harvard University. E-mail: hlavac at fas.harvard.edu
+% Date and time: Tue, Sep 03, 2019 - 03:03:00 PM
+\begin{table}[!htbp] \centering 
+  \caption{Bulk Buying Within ZIP Codes, Store Types, or Retail Chains by Income} 
+  \label{tab:discountingBehaviorFE} 
+\begin{tabular}{@{\extracolsep{5pt}}lccccc} 
+\\[-1.8ex]\hline 
+\hline \\[-1.8ex] 
+ & \multicolumn{2}{c}{ZIP Code} & \multicolumn{3}{c}{Channel/Retailer Type} \\ 
+\\[-1.8ex] & (1) & (2) & (3) & (4) & (5)\\ 
+\hline \\[-1.8ex] 
+ 25-50k & 0.031$^{***}$ & 0.031$^{***}$ & 0.021$^{***}$ & 0.007$^{***}$ & 0.007$^{***}$ \\ 
+  & (0.001) & (0.001) & (0.001) & (0.0005) & (0.0005) \\ 
+  50-100k & 0.067$^{***}$ & 0.065$^{***}$ & 0.044$^{***}$ & 0.014$^{***}$ & 0.013$^{***}$ \\ 
+  & (0.001) & (0.001) & (0.001) & (0.0005) & (0.0005) \\ 
+  >100k & 0.101$^{***}$ & 0.096$^{***}$ & 0.064$^{***}$ & 0.018$^{***}$ & 0.017$^{***}$ \\ 
+  & (0.001) & (0.001) & (0.001) & (0.001) & (0.001) \\ 
+ \hline \\[-1.8ex] 
+Demographics & Y & Y & Y & Y & Y \\ 
+ZIP-Year FE & N & Y & N & N & N \\ 
+Channel-Year FE & N & N & N & Y & Y \\ 
+Chain-Year FE & N & N & N & N & Y \\ 
+Observations & 767,195 & 767,195 & 3,978,987 & 3,978,987 & 3,978,987 \\ 
+Adjusted R$^{2}$ & 0.086 & 0.265 & 0.012 & 0.221 & 0.238 \\ 
+\hline 
+\hline \\[-1.8ex] 
+\textit{Note:}  & \multicolumn{5}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\ 
+ & \multicolumn{5}{l}{Source: Using 2004--2017 Nielsen Consumer Panel data, this } \\ 
+ & \multicolumn{5}{l}{table displays the regression coefficients from estimating } \\ 
+ & \multicolumn{5}{l}{Equation ef{eq:discountingBehaviorFE} which regresses a } \\ 
+ & \multicolumn{5}{l}{household's annual share of bulk purchases of non-food products } \\ 
+ & \multicolumn{5}{l}{on household characteristics (household composition, age, } \\ 
+ & \multicolumn{5}{l}{marital status, and education) and includes a DMA and year } \\ 
+ & \multicolumn{5}{l}{fixed effect (Columns 1, 3, 5). Columns 2, 4, and 6 also } \\ 
+ & \multicolumn{5}{l}{include a ZIP code-year, store type-year, or retail chain-year } \\ 
+ & \multicolumn{5}{l}{fixed effect.} \\ 
+\end{tabular} 
+\end{table} 
