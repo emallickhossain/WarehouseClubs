@@ -59,7 +59,7 @@ ggplot(data = tp[brand_descr %in% topBrands & rolls <= 24],
   geom_vline(xintercept = sheetQtile75, linetype = "dashed") +
   geom_hline(yintercept = 0) +
   geom_vline(xintercept = 0) +
-  geom_jitter(height = 0) +
+  geom_jitter(width = 0) +
   facet_wrap(vars(brand_descr)) +
   labs(x = "Days' Supply",
        y = "Rolls") +
@@ -67,10 +67,8 @@ ggplot(data = tp[brand_descr %in% topBrands & rolls <= 24],
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "none") +
-  scale_color_grey()
-  # scale_color_colorblind()
-ggsave(filename = "./figures/tpSizeQuantityDistributionAllProds.pdf", height = 4, width = 6)
-# ggsave(filename = "./figures/tpSizeQuantityDistributionAllProdsColor.pdf", height = 4, width = 6)
+  scale_color_colorblind()
+ggsave(filename = "./figures/tpSizeQuantityDistributionAllProdsColor.pdf", height = 4, width = 6)
 
 ################################################################################
 ################## MNL ESTIMATION DATA #########################################

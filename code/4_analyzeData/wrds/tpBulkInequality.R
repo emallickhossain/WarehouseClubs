@@ -3,78 +3,75 @@ library(lfe)
 library(stargazer)
 library(ggplot2)
 library(ggthemes)
+library(stringr)
+library(zoo)
 threads <- 8
 
-
 ################################################################################
-# ANALYSIS OF TOILET PAPER SHOPPING ON CHOICE SUBSAMPLE
+# ANALYSIS OF TOILET PAPER PURCHASES TO VALIDATE MODEL PREDICTIONS
 ################################################################################
 fullPurch <- fread("/scratch/upenn/hossaine/fullTPPurchases.csv", nThread = threads)
-panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads)
+panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
+               select = c("household_code", "panel_year", "projection_factor",
+                          "household_income_coarse", "type_of_residence", "dma_cd",
+                          "age", "men", "women", "nChildren", "college", "married",
+                          "carShare", "law", "fips"))
 prod <- fread("/scratch/upenn/hossaine/prodTP.csv")
+
+# Adjusting unit price regulations
+panel[, "lawInd" := (law >= 3)]
+panel[, "fips" := str_pad(fips, 5, "left", "0")]
+panel[, "state" := as.integer(substr(fips, 1, 2))]
+panel[lawInd == FALSE, "mandatory" := "None"]
+panel[lawInd == TRUE, "mandatory" := ifelse(state %in%
+                                              c(9, 11, 24, 25, 33, 34, 36, 41, 44, 50),
+                                            "Mandatory", "Voluntary")]
+panel[lawInd == FALSE, "display" := "None"]
+panel[lawInd == TRUE, "display" := mandatory]
+panel[lawInd == TRUE & state %in% c(6, 9, 25, 34, 36, 44), "display" := "Display"]
+panel[, "mandatory" := relevel(as.factor(mandatory), ref = "None")]
+panel[, "display" := relevel(as.factor(display), ref = "None")]
 
 # Isolating to grocery and discount stores
 fullPurch <- merge(fullPurch, prod, by.x = c("upc_choice", "upc_ver_uc_choice"),
                    by.y = c("upc", "upc_ver_uc"))
+fullPurch <- fullPurch[, .(totalSheet, household_code, panel_year, channel_type)]
 fullPurch <- merge(fullPurch, panel, by = c("household_code", "panel_year"))
-fullPurch[, "Household Income" := factor(household_income_coarse,
-                                         levels = c("<25k", "25-50k", "50-100k", ">100k"),
-                                         ordered = TRUE)]
-fullPurch[, "retailYear" := paste(retailer_code, panel_year, sep = "_")]
-fullPurch[, "brandRetailYear" := paste(brand_code_uc, retailer_code, panel_year, sep = "_")]
-fullPurch[, "zipYear" := paste(zip_code, panel_year, sep = "_")]
-fullPurch[, "brandZipYear" := paste(brand_code_uc, zip_code, panel_year, sep = "_")]
-fullPurch[, "household_income" := as.factor(household_income)]
 
-# Bulk buying by rolls
-reg1 <- felm(log(totalAmount) ~ household_income + men + women + nChildren + age |
-               married + child + college,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg2 <- felm(log(totalAmount) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + retailYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg3 <- felm(log(totalAmount) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + brandRetailYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg4 <- felm(log(totalAmount) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + zipYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg5 <- felm(log(totalAmount) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + brandZipYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, type = "text", omit.stat = c("f", "ser"))
+# Generating regulation indicator and days' supply
+fullPurch[, "days" := totalSheet / (57 * 2)]
+fullPurch[state == 6, "display" := "Voluntary"]
+fullPurch[, "hhInc" := paste(household_income_coarse, household_code, sep = "_")]
+fullPurch[, "adults" := men + women]
 
-# Bulk buying by sheets
-reg1 <- felm(log(totalSheet) ~ household_income + men + women + nChildren + age |
-               married + child + college,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg2 <- felm(log(totalSheet) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + retailYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg3 <- felm(log(totalSheet) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + brandRetailYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg4 <- felm(log(totalSheet) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + zipYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-reg5 <- felm(log(totalSheet) ~ household_income + men + women + nChildren + age |
-               married + child + college + brand_code_uc + brandZipYear,
-             data = fullPurch, weights = fullPurch$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, type = "text", omit.stat = c("f", "ser"))
+# Adding mover information
+setorder(fullPurch, household_code, panel_year)
+fullPurch[, "lagLaw" := shift(lawInd, 1, type = "lag"),
+                    by = .(household_code)]
+fullPurch[, "move" := lawInd - lagLaw]
+fullPurch[!move %in% c(-1, 1), "move" := NA]
+fullPurch[, "move" := na.locf(move), by = household_code] #filling all NAs with previous non-na value
+fullPurch[move == 1 & lawInd == FALSE, "move" := 0]
+fullPurch[move == -1 & lawInd == TRUE, "move" := 0]
+fullPurch[, "move" := relevel(as.factor(move), ref = "0")]
 
-# Getting coefficients
-
-# Graphing sheet disparity
-# Organizing graph data
-finalCoefs <- rbindlist(list(as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE),
-                             as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE),
-                             as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE),
-                             as.data.table(summary(reg4)$coefficients, keep.rownames = TRUE),
-                             as.data.table(summary(reg5)$coefficients, keep.rownames = TRUE)))
-graphData <- finalCoefs[grepl("household_income", rn)]
-graphData[, "rn" := gsub("household_income", "", rn)]
-graphData[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
-                           labels = c(6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
-                           ordered = TRUE)]
-graphData[, "rn" := as.numeric(as.character(rn))]
-setnames(graphData, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "disc", "Product Type"))
+# Getting regression table
+# Movers (symmetric effects, no difference between move to and move away from regs)
+reg1 <- felm(log(days) ~ lawInd | household_code + panel_year | 0 | household_code,
+             data = fullPurch)
+reg2 <- felm(log(days) ~ lawInd + household_income_coarse + men + women + nChildren +
+               married + carShare + type_of_residence + college + age |
+               household_code + panel_year | 0 | household_code,
+             data = fullPurch)
+stargazer(reg1, reg2, type = "text",
+          add.lines = list(c("Household FE", "Y", "Y"),
+                           c("Year FE", "Y", "Y"),
+                           c("Demographics", "N", "Y")),
+          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          keep = c("lawInd", "type_of_residence"),
+          covariate.labels = c("Regulation", "Single-Family Home"),
+          notes.align = "l",
+          digits = 3,
+          out = "tables/unitPriceLawMoversTP.tex")

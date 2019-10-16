@@ -88,7 +88,7 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "men", "women", "age", "nChildren",
                           "dma_cd", "household_income_coarse", "married", "college",
-                          "carShare", "law", "zip_code", "fips"),
+                          "carShare", "law", "zip_code", "fips", "type_of_residece"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
@@ -369,10 +369,10 @@ graphDataRetailer[, "rn" := as.numeric(as.character(rn))]
 setnames(graphDataRetailer, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
 # Retailer and Channel FE graph
-group.colors <- c("Without FE" = "#FF2700", "Channel FE" = "#008FD5",
-                  "Channel + Retailer FE" = "#77AB43")
-group.shapes <- c("Without FE" = 17, "Channel FE" = 16,
-                  "Channel + Retailer FE" = 15)
+group.colors <- c("Without FE" = "#FF2700", "Channel FE" = "#77AB43",
+                  "Channel + Retailer FE" = "#008FD5")
+group.shapes <- c("Without FE" = 17, "Channel FE" = 15,
+                  "Channel + Retailer FE" = 16)
 ggplot(data = graphDataRetailer,
        aes(x = rn, y = beta * 100, color = Type)) +
   geom_errorbar(aes(ymin = 100 * LCL,

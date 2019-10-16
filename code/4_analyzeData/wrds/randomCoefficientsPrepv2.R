@@ -15,7 +15,7 @@ library(ggplot2)
 library(ggthemes)
 library(ggridges)
 library(lfe)
-yrs <- 2006:2016
+yrs <- 2016
 threads <- 8
 moduleCode <- 7260 #tp
 path <- "/scratch/upenn/hossaine/nielsen_extracts/RMS/"
@@ -36,7 +36,7 @@ trips <- merge(trips, retailers, by = "retailer_code")
 
 # Getting all purchase data together (~66% have a store_code_uc)
 fullPurch <- NULL
-for (i in yrs) {
+for (i in 2004:2017) {
   print(i)
   purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", i, ".csv"),
                  nThread = threads,

@@ -152,8 +152,13 @@ panel[female_head_education >= 5 | male_head_education >= 5, "college" := 1]
 panel[, "white" := ifelse(race == 1, 1L, 0L)]
 
 # Collapsing type of residence to single-family home, mobile home, and other (likely apt)
+# Dropping mobile homes
 panel[, "type_of_residence" := cut(type_of_residence, c(0, 2, 6, 10),
                                    labels = c("Single-Family", "Multi-Family", "Mobile"))]
+panel <- panel[type_of_residence != ""]
+panel <- panel[type_of_residence != "Mobile"]
+row4 <- c("Exclude Mobile Homes:", uniqueN(panel$household_code))
+
 
 # Adding child indicator
 panel[, "child" := ifelse(age_and_presence_of_children == 9, 0L, 1L)]
@@ -168,7 +173,7 @@ zipLatLon <- fread("/home/upenn/hossaine/Nielsen/Data/zipLatLon.csv")
 panel <- merge(panel, zipLatLon, by = "zip_code")
 panel[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
 panel[, "state" := substr(fips, 1, 2)]
-row4 <- c("Drop ZIPs Not Geocoded:", uniqueN(panel$household_code))
+row5 <- c("Drop ZIPs Not Geocoded:", uniqueN(panel$household_code))
 
 # Adding car ownership
 # scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/car.csv
@@ -176,11 +181,7 @@ row4 <- c("Drop ZIPs Not Geocoded:", uniqueN(panel$household_code))
 own <- fread("/home/upenn/hossaine/Nielsen/Data/car.csv")
 own[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
 panel <- merge(panel, own, by = "zip_code")
-sqft <- fread("/home/upenn/hossaine/Nielsen/Data/sqftValue.csv")
-sqft[, "zip_code" := str_pad(zip_code, 5, "left", "0")]
-panel <- merge(panel, sqft, by.x = c("panel_year", "zip_code"),
-               by.y = c("year", "zip_code"), all.x = TRUE)
-row5 <- c("Cannot Be Matched to Car Access:", uniqueN(panel$household_code))
+row6 <- c("Cannot Be Matched to Car Access:", uniqueN(panel$household_code))
 
 # Add Unit pricing indicators
 # scp Desktop/Research/OnlineShopping/WarehouseClubs/code/0_data/nist130.csv
@@ -205,7 +206,7 @@ intCols <- c("zip_code", "fips", "household_income", "college", "married")
 panel[, (intCols) := lapply(.SD, as.integer), .SDcols = intCols]
 fwrite(panel, "/scratch/upenn/hossaine/fullPanel.csv", nThread = threads)
 
-cleanTable <- as.data.table(rbind(row1, row2, row3, row4, row5))
+cleanTable <- as.data.table(rbind(row1, row2, row3, row4, row5, row6))
 setnames(cleanTable, c("Step", "HH"))
 cleanTable[, "HH" := as.integer(HH)]
 stargazer(cleanTable, type = "text", summary = FALSE,
@@ -412,7 +413,6 @@ for (yr in yrs) {
 path <- "/scratch/upenn/hossaine/nielsen_extracts/HMS/"
 retailers <- fread(paste0(path, "Master_Files/Latest/retailers.tsv"))
 fwrite(retailers, "/scratch/upenn/hossaine/fullRetailers.csv", nThread = threads)
-
 
 ######################## STEP 7: CLEAN TRIPS FILE ##############################
 # Combining trips files and computing monthly cumulative spending and whether

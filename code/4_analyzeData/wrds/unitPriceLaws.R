@@ -49,7 +49,8 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "men", "women", "age", "nChildren",
                           "dma_cd", "household_income_coarse", "married",
-                          "carShare", "law", "fips", "zip_code", "college"),
+                          "carShare", "law", "fips", "zip_code", "college",
+                          "type_of_residence"),
                key = c("household_code", "panel_year"))
 panel[, "fips" := str_pad(fips, width = 5, side = "left", pad = "0")]
 panel[, "state" := as.integer(substr(fips, 1, 2))]
@@ -120,16 +121,16 @@ discBehaviorNonFood[state == 6, "display" := "Voluntary"]
 reg1 <- felm(bulk ~ lawInd | 0 | 0 | state,
              data = discBehaviorNonFood)
 reg2 <- felm(bulk ~ lawInd + household_income_coarse + men + women + nChildren +
-               age + college + married | 0 | 0 | state,
+               age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
 reg3 <- felm(bulk ~ lawInd * household_income_coarse + men + women + nChildren +
-               age + college + married | 0 | 0 | state,
+               age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
 reg4 <- felm(bulk ~ display + men + women + nChildren +
-               age + college + married | 0 | 0 | state,
+               age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
 reg5 <- felm(bulk ~ display + men + women + nChildren +
-               age + college + married | 0 | 0 | state,
+               age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood[state != 6])
 stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
           add.lines = list(c("Demographics", "N", "Y", "Y", "Y", "Y"),
@@ -138,7 +139,7 @@ stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
           keep = c("lawInd*", "mandatory*", "display*", "voluntary*"),
-          order = c(1, 15, 16, 14, 7, 6, 5),
+          order = c(1, 17, 18, 16, 7, 6, 5),
           covariate.labels = c("Regulation", " . : 25-50k", " . : 50-100k", " . : >100k",
                                "Vol. Disp","Mand. Disp", "Mand. Disp, Strict"),
           notes.align = "l",
@@ -200,10 +201,12 @@ discBehaviorNonFood[, "move" := relevel(as.factor(move), ref = "0")]
 reg1 <- felm(bulk ~ lawInd | household_code + panel_year | 0 | household_code,
              data = discBehaviorNonFood[!is.na(move)])
 reg2 <- felm(bulk ~ lawInd + household_income_coarse + men + women + nChildren +
-               married + college + age | household_code + panel_year | 0 | household_code,
+               married + carShare + type_of_residence + college + age |
+               household_code + panel_year | 0 | household_code,
              data = discBehaviorNonFood[!is.na(move)])
 reg3 <- felm(bulk ~ move + household_income_coarse + men + women + nChildren +
-               age + married + college | household_code + panel_year | 0 | household_code,
+               married + carShare + type_of_residence + college + age |
+               household_code + panel_year | 0 | household_code,
              data = discBehaviorNonFood)
 stargazer(reg1, reg2, reg3, type = "text",
           add.lines = list(c("Household FE", "Y", "Y", "Y"),
@@ -212,8 +215,8 @@ stargazer(reg1, reg2, reg3, type = "text",
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          keep = c("lawInd", "move"),
-          covariate.labels = c("Regulation", "Without Regs", "With Regs"),
+          keep = c("lawInd", "move", "type_of_residence"),
+          covariate.labels = c("Regulation", "Law to No Law", "No Law to Law", "Single-Family Home"),
           notes.align = "l",
           digits = 3,
           out = "tables/unitPriceLawMovers.tex")

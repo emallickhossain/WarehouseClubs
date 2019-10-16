@@ -157,16 +157,14 @@ ggplot(data = graphData,
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Annual Household Income ($000s)",
-       y = "Diff. in Annual Purchasing (Percentage Points)") +
+       y = "Diff. in Annual Budget Share (Percentage Points)") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
   scale_shape_manual(values = c(15:19)) +
-  scale_color_grey()
-  # scale_color_colorblind()
-ggsave("./figures/expendituresByChannel.pdf", height = 4, width = 6)
-# ggsave("./figures/expendituresByChannelColor.pdf", height = 4, width = 6)
+  scale_color_manual(values = c("#009E73", "#000000", "#E69F00", "#56B4E9", "#F0E442"))
+ggsave("./figures/expendituresByChannelColor.pdf", height = 4, width = 6)
 
 # Stargazer table for income quartiles
 reg1 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |

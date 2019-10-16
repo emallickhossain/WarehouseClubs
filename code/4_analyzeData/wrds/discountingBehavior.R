@@ -109,8 +109,9 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                           "household_income", "household_size", "age", "child",
                           "dma_cd", "household_income_coarse", "married",
                           "carShare", "law", "zip_code", "college", "men", "women",
-                          "nChildren"),
+                          "nChildren", "type_of_residence"),
                key = c("household_code", "panel_year"))
+panel[, "adults" := men + women]
 panel[, "household_income" := as.factor(household_income)]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
 panel[, "lawInd" := (law >= 3)]
@@ -120,7 +121,8 @@ discBehaviorFood <- merge(discBehaviorFood, panel, by = c("household_code", "pan
 
 # Identifying variation example
 ex <- discBehaviorFood[men == 1 & women == 1 & nChildren == 2 & married == 1 &
-                         college == 1 & panel_year == 2017]
+                         college == 1 & type_of_residence == "Single-Family" &
+                         panel_year == 2017]
 ex[, "household_income" := factor(household_income,
                                   levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17,
                                              18, 19, 21, 23, 26, 27),
@@ -163,8 +165,8 @@ print(discBehaviorFood[food == 0, weighted.mean(bulk, w = projection_factor),
 
 runRegAll <- function(y) {
   regForm <- as.formula(paste0(y, "~", "household_income + married + ",
-                               "age + men + women + nChildren + college | ",
-                               "dma_cd + panel_year"))
+                               "age + adults + nChildren + type_of_residence + ",
+                               "carShare + college | dma_cd + panel_year"))
 
   # All products
   regData <- discBehaviorAll
@@ -247,21 +249,28 @@ reg2 <- felm(formula = bulk ~ household_income + married,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
 reg3 <- felm(formula = bulk ~ household_income + married + age,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
+reg4 <- felm(formula = bulk ~ household_income + married + age + adults +
                nChildren,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
+reg5 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
+reg6 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
-reg7 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
+reg7 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, type = "text")
-# Average bulk purchasing, residual of marital status, age, composition, and education
-# (i.e. reg 5) is 38.3% for all products. Coarsening income bins gives the same.
+reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd,
+             data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
+reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+             data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
+stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, reg9, type = "text", omit.stat = "ser")
+# Average bulk purchasing, residual of marital status, age, composition,
+# housing type, car share, and education
+# (i.e. reg 7) is 28.6% for all products. Coarsening income bins gives 28.5%
 # High income are an additional 2.2 pp above that.
 
 #Redoing regressions slowly dropping in covariates and looking at coefficient changes
@@ -274,25 +283,33 @@ reg2 <- felm(formula = bulk ~ household_income + married,
 reg3 <- felm(formula = bulk ~ household_income + married + age,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
+reg4 <- felm(formula = bulk ~ household_income + married + age + adults +
                nChildren,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
-reg5f <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
+reg5 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
+reg6 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
-reg7 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
+reg7f <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5f, reg6, reg7, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
+reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd,
+             data = discBehaviorFood[food == 1],
+             weights = discBehaviorFood[food == 1]$projection_factor)
+reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+             data = discBehaviorFood[food == 1],
+             weights = discBehaviorFood[food == 1]$projection_factor)
+stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7f, reg8, reg9, type = "text",
+          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "N", "Y", "Y"),
+                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "N", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
@@ -300,18 +317,19 @@ stargazer(reg1, reg2, reg3, reg4, reg5f, reg6, reg7, type = "text",
           covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
                                "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
                                "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
+                               "Age", "Adults", "Children", "Single-Family Home",
+                               "% Car Access", "College"),
           notes.align = "l",
           notes.append = TRUE,
           digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
+          notes = c("Source: Author calulations from Nielsen Consumer Panel."),
           label = "tab:discountingBehaviorFood",
           title = "Correlation of Bulk Buying and Demographics (Food Products)",
           out = "tables/AppendixDiscountingBehaviorFood.tex")
-# Average bulk purchasing, residual of marital status, age, composition, and education
-# (i.e. reg 5) is 38.6% for food products. High income are an additional 0.7 pp
-# above that. Coarsening income bins gives 38.3% with 1pp above.
+# Average bulk purchasing, residual of marital status, age, composition,
+# housing, car share, and education
+# (i.e. reg 7) is 27% for food products. High income are an additional 0.6 pp
+# above that. Coarsening income bins gives 26.6% with 1pp above.
 
 
 #Redoing regressions slowly dropping in covariates and looking at coefficient changes
@@ -324,25 +342,33 @@ reg2 <- felm(formula = bulk ~ household_income + married,
 reg3 <- felm(formula = bulk ~ household_income + married + age,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
+reg4 <- felm(formula = bulk ~ household_income + married + age + adults +
                nChildren,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
-reg5nf <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
+reg5 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
+reg6 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
-reg7 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
+reg7nf <- felm(formula = bulk ~ household_income + married + age + adults +
+                nChildren + type_of_residence + carShare + college,
+              data = discBehaviorFood[food == 0],
+              weights = discBehaviorFood[food == 0]$projection_factor)
+reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5nf, reg6, reg7, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
+reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+             data = discBehaviorFood[food == 0],
+             weights = discBehaviorFood[food == 0]$projection_factor)
+stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7nf, reg8, reg9, type = "text",
+          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "N", "Y", "Y"),
+                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "N", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
@@ -350,32 +376,33 @@ stargazer(reg1, reg2, reg3, reg4, reg5nf, reg6, reg7, type = "text",
           covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
                                "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
                                "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
+                               "Age", "Adults", "Children", "Single-Family Home",
+                               "% Car Access", "College"),
           notes.align = "l",
           notes.append = TRUE,
           digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
+          notes = c("Source: Author calulations from Nielsen Consumer Panel."),
           label = "tab:discountingBehaviorNonFood",
           title = "Correlation of Bulk Buying and Demographics (Non-Food Products)",
           out = "tables/AppendixDiscountingBehaviorNonFood.tex")
-# Average bulk purchasing, residual of marital status, age, composition, and education
-# (i.e. reg 5) is 34.8% for non-food products. High income are an additional 13.5 pp
-# above that. Coarsening income bins gives 37.2% with 10.6pp above.
+# Average bulk purchasing, residual of marital status, age, composition,
+# house type, car share, and education
+# (i.e. reg 7) is 33.4% for non-food products. High income are an additional 13 pp
+# above that. Coarsening income bins gives 35.7% with 10.1pp above.
 
 # Plotting food and non food averages without market and year FE's, just for illustration
-coefs5f <- as.data.table(summary(reg5f)$coefficients, keep.rownames = TRUE)
-confInt5f <- as.data.table(confint(reg5f), keep.rownames = TRUE)
-coefs5f <- merge(coefs5f, confInt5f, by = "rn")
-coefs5f[, "reg" := "Food"]
+coefs7f <- as.data.table(summary(reg7f)$coefficients, keep.rownames = TRUE)
+confInt7f <- as.data.table(confint(reg7f), keep.rownames = TRUE)
+coefs7f <- merge(coefs7f, confInt7f, by = "rn")
+coefs7f[, "reg" := "Food"]
 
-coefs5nf <- as.data.table(summary(reg5nf)$coefficients, keep.rownames = TRUE)
-confInt5nf <- as.data.table(confint(reg5nf), keep.rownames = TRUE)
-coefs5nf <- merge(coefs5nf, confInt5nf, by = "rn")
-coefs5nf[, "reg" := "Non-Food"]
+coefs7nf <- as.data.table(summary(reg7nf)$coefficients, keep.rownames = TRUE)
+confInt7nf <- as.data.table(confint(reg7nf), keep.rownames = TRUE)
+coefs7nf <- merge(coefs7nf, confInt7nf, by = "rn")
+coefs7nf[, "reg" := "Non-Food"]
 
 # Organizing graph data
-finalCoefs <- rbindlist(list(coefs5f, coefs5nf), use.names = TRUE)
+finalCoefs <- rbindlist(list(coefs7f, coefs7nf), use.names = TRUE)
 graphData <- finalCoefs[grepl("(household_income*)|(Intercept)", rn)]
 graphData[, "rn" := gsub("household_income", "", rn)]
 graphData[, "rn" := gsub("\\(Intercept\\)", "4", rn)]
@@ -394,7 +421,7 @@ ggplot(data = graphData,
        aes(x = rn, y = beta * 100, color = `Product Type`)) +
   geom_point(aes(shape = `Product Type`), size = 3) +
   geom_vline(xintercept = 0) +
-  geom_hline(yintercept = 34) +
+  geom_hline(yintercept = 25) +
   labs(x = "Annual Household Income ($000s)",
        y = "Average Bulk Share of Purchases (Percent)") +
   theme_tufte() +

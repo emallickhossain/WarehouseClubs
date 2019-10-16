@@ -101,10 +101,11 @@ discBehaviorModule <- fread("/scratch/upenn/hossaine/discBehaviorModule.csv",
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "age", "men", "women", "nChildren",
-                          "dma_cd", "household_income_coarse", "married", "college"),
+                          "dma_cd", "household_income_coarse", "married",
+                          "college", "type_of_residence", "carShare"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
-
+panel[, "adults" := men + women]
 discBehaviorModule <- merge(discBehaviorModule, panel,
                             by = c("household_code", "panel_year"))
 
@@ -113,9 +114,9 @@ discBehaviorModule <- merge(discBehaviorModule, panel,
 # different trends over time, but nothing seemed significant or big enough
 # to change the overall picture of increasing bulk with income.
 runRegAll <- function(y, module) {
-  regForm <- as.formula(paste0(y, "~", "household_income + age + men + women + ",
-                               "nChildren + married + college | dma_cd + panel_year",
-                               "| 0 | dma_cd"))
+  regForm <- as.formula(paste0(y, "~", "household_income + age + adults + ",
+                               "nChildren + married + type_of_residence + carShare +",
+                               "college | dma_cd + panel_year"))
 
   # All products
   regData <- discBehaviorModule[product_module_code == module]
@@ -169,298 +170,83 @@ ggplot(data = graphData,
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
   scale_shape_manual(values = c(7, 15:19)) +
-  # scale_color_grey()
-  scale_color_colorblind()
+  scale_color_grey()
+  # scale_color_colorblind()
 
-# ggsave("./figures/savingsBehaviorModules.pdf", height = 4, width = 6)
-ggsave("./figures/savingsBehaviorModulesColor.pdf", height = 4, width = 6)
+ggsave("./figures/savingsBehaviorModules.pdf", height = 4, width = 6)
+# ggsave("./figures/savingsBehaviorModulesColor.pdf", height = 4, width = 6)
 
 ################################################################################
 ########### ROBUSTNESS #########################################################
 ################################################################################
 #Redoing regressions slowly dropping in covariates and looking at coefficient changes
 # 7260: Toilet Paper
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-reg7tp <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7260],
-             weights = discBehaviorModule[product_module_code == 7260]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7tp, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior7260",
-          title = "Correlation of Bulk Buying and Demographics (Toilet Paper)",
-          out = "tables/AppendixDiscountingBehavior7260.tex")
+getRobust <- function(modCode) {
+  reg1 <- felm(formula = bulk ~ household_income,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg2 <- felm(formula = bulk ~ household_income + married,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg3 <- felm(formula = bulk ~ household_income + married + age,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg4 <- felm(formula = bulk ~ household_income + married + age + adults +
+                 nChildren,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg5 <- felm(formula = bulk ~ household_income + married + age + adults +
+                 nChildren + type_of_residence,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg6 <- felm(formula = bulk ~ household_income + married + age + adults +
+                 nChildren + type_of_residence + carShare,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg7 <- felm(formula = bulk ~ household_income + married + age + adults +
+                 nChildren + type_of_residence + carShare + college,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
+                 nChildren + type_of_residence + carShare + college | dma_cd,
+               data = discBehaviorModule[product_module_code == modCode],
+               weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
+                   nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+                 data = discBehaviorModule[product_module_code == modCode],
+                 weights = discBehaviorModule[product_module_code == modCode]$projection_factor)
+  stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, reg9, type = "text",
+            add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "N", "N", "Y", "Y"),
+                             c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "N", "N", "Y")),
+            single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+            out.header = FALSE,
+            dep.var.caption = "", dep.var.labels.include = FALSE,
+            omit = c("Constant"),
+            covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
+                                 "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
+                                 "50-60k", "60-70k", "70-100k", ">100k", "Married",
+                                 "Age", "Adults", "Children", "Single-Family Home",
+                                 "% Car Access", "College"),
+            notes.align = "l",
+            notes.append = TRUE,
+            digits = 3,
+            notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
+                      "cluster standard errors at the market level"),
+            label = paste0("tab:discountingBehavior", modCode),
+            title = "Correlation of Bulk Buying and Demographics (Toilet Paper)",
+            out = paste0("tables/AppendixDiscountingBehavior", modCode, ".tex"))
+  return(reg9)
+}
 
-# 7734: Paper Towels
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-reg7paperTowel <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7734],
-             weights = discBehaviorModule[product_module_code == 7734]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7paperTowel, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior7734",
-          title = "Correlation of Bulk Buying and Demographics (Paper Towels)",
-          out = "tables/AppendixDiscountingBehavior7734.tex")
-
-
-# 8444: Diapers
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-reg7diaper <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 8444],
-             weights = discBehaviorModule[product_module_code == 8444]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7diaper, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior8444",
-          title = "Correlation of Bulk Buying and Demographics (Diapers)",
-          out = "tables/AppendixDiscountingBehavior8444.tex")
-
-
-# 7270: Tampons
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-reg7 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 7270],
-             weights = discBehaviorModule[product_module_code == 7270]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior7270",
-          title = "Correlation of Bulk Buying and Demographics (Tampons)",
-          out = "tables/AppendixDiscountingBehavior7270.tex")
-
-
-# 3625: Milk
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-reg7milk <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 3625],
-             weights = discBehaviorModule[product_module_code == 3625]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7milk, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior3625",
-          title = "Correlation of Bulk Buying and Demographics (Milk)",
-          out = "tables/AppendixDiscountingBehavior3625.tex")
-
-
-# 4100: Eggs
-reg1 <- felm(formula = bulk ~ household_income,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg2 <- felm(formula = bulk ~ household_income + married,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg3 <- felm(formula = bulk ~ household_income + married + age,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg4 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg5 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg6 <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-reg7eggs <- felm(formula = bulk ~ household_income + married + age + men + women +
-               nChildren + college | dma_cd + panel_year | 0 | dma_cd,
-             data = discBehaviorModule[product_module_code == 4100],
-             weights = discBehaviorModule[product_module_code == 4100]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7eggs, type = "text",
-          add.lines = list(c("Market FE's", "N", "N", "N", "N", "N", "N", "Y", "Y"),
-                           c("Year FE's",   "N", "N", "N", "N", "N", "N", "N", "Y")),
-          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
-          out.header = FALSE,
-          dep.var.caption = "", dep.var.labels.include = FALSE,
-          omit = c("Constant"),
-          covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
-                               "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
-                               "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
-          notes.align = "l",
-          notes.append = TRUE,
-          digits = 3,
-          notes = c("Source: Author calulations from Nielsen Consumer Panel. Columns (7) and (8) ",
-                    "cluster standard errors at the market level"),
-          label = "tab:discountingBehavior4100",
-          title = "Correlation of Bulk Buying and Demographics (Eggs)",
-          out = "tables/AppendixDiscountingBehavior4100.tex")
+regtp <- getRobust(7260)
+regPaperTowel <- getRobust(7734)
+regDiaper <- getRobust(8444)
+regTamp <- getRobust(7270)
+regMilk <- getRobust(3625)
+regEggs <- getRobust(4100)
 
 # Combining only the last regressio for each product
-stargazer(reg7tp, reg7paperTowel, reg7diaper, reg7eggs, reg7milk, type = "text",
+stargazer(regtp, regPaperTowel, regDiaper, regEggs, regMilk, type = "text",
           add.lines = list(c("Market FE's", "Y", "Y", "Y", "Y", "Y"),
                            c("Year FE's",   "Y", "Y", "Y", "Y", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
@@ -471,7 +257,8 @@ stargazer(reg7tp, reg7paperTowel, reg7diaper, reg7eggs, reg7milk, type = "text",
           covariate.labels = c("8-10k", "10-12k", "12-15k", "15-20k", "20-25k",
                                "25-30k", "30-35k", "35-40k", "40-45k", "45-50k",
                                "50-60k", "60-70k", "70-100k", ">100k", "Married",
-                               "Age", "Men", "Women", "Children", "College"),
+                               "Age", "Adults", "Children", "Single-Family Home",
+                               "% Car Access", "College"),
           notes.align = "l",
           notes.append = TRUE,
           digits = 3,

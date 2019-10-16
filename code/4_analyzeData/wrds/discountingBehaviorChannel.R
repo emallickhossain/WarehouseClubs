@@ -146,7 +146,7 @@ ggplot(data = histData,
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
         legend.position = "bottom") +
-  scale_fill_grey()
+  scale_fill_brewer(palette = "OrRd", direction = -1)
 ggsave("./code/5_figures/discountingBehaviorChannelAll.pdf", height = 4, width = 6)
 
 # Plotting coefficients for only nonfood products (dropping bath oil dry [8602])

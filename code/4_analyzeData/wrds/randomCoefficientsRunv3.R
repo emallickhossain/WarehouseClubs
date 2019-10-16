@@ -34,7 +34,8 @@ tp[, c("upc", "upc_ver_uc", "brand_descr", "rolls", "sheet", "totalSheet",
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("household_code", "panel_year", "dma_name", "dma_cd",
                           "household_income_coarse", "adults", "nChildren",
-                          "married", "college", "projection_factor", "law", "age"))
+                          "married", "college", "projection_factor", "law", "age",
+                          "type_of_residence"))
 panel[, "lawInd" := (law >= 3)]
 tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 
@@ -57,7 +58,7 @@ tp <- tp[, .(price = mean(stdPrice),
          by = .(household_code, panel_year, trip_code_uc, brandRollSheet, age,
                 dma_cd, household_income_coarse, adults, nChildren, married,
                 brand_descr, rolls, sheets, days, projection_factor, college,
-                lawInd, lDays)]
+                lawInd, lDays, type_of_residence)]
 tp[, "unitPrice" := price / days]
 
 # Generating price interactions
@@ -68,7 +69,9 @@ tp[, "unitReg"      := unitPrice * lawInd]
 
 # Generating size interactions
 tp[, "large"       := (rolls > 12)]
+tp[, "largeHome"   := large * (type_of_residence == "Single-Family")]
 tp[, "small"       := (rolls < 12)]
+tp[, "smallHome"   := small * (type_of_residence == "Single-Family")]
 
 # Coding package sizes and brands
 tp[, "brand_descr" := relevel(as.factor(brand_descr), ref = "SCOTT 1000")]
@@ -106,12 +109,15 @@ r <- foreach(i = 2016) %:%
                      unitPrice + unitReg +
                      lDays + large + small + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
-    stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, type = "text")
-    print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6, reg7))
-    save(reg7, file = paste0("/scratch/upenn/hossaine/mlogit/newModel2016Only/mlogit",
+    reg8 <- mlogit(choice ~ price + pReg +
+                     unitPrice + unitReg +
+                     lDays + large + largeHome + small + smallHome + brand_descr + 0,
+                   data = tpML[tpML$household_income_coarse == incBin, ])
+    stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, type = "text")
+    print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8))
+    save(reg8, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016Only/mlogit",
                              incBin, i, ".rda"), compress = TRUE)
   }
-save(r, file = paste0("/scratch/upenn/hossaine/mlogit/newModel2016Only/FullIncYear.rda"), compress = TRUE)
 
 ################################################################################
 ############## STEP 1A: ELASTICITIES ###########################################
@@ -119,12 +125,12 @@ save(r, file = paste0("/scratch/upenn/hossaine/mlogit/newModel2016Only/FullIncYe
 fullElast <- NULL
 fullCoefs <- NULL
 for (i in c("<25k", "25-50k", "50-100k", ">100k")) {
-  load(paste0("/scratch/upenn/hossaine/mlogit/newModel2016Only/mlogit", i, "2016.rda"))
-  margs <- effects(reg7, covariate = "unitPrice", type = "rr")
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016Only/mlogit", i, "2016.rda"))
+  margs <- effects(reg8, covariate = "price", type = "rr")
   ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
   ownElast[, "household_income_coarse" := i]
   fullElast <- rbindlist(list(fullElast, ownElast), use.names = TRUE)
-  fullCoefs[[i]] <- reg7
+  fullCoefs[[i]] <- reg8
 }
 
 stargazer(fullCoefs, type = "text",
@@ -136,7 +142,9 @@ stargazer(fullCoefs, type = "text",
           omit = c("brand_descr*"),
           covariate.labels = c("Total Price", ". : Reg",
                                "Unit Price", ". : Reg",
-                               "Log(Days)", "Large Size", "Small Size"),
+                               "Log(Days)",
+                               "Large Size", ". : Home",
+                               "Small Size", ". : Home"),
           notes.align = "l",
           notes.append = TRUE,
           digits = 3,
@@ -158,6 +166,7 @@ ggplot(data = fullElast, aes(x = elast)) +
   facet_grid(rows = vars(household_income_coarse)) +
   labs(x = "Elasticity",
        y = "Density") +
+  scale_x_continuous(limits = c(-4, 0)) +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
@@ -170,11 +179,9 @@ ggsave(filename = "./figures/elasticity2016.pdf", height = 4, width = 6)
 # Function to generate WTP table computing standard errors using the delta method
 getTable <- function(reg) {
   wtp1 <- -coef(reg)[-1] / coef(reg)[1]
-  wtpSE1 <- deltamethod(list(~ x2 / x1, ~ x3 / x1, ~ x4 / x1, ~ x5 / x1, ~ x6 / x1,
-                             ~ x7 / x1, ~ x8 / x1, ~ x9 / x1, ~ x10 / x1,
-                             ~ x11 / x1, ~ x12 / x1, ~ x13 / x1, ~ x14 / x1,
-                             ~ x15 / x1, ~ x16 / x1, ~ x17 / x1, ~ x18 / x1,
-                             ~ x19 / x1, ~ x20 / x1),
+  wtpSE1 <- deltamethod(list(~ x2 / x1, ~ x3 / x1, ~ x4 / x1, ~ x5 / x1,
+                             ~ x6 / x1, ~ x7 / x1, ~ x8 / x1, ~ x9 / x1,
+                             ~ x10 / x1, ~ x11 / x1, ~ x12 / x1),
                         coef(reg), vcov(reg))
 
   finalTable <- data.table(coef = names(coef(reg))[-1],
@@ -184,16 +191,14 @@ getTable <- function(reg) {
 }
 
 # Generating WTP table for each year and income group
-combineTable <- function(yr, income) {
-  print(paste(yr, income))
-  load(paste0("/scratch/upenn/hossaine/mlogit/newModel/mlogit", income, yr, ".rda"))
-  dt <- getTable(reg5)
-  dt[, "year" := yr]
+combineTable <- function(income) {
+  print(paste(income))
+  load(paste0("/scratch/upenn/hossaine/mlogit/newModel2016Only/mlogit", income, "2016.rda"))
+  dt <- getTable(reg7)
   dt[, "income" := income]
   return(dt)
 }
-mapArgs <- expand.grid(year = 2006:2016, income = c("<25k", "25-50k", "50-100k", ">100k"))
-finalTable <- rbindlist(map2(mapArgs$year, mapArgs$income, combineTable), use.names = TRUE)
+finalTable <- rbindlist(map(c("<25k", "25-50k", "50-100k", ">100k"), combineTable), use.names = TRUE)
 
 # Computing t-tests
 finalTable[, ':=' (t = WTP / SE,
@@ -206,14 +211,15 @@ finalTable[, "WTPPrint" := paste0(round(WTP, 3), stars)]
 finalTable[, "SEPrint" := paste0("(", round(SE, 3), ")")]
 
 # Housekeeping and reshaping
+finalTable <- finalTable[!grepl("brand_descr", coef)]
 finalTable[, "coef" := gsub("brand_descr", "", coef)]
-finalTable[, "coef" := gsub("logSheetPP", "Log Sheets Per Person", coef)]
-finalTable[, "coef" := gsub("large12TRUE", "Large", coef)]
+finalTable[, "coef" := gsub("largeTRUE", "Large", coef)]
+finalTable[, "coef" := gsub("smallTRUE", "Small", coef)]
 
-finalTableWide <- dcast(finalTable, coef + year ~ income, value.var = c("WTPPrint", "SEPrint"))
+finalTableWide <- dcast(finalTable, coef ~ income, value.var = c("WTPPrint", "SEPrint"))
 setcolorder(finalTableWide, c(1, 4, 8, 2, 6, 3, 7, 5, 9))
 stargazer(finalTableWide, summary = FALSE, type = "text", rownames = FALSE,
-          out = paste0("/home/upenn/hossaine/tables/mlogit", i, ".tex"))
+          out = paste0("/home/upenn/hossaine/tables/mlogitWTP.tex"))
 
 # Plotting WTP over time for each income group and for each variable
 ggplot(data = finalTable[coef %in% c("Large", "Log Sheets Per Person")],
