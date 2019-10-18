@@ -46,11 +46,10 @@ ggsave(filename = "./code/5_figures/unitPriceLaws.pdf", height = 4, width = 6)
 
 # Loading panel data
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
-               select = c("panel_year", "household_code", "projection_factor",
-                          "household_income", "men", "women", "age", "nChildren",
-                          "dma_cd", "household_income_coarse", "married",
-                          "carShare", "law", "fips", "zip_code", "college",
-                          "type_of_residence"),
+               select = c("panel_year", "household_code", "household_income",
+                          "men", "women", "age", "nChildren", "fips",
+                          "household_income_coarse", "married", "carShare",
+                          "law", "college", "type_of_residence"),
                key = c("household_code", "panel_year"))
 panel[, "fips" := str_pad(fips, width = 5, side = "left", pad = "0")]
 panel[, "state" := as.integer(substr(fips, 1, 2))]
@@ -65,6 +64,7 @@ panel[, "household_size" := men + women + nChildren]
 panel[, "child" := as.integer(nChildren > 0)]
 panel[, "household_income" := as.numeric(as.character(household_income))]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
+panel[, "adult" := men + women]
 
 # Coding law types
 panel[, "lawInd" := (law >= 3)]
@@ -116,20 +116,22 @@ discBehaviorNonFood <- fread("/scratch/upenn/hossaine/discBehaviorFood.csv",
 discBehaviorNonFood <- merge(discBehaviorNonFood, panel,
                              by = c("household_code", "panel_year"))
 discBehaviorNonFood[state == 6, "display" := "Voluntary"]
+discBehaviorNonFood[, c("food", "coupon", "generic", "none", "one", "two", "three",
+                        "men", "women", "fips") := NULL]
 
 # Cross section
 reg1 <- felm(bulk ~ lawInd | 0 | 0 | state,
              data = discBehaviorNonFood)
-reg2 <- felm(bulk ~ lawInd + household_income_coarse + men + women + nChildren +
+reg2 <- felm(bulk ~ lawInd + household_income_coarse + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
-reg3 <- felm(bulk ~ lawInd * household_income_coarse + men + women + nChildren +
+reg3 <- felm(bulk ~ lawInd * household_income_coarse + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
-reg4 <- felm(bulk ~ display + men + women + nChildren +
+reg4 <- felm(bulk ~ display + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
-reg5 <- felm(bulk ~ display + men + women + nChildren +
+reg5 <- felm(bulk ~ display + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood[state != 6])
 stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
@@ -139,7 +141,7 @@ stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
           keep = c("lawInd*", "mandatory*", "display*", "voluntary*"),
-          order = c(1, 17, 18, 16, 7, 6, 5),
+          order = c(1, 16, 17, 15, 7, 6, 5),
           covariate.labels = c("Regulation", " . : 25-50k", " . : 50-100k", " . : >100k",
                                "Vol. Disp","Mand. Disp", "Mand. Disp, Strict"),
           notes.align = "l",
@@ -161,7 +163,6 @@ panel[, "lagZip" := shift(zip_code, n = 1, type = "lag"), by = household_code]
 panel[, "moveDirection" := paste(lagLaw, lawInd, sep = "_")]
 table(panel[!is.na(lagLaw) & zip_code != lagZip]$moveDirection)
 # Saving in moverTransition.tex
-
 
 # Getting summary stats for laws with and without regulations
 cols <- c("household_income", "household_size", "child", "married", "college", "age")
@@ -186,57 +187,70 @@ kable(finalTableWide, digits = 2, format = "markdown")
 # Saved in summaryStatsUnitLawMovers.tex
 
 # Determining move direction (to regulations or away from regulations)
+discBehaviorNonFood[, "lawCount" := uniqueN(lawInd), by = household_code]
+discBehaviorNonFood[, "mover" := (lawCount == 2)]
 setorder(discBehaviorNonFood, household_code, panel_year)
 discBehaviorNonFood[, "lagLaw" := shift(lawInd, 1, type = "lag"),
                     by = .(household_code)]
 discBehaviorNonFood[, "move" := lawInd - lagLaw]
-discBehaviorNonFood[!move %in% c(-1, 1), "move" := NA]
-discBehaviorNonFood[, "move" := na.locf(move), by = household_code] #filling all NAs with previous non-na value
-discBehaviorNonFood[move == 1 & lawInd == FALSE, "move" := 0]
-discBehaviorNonFood[move == -1 & lawInd == TRUE, "move" := 0]
+
+# Classifying movers
+movers <- discBehaviorNonFood[mover == TRUE]
+movers[is.na(move), "move" := 0]
+movers <- movers[, .(type = max(move)), by = household_code]
+discBehaviorNonFood <- merge(discBehaviorNonFood, movers, by = "household_code", all = TRUE)
+discBehaviorNonFood[is.na(type), "moverType" := "No Move"]
+discBehaviorNonFood[type == 0, "moverType" := "Move To No Reg"]
+discBehaviorNonFood[type == 1, "moverType" := "Move To Reg"]
 discBehaviorNonFood[, "move" := relevel(as.factor(move), ref = "0")]
 
 # Getting regression table
 # Movers (symmetric effects, no difference between move to and move away from regs)
 reg1 <- felm(bulk ~ lawInd | household_code + panel_year | 0 | household_code,
-             data = discBehaviorNonFood[!is.na(move)])
-reg2 <- felm(bulk ~ lawInd + household_income_coarse + men + women + nChildren +
-               married + carShare + type_of_residence + college + age |
-               household_code + panel_year | 0 | household_code,
-             data = discBehaviorNonFood[!is.na(move)])
-reg3 <- felm(bulk ~ move + household_income_coarse + men + women + nChildren +
+             data = discBehaviorNonFood)
+reg2 <- felm(bulk ~ lawInd + household_income_coarse + adult + nChildren +
                married + carShare + type_of_residence + college + age |
                household_code + panel_year | 0 | household_code,
              data = discBehaviorNonFood)
-stargazer(reg1, reg2, reg3, type = "text",
-          add.lines = list(c("Household FE", "Y", "Y", "Y"),
-                           c("Year FE", "Y", "Y", "Y"),
-                           c("Demographics", "N", "Y", "Y")),
+reg3 <- felm(bulk ~ lawInd + household_income_coarse + adult + nChildren +
+               married + carShare + type_of_residence + college + age |
+               household_code + panel_year | 0 | household_code,
+             data = discBehaviorNonFood[moverType != "Move To No Reg"])
+reg4 <- felm(bulk ~ lawInd + household_income_coarse + adult + nChildren +
+               married + carShare + type_of_residence + college + age |
+               household_code + panel_year | 0 | household_code,
+             data = discBehaviorNonFood[moverType != "Move To Reg"])
+stargazer(reg1, reg2, reg3, reg4, type = "text",
+          add.lines = list(c("Household FE", "Y", "Y", "Y", "Y"),
+                           c("Year FE", "Y", "Y", "Y", "Y"),
+                           c("Demographics", "N", "Y", "Y", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
-          keep = c("lawInd", "move", "type_of_residence"),
-          covariate.labels = c("Regulation", "Law to No Law", "No Law to Law", "Single-Family Home"),
+          column.separate = c(2, 1, 1),
+          column.labels = c("All Households", "No Law To Law", "Law To No Law"),
+          keep = c("lawInd", "type_of_residence"),
+          covariate.labels = c("Regulation", "Single-Family Home"),
           notes.align = "l",
           digits = 3,
           out = "tables/unitPriceLawMovers.tex")
 
-# Generating event study
+# Generating event study.
+# There's something weird with collinearity or something. Regression keeps
+# dropping one of the lags when year fixed effects are added.
 moveYear <- discBehaviorNonFood[move != "0", .(moveYear = min(panel_year)), by = household_code]
-discBehaviorNonFood <- merge(discBehaviorNonFood, moveYear, by = "household_code")
+discBehaviorNonFood <- merge(discBehaviorNonFood, moveYear, by = "household_code", all = TRUE)
 discBehaviorNonFood[, "Y" := panel_year - moveYear]
 discBehaviorNonFood[, "Y" := relevel(as.factor(Y), ref = "-1")]
-discBehaviorNonFood[, "moveType" := max(as.integer(as.character(move))),
-                    by = household_code]
-discBehaviorNonFood[, "To" := as.integer(as.character(Y)) * (moveType == "1")]
-discBehaviorNonFood[, "To" := relevel(as.factor(To), ref = "-1")]
-discBehaviorNonFood[, "Away" := as.integer(as.character(Y)) * (moveType == "0")]
-discBehaviorNonFood[, "Away" := relevel(as.factor(Away), ref = "-1")]
-regEvent1 <- felm(bulk ~ To + Away | household_code + panel_year | 0 | household_code,
-                  data = discBehaviorNonFood[Y %in% paste(-2:2)])
-regEvent2 <- felm(bulk ~ To + Away + household_income_coarse + men + women + nChildren +
-                    age + married + college | household_code + panel_year | 0 | household_code,
-                  data = discBehaviorNonFood[Y %in% paste(-2:2)])
+discBehaviorNonFood[is.na(Y), "Y" := "-1"]
+
+regEvent1 <- felm(bulk ~ lawInd * Y | household_code |
+                    0 | household_code,
+                  data = discBehaviorNonFood[Y %in% -2:2])
+regEvent2 <- felm(bulk ~ lawInd * Y + household_income_coarse + adult +
+                    nChildren + age + married + college |
+                    household_code + panel_year | 0 | household_code,
+                  data = discBehaviorNonFood[Y %in% -2:2])
 stargazer(regEvent1, regEvent2, type = "text")
 
 finalCoefs <- as.data.table(summary(regEvent2)$coefficients, keep.rownames = TRUE)

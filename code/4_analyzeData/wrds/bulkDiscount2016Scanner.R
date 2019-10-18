@@ -155,9 +155,9 @@ ggplot(data = coefs[reg == "Store-Week-Brand FE"],
   geom_vline(xintercept = annot$Median[2], linetype = 2,
              color = brewer.pal(3, "Paired")[2]) +
   annotate("text", label = paste0("Median: ", annot$Median[1]),
-           x = annot$Mean[1] + 0.25, y = 0.7) +
+           x = annot$Median[1] + 0.33, y = 0.7) +
   annotate("text", label = paste0("Median: ", annot$Median[2]),
-           x = annot$Mean[2] - 0.27, y = 1.2) +
+           x = annot$Median[2] - 0.33, y = 1.2) +
   scale_x_continuous(limits = c(-2, 1)) +
   labs(x = "Elasticity of Unit Price w.r.t. Package Size",
        y = "Density",
@@ -316,27 +316,36 @@ getCoefs <- function(i) {
   data <- fread(paste0("/home/mallick/Downloads/scannerBulkDiscountBetas", i, "Winsor.csv"))
   return(data)
 }
-coefs <- rbindlist(map(c("1a", "1b", "2", "3", "4", "5", "6", "7"),
+coefsWins <- rbindlist(map(c("1a", "1b", "1c", "2", "3", "4", "5", "6", "7"),
                        getCoefs), use.names = TRUE)
-coefs[abs(`t value`) <= 3, "Estimate" := 0]
+coefsWins[abs(`t value`) <= 3, "Estimate" := 0]
 
 # Getting food classification
 prod <- fread("/home/mallick/Downloads/prodFood.csv")
 setnames(prod, "product_module_code", "mod")
-coefs <- merge(coefs, prod, by = "mod")
-coefs <- coefs[rn == "lq"]
-coefs[, "foodChar" := ifelse(food == 1, "Food", "Non-Food")]
+coefsWins <- merge(coefsWins, prod, by = "mod")
+coefsWins[, "foodChar" := ifelse(food == 1, "Food", "Non-Food")]
+
+# Checking quantitative similarities between raw estimates and winsorized ones.
+quantCheck <- rbindlist(list(coefs[reg == "Store-Week-Brand FE", .(mod, Estimate, reg)],
+                             coefsWins[rn == "lq", .(mod, Estimate, reg)]),
+                        use.names = TRUE)
+quantCheck <- dcast(unique(quantCheck), mod ~ reg, value.var = "Estimate")
+quantCheck[, c("diff1", "diff5") := .(`Store-Week-Brand FE` - `Store-Week-Brand Winsor 1`,
+                                      `Store-Week-Brand FE` - `Store-Week-Brand Winsor 5`)]
+quantile(quantCheck$diff1, na.rm = TRUE, seq(0, 1, 0.1))
+quantile(quantCheck$diff5, na.rm = TRUE, seq(0, 1, 0.1))
 
 # Getting share of products with bulk discounts
-nrow(coefs[reg == "Store-Week-Brand Winsor 1" & Estimate < 0]) / nrow(prod)
-nrow(coefs[reg == "Store-Week-Brand Winsor 5" & Estimate < 0]) / nrow(prod)
+nrow(coefsWins[reg == "Store-Week-Brand Winsor 1" & Estimate < 0]) / nrow(prod)
+nrow(coefsWins[reg == "Store-Week-Brand Winsor 5" & Estimate < 0]) / nrow(prod)
 
 # Plotting distribution of betas
-annot <- coefs[reg == "Store-Week-Brand Winsor 5",
+annot <- coefsWins[reg == "Store-Week-Brand Winsor 5",
                .(Mean = round(mean(Estimate, na.rm = TRUE), 2),
                  SD = round(sd(Estimate, na.rm = TRUE), 2),
                  Median = round(median(Estimate, na.rm = TRUE), 2)), by = foodChar]
-ggplot(data = coefs[reg == "Store-Week-Brand Winsor 5"],
+ggplot(data = coefsWins[reg == "Store-Week-Brand Winsor 5"],
        aes(x = Estimate, y = stat(density), fill = foodChar)) +
   geom_histogram(bins = 30, alpha = 0.65, position = "identity") +
   geom_vline(xintercept = annot$Median[1], linetype = 2,
@@ -358,3 +367,17 @@ ggplot(data = coefs[reg == "Store-Week-Brand Winsor 5"],
   scale_fill_brewer(palette = "Paired")
 
 ggsave(filename = "./code/5_figures/bulkDiscountAllProdsScanner.pdf", height = 4, width = 6)
+
+# Plotting distribution of quantiles
+ggplot(data = coefsWins[rn %in% c("quintile2", "quintile3", "quintile4", "quintile5")],
+       aes(x = Estimate, y = stat(density), fill = rn)) +
+  geom_histogram(bins = 30, alpha = 0.65, position = "identity") +
+  facet_grid(rows = vars(foodChar)) +
+  labs(x = "Elasticity of Unit Price and Package Size",
+       y = "Density",
+       fill = "Product Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_fill_brewer(palette = "Paired")

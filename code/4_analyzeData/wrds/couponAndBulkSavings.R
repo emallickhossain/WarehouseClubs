@@ -80,7 +80,7 @@ ggplot(data = graphData,
        aes(x = beta * 100,
            y = stat(density),
            fill = foodChar)) +
-  facet_grid(cols = vars(savings)) +
+  facet_grid(rows = vars(savings)) +
   geom_histogram(bins = 50, alpha = 0.65, position = "identity") +
   geom_hline(yintercept = 0) +
   scale_x_continuous(limits = c(-10, 100)) +
@@ -92,9 +92,7 @@ ggplot(data = graphData,
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
-  scale_fill_grey()
-  # scale_fill_fivethirtyeight()
+  scale_fill_brewer(palette = "Paired")
 
-ggsave(filename = "./code/5_figures/couponBulkSavings.pdf", height = 4, width = 6)
-# ggsave(filename = "./code/5_figures/couponBulkSavingsColor.pdf", height = 4, width = 6)
+ggsave(filename = "./code/5_figures/couponBulkSavingsColor.pdf", height = 4, width = 6)
 

@@ -42,9 +42,9 @@ tpDrug <- tp[retailer_code %in% 4901:4998]
 tpDrug <- merge(tpDrug, prod, by = c("upc", "upc_ver_uc"))
 tpDrug <- tpDrug[, .(price = mean(price)), by = .(brand_descr, rolls, totalSheet)]
 tpDrug[, ':=' (unitPrice = price / totalSheet * 100 * 2,
-                 large12 = (rolls > 12),
-                 brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
-                 channel_type = "Drug Store")]
+               large12 = (rolls > 12),
+               brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
+               channel_type = "Drug Store")]
 fwrite(tpDrug, file = "/scratch/upenn/hossaine/tpDrug.csv")
 
 # Discount store assortment
@@ -52,9 +52,9 @@ tpDiscount <- tp[retailer_code %in% 6901:6926]
 tpDiscount <- merge(tpDiscount, prod, by = c("upc", "upc_ver_uc"))
 tpDiscount <- tpDiscount[, .(price = mean(price)), by = .(brand_descr, rolls, totalSheet)]
 tpDiscount[, ':=' (unitPrice = price / totalSheet * 100 * 2,
-               large12 = (rolls > 12),
-               brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
-               channel_type = "Discount Store")]
+                   large12 = (rolls > 12),
+                   brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
+                   channel_type = "Discount Store")]
 fwrite(tpDiscount, file = "/scratch/upenn/hossaine/tpDiscount.csv")
 
 # Grocery store assortment
@@ -62,7 +62,7 @@ tpGrocery <- tp[retailer_code %in% 1:1006]
 tpGrocery <- merge(tpGrocery, prod, by = c("upc", "upc_ver_uc"))
 tpGrocery <- tpGrocery[, .(price = mean(price)), by = .(brand_descr, rolls, totalSheet)]
 tpGrocery[, ':=' (unitPrice = price / totalSheet * 100 * 2,
-                   large12 = (rolls > 12),
-                   brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
-                   channel_type = "Grocery Store")]
+                  large12 = (rolls > 12),
+                  brandRollSheet = paste(brand_descr, rolls, totalSheet, sep = "_"),
+                  channel_type = "Grocery Store")]
 fwrite(tpGrocery, file = "/scratch/upenn/hossaine/tpGrocery.csv")

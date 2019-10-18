@@ -88,11 +88,12 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "men", "women", "age", "nChildren",
                           "dma_cd", "household_income_coarse", "married", "college",
-                          "carShare", "law", "zip_code", "fips", "type_of_residece"),
+                          "carShare", "law", "zip_code", "fips", "type_of_residence"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
 panel[, "lawInd" := (law >= 3)]
+panel[, "adults" := men + women]
 
 discBehaviorZIP <- merge(discBehaviorZIP, panel, by = c("household_code", "panel_year"))
 discBehaviorStore <- merge(discBehaviorStore, panel, by = c("household_code", "panel_year"))
@@ -133,23 +134,17 @@ ggsave(filename = "./figures/discountingBehaviorFERetailerVariation.pdf",
 # This adds ZIP-year FEs
 zipFip <- unique(panel[, .(household_code, panel_year, fips)])
 discBehaviorZIP[, "zipYear" := paste(zip_code, panel_year, sep = "_")]
-reg0ZIP <- felm(bulk ~ household_income + men + women + nChildren + age + married |
+reg0ZIP <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                  type_of_residence + carShare + college |
                panel_year + dma_cd,
              data = discBehaviorZIP,
              weights = discBehaviorZIP$projection_factor)
-reg1ZIP <- felm(bulk ~ household_income + men + women + age + nChildren + married |
+reg1ZIP <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                  type_of_residence + carShare + college |
                zipYear + panel_year + dma_cd,
              data = discBehaviorZIP,
              weights = discBehaviorZIP$projection_factor)
-reg2ZIP <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-               panel_year + dma_cd,
-             data = discBehaviorZIP,
-             weights = discBehaviorZIP$projection_factor)
-reg3ZIP <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-               zipYear + panel_year + dma_cd,
-             data = discBehaviorZIP,
-             weights = discBehaviorZIP$projection_factor)
-stargazer(reg0ZIP, reg1ZIP, reg2ZIP, reg3ZIP, type = "text")
+stargazer(reg0ZIP, reg1ZIP, type = "text")
 
 coef0 <- as.data.table(summary(reg0ZIP)$coefficients, keep.rownames = TRUE)
 confInt0 <- as.data.table(confint(reg0ZIP), keep.rownames = TRUE)
@@ -170,6 +165,8 @@ graphDataZIP[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18
 graphDataZIP[, "rn" := as.numeric(as.character(rn))]
 setnames(graphDataZIP, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
+group.colors <- c("Without FE" = "#FF2700", "With FE" = "#008FD5")
+group.shapes <- c("Without FE" = 17, "With FE" = 16)
 ggplot(data = graphDataZIP,
        aes(x = rn, y = beta * 100, color = Type)) +
   geom_errorbar(aes(ymin = 100 * LCL,
@@ -183,10 +180,9 @@ ggplot(data = graphDataZIP,
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
-  scale_color_grey()
-# scale_color_fivethirtyeight()
-ggsave(filename = "./figures/discountingBehaviorFEZIP.pdf", height = 4, width = 6)
-# ggsave(filename = "./figures/discountingBehaviorFEZIPColor.pdf", height = 4, width = 6)
+  scale_color_manual(values = group.colors) +
+  scale_shape_manual(values = group.shapes)
+ggsave(filename = "./figures/discountingBehaviorFEZIPColor.pdf", height = 4, width = 6)
 
 ################################################################################
 ########## ROBUSTNESS ##########################################################
@@ -195,23 +191,17 @@ ggsave(filename = "./figures/discountingBehaviorFEZIP.pdf", height = 4, width = 
 # Regressions of bulk buying within locations
 # This adds ZIP-year FEs
 discBehaviorZIP[, "fipYear" := paste(fips, panel_year, sep = "_")]
-reg0fip <- felm(bulk ~ household_income + men + women + nChildren + age + married |
+reg0fip <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                  type_of_residence + carShare + college |
                   panel_year + dma_cd,
                 data = discBehaviorZIP,
                 weights = discBehaviorZIP$projection_factor)
-reg1fip <- felm(bulk ~ household_income + men + women + age + nChildren + married |
+reg1fip <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                  type_of_residence + carShare + college |
                   fipYear + panel_year + dma_cd,
                 data = discBehaviorZIP,
                 weights = discBehaviorZIP$projection_factor)
-reg2fip <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-                  panel_year + dma_cd,
-                data = discBehaviorZIP,
-                weights = discBehaviorZIP$projection_factor)
-reg3fip <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-                  fipYear + panel_year + dma_cd,
-                data = discBehaviorZIP,
-                weights = discBehaviorZIP$projection_factor)
-stargazer(reg0fip, reg1fip, reg2fip, reg3fip, type = "text")
+stargazer(reg0fip, reg1fip, type = "text")
 
 # Plotting zip vs county FE charts
 coef0fip <- as.data.table(summary(reg0fip)$coefficients, keep.rownames = TRUE)
@@ -247,10 +237,8 @@ ggplot(data = graphDataFIP,
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
-  scale_color_grey()
-# scale_color_fivethirtyeight()
-ggsave(filename = "./figures/AppendixDiscountingBehaviorFEFIP.pdf", height = 4, width = 6)
-# ggsave(filename = "./figures/AppendixDiscountingBehaviorFEFIPColor.pdf", height = 4, width = 6)
+  scale_color_colorblind()
+ggsave(filename = "./figures/AppendixDiscountingBehaviorFEFIPColor.pdf", height = 4, width = 6)
 
 ################################################################################
 ########## END ROBUSTNESS ######################################################
@@ -259,19 +247,13 @@ ggsave(filename = "./figures/AppendixDiscountingBehaviorFEFIP.pdf", height = 4, 
 # Regressions of bulk buying within stores
 # This adds store-year FEs
 discBehaviorStore[, "storeYear" := paste(store_code_uc, panel_year, sep = "_")]
-reg0Store <- felm(bulk ~ household_income + men + women + age + nChildren + married |
+reg0Store <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                    type_of_residence + carShare + college |
                panel_year + dma_cd,
              data = discBehaviorStore,
              weights = discBehaviorStore$projection_factor)
-reg1Store <- felm(bulk ~ household_income + men + women + age + nChildren + married |
-               storeYear + panel_year + dma_cd,
-             data = discBehaviorStore,
-             weights = discBehaviorStore$projection_factor)
-reg2Store <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-               panel_year + dma_cd,
-             data = discBehaviorStore,
-             weights = discBehaviorStore$projection_factor)
-reg3Store <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
+reg1Store <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                    type_of_residence + carShare + college |
                storeYear + panel_year + dma_cd,
              data = discBehaviorStore,
              weights = discBehaviorStore$projection_factor)
@@ -308,38 +290,26 @@ ggplot(data = graphData,
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
-  scale_color_grey()
-# scale_color_fivethirtyeight()
-ggsave(filename = "./figures/AppendixDiscountingBehaviorFEStore.pdf", height = 4, width = 6)
-# ggsave(filename = "./figures/AppendixDiscountingBehaviorFEStoreColor.pdf", height = 4, width = 6)
-
+  scale_color_colorblind()
+ggsave(filename = "./figures/AppendixDiscountingBehaviorFEStoreColor.pdf", height = 4, width = 6)
 
 # Regressions of bulk buying within retail chains
 # This adds retailer-year FEs
 discBehaviorRetailer[, "retailerYear" := paste(retailer_code, panel_year, sep = "_")]
 discBehaviorRetailer[, "channelYear" := paste(channel_type, panel_year, sep = "_")]
 
-reg0Retailer <- felm(bulk ~ household_income + men + women + age + nChildren + married |
+reg0Retailer <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                       type_of_residence + carShare + college |
                        panel_year + dma_cd,
                      data = discBehaviorRetailer,
                      weights = discBehaviorRetailer$projection_factor)
-reg1Retailer <- felm(bulk ~ household_income + men + women + age + nChildren + married |
+reg1Retailer <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                       type_of_residence + carShare + college |
                        channelYear + panel_year + dma_cd,
                      data = discBehaviorRetailer,
                      weights = discBehaviorRetailer$projection_factor)
-reg2Retailer <- felm(bulk ~ household_income + men + women + age + nChildren + married |
-                       channelYear + retailerYear + panel_year + dma_cd,
-                     data = discBehaviorRetailer,
-                     weights = discBehaviorRetailer$projection_factor)
-reg3Retailer <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-               panel_year + dma_cd,
-             data = discBehaviorRetailer,
-             weights = discBehaviorRetailer$projection_factor)
-reg4Retailer <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
-               channelYear + panel_year + dma_cd,
-             data = discBehaviorRetailer,
-             weights = discBehaviorRetailer$projection_factor)
-reg5Retailer <- felm(bulk ~ household_income_coarse + men + women + age + nChildren + married |
+reg2Retailer <- felm(bulk ~ household_income + adults + nChildren + age + married +
+                       type_of_residence + carShare + college |
                        channelYear + retailerYear + panel_year + dma_cd,
                      data = discBehaviorRetailer,
                      weights = discBehaviorRetailer$projection_factor)
@@ -386,10 +356,8 @@ ggplot(data = graphDataRetailer,
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
-  # scale_color_grey() +
   scale_color_manual(values = group.colors) +
   scale_shape_manual(values = group.shapes)
-# ggsave(filename = "./figures/discountingBehaviorFE.pdf", height = 4, width = 6)
 ggsave(filename = "./figures/discountingBehaviorFEColor.pdf", height = 4, width = 6)
 
 # Getting stargazer table for income quartiles

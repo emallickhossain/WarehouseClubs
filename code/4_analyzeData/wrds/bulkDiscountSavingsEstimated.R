@@ -29,12 +29,13 @@ trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
                select = c("trip_code_uc", "household_code", "panel_year"))
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
-                          "household_income", "age", "dma_cd",
+                          "household_income", "age", "dma_cd", "type_of_residence",
                           "household_income_coarse", "married", "carShare",
                           "law", "zip_code", "college", "men", "women",
                           "nChildren"),
                key = c("household_code", "panel_year"))
 panel[, "household_income" := as.factor(household_income)]
+panel[, "adults" := men + women]
 
 # Getting all purchases and computing the average package size weighted by the
 # total amount purchased (i.e. size-weighted package size) for that trip.
@@ -77,12 +78,13 @@ getDiff <- function(mod) {
     reg1 <- felm(lSize ~ household_income_coarse,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)
-    reg2 <- felm(lSize ~ household_income_coarse + age + college + men +
-                  women + nChildren + married,
+    reg2 <- felm(lSize ~ household_income_coarse + married + age + adults +
+                   nChildren + type_of_residence + carShare + college,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)
-    reg3 <- felm(lSize ~ household_income_coarse + age + college + men +
-                  women + nChildren + married | panel_year + dma_cd,
+    reg3 <- felm(lSize ~ household_income_coarse + married + age + adults +
+                   nChildren + type_of_residence + carShare + college |
+                   panel_year + dma_cd,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)
     coefs <- as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE)
