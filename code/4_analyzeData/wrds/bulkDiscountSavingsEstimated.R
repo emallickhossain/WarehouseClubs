@@ -124,9 +124,9 @@ poorWeights <- avgSize[household_income_coarse == "<25k",
 # Merge the % savings by module with the spending weights for poor households
 # Taking the weighted average of the % savings gives the overall savings
 # that poor households could obtain.
-# Could save 5.0% on overall basket (~$238 in 2017 dollars) if they bought in bulk like rich
+# Could save 4.8% on overall basket (~$222 in 2017 dollars) if they bought in bulk like rich
 # If they bought exactly like rich (less on some items and more on others),
-# savings would be 2.3% (~$161).
+# savings would be 2.1% (~$146).
 finalSavings <- merge(richDiffs, poorWeights, by = "mod")
 finalSavings[, .(weighted.mean(savings, w = realExp), sum(realExp * savings))]
 finalSavings[savings < 0, .(weighted.mean(savings, w = realExp), sum(realExp * savings))]

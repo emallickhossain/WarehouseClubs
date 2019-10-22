@@ -40,7 +40,6 @@ purch <- merge(purch, trips, by = c("trip_code_uc"))
 purch <- merge(purch, panel, by= c("household_code", "panel_year"))
 apple <- purch[store_code_uc == 8192375 & trip_code_uc %in% c(1014029279, 1023382611)]
 
-
 # Looking at paper towels
 pt <- purch[product_module_code == 7734 & channel_type == "Discount Store" &
               household_income_coarse %in% c("<25k", ">100k") &

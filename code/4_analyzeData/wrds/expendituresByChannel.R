@@ -163,7 +163,7 @@ ggplot(data = graphData,
         plot.caption = element_text(hjust = 0),
         legend.position = "bottom") +
   scale_shape_manual(values = c(15:19)) +
-  scale_color_manual(values = c("#009E73", "#000000", "#E69F00", "#56B4E9", "#F0E442"))
+  scale_color_manual(values = c("#009E73", "#F0E442", "#E69F00", "#56B4E9", "#000000"))
 ggsave("./figures/expendituresByChannelColor.pdf", height = 4, width = 6)
 
 # Stargazer table for income quartiles
