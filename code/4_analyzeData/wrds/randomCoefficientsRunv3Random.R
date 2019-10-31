@@ -34,7 +34,8 @@ tp[, c("upc", "upc_ver_uc", "brand_descr", "rolls", "sheet", "totalSheet",
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("household_code", "panel_year", "dma_name", "dma_cd",
                           "household_income_coarse", "adults", "nChildren",
-                          "married", "college", "projection_factor", "law", "age"))
+                          "married", "college", "projection_factor", "law", "age",
+                          "type_of_residence"))
 panel[, "lawInd" := (law >= 3)]
 tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 
@@ -42,6 +43,8 @@ tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 tp[, c("brand_descr", "rolls", "sheets") := tstrsplit(brandRollSheet, "_", fixed = TRUE)]
 tp[, "rolls" := as.integer(rolls)]
 tp[, "sheets" := as.integer(sheets)]
+tp[, "days" := sheets / (57 * 2)]
+tp[, "lDays" := log(days)]
 
 # Assessing how different prices are for cases where there are duplicate
 # brand-roll-size combinations. Usually, the prices seem to be the same
@@ -54,29 +57,18 @@ tp <- tp[, .(price = mean(stdPrice),
              choice = sum(choice)),
          by = .(household_code, panel_year, trip_code_uc, brandRollSheet, age,
                 dma_cd, household_income_coarse, adults, nChildren, married,
-                brand_descr, rolls, sheets, projection_factor, college, lawInd)]
-tp[, "unitPrice" := price / sheets * (100 * 2)]
+                brand_descr, rolls, sheets, days, projection_factor, college,
+                lawInd, lDays, type_of_residence)]
+tp[, "unitPrice" := price / days]
 
-# Generating price interactions
-tp[, "pAdults"   := unitPrice * adults]
-tp[, "pChildren" := unitPrice * nChildren]
-tp[, "pAge"      := unitPrice * age]
-tp[, "pMarried"  := unitPrice * married]
-tp[, "pCollege"  := unitPrice * college]
-tp[, "pReg"      := unitPrice * lawInd]
+# Generating unit price interactions
+tp[, "unitReg"      := unitPrice * lawInd]
 
 # Generating size interactions
-tp[, "large"       := as.integer(rolls > 12)]
-tp[, "largeAdults"   := large * adults]
-tp[, "largeChildren" := large * nChildren]
-tp[, "largeAge"      := large * age]
-tp[, "largeMarried"  := large * married]
-
-tp[, "small"       := as.integer(rolls < 12)]
-tp[, "smallAdults"   := small * adults]
-tp[, "smallChildren" := small * nChildren]
-tp[, "smallAge"      := small * age]
-tp[, "smallMarried"  := small * married]
+tp[, "large"       := (rolls > 12)]
+tp[, "largeHome"   := large * (type_of_residence == "Single-Family")]
+tp[, "small"       := (rolls < 12)]
+tp[, "smallHome"   := small * (type_of_residence == "Single-Family")]
 
 # Coding package sizes and brands
 tp[, "brand_descr" := relevel(as.factor(brand_descr), ref = "SCOTT 1000")]
@@ -97,35 +89,10 @@ for(incBin in c("<25k", "25-50k", "50-100k", ">100k")) {
   print(incBin)
   # Running MNL model
   # Creating mlogit data for analysis
-  reg1 <- mlogit(choice ~ unitPrice + pAdults + pChildren + pAge + pMarried +
-                   pCollege + pReg +
-                   large + largeAdults + largeChildren + largeAge + largeMarried +
-                   small + smallAdults + smallChildren + smallAge + smallMarried +
-                   brand_descr + 0,
-                 data = tpML[tpML$household_income_coarse == incBin, ],
-                 rpar = c(unitPrice = "n"),
-                 R = 25, halton = NA)
-  reg2 <- mlogit(choice ~ unitPrice + pAdults + pChildren + pAge + pMarried +
-                   pCollege + pReg +
-                   large + largeAdults + largeChildren + largeAge + largeMarried +
-                   small + smallAdults + smallChildren + smallAge + smallMarried +
-                   brand_descr + 0,
-                 data = tpML[tpML$household_income_coarse == incBin, ],
-                 rpar = c(unitPrice = "n", small = "n", large = "n"),
-                 R = 25, halton = NA)
-  reg3 <- mlogit(choice ~ unitPrice + pAdults + pChildren + pAge + pMarried +
-                   pCollege + pReg +
-                   large + largeAdults + largeChildren + largeAge + largeMarried +
-                   small + smallAdults + smallChildren + smallAge + smallMarried +
-                   brand_descr + 0,
-                 data = tpML[tpML$household_income_coarse == incBin, ],
-                 rpar = c(unitPrice = "n", large = "n", small = "n",
-                          `brand_descrANGEL SOFT` = "n",
-                          `brand_descrCHARMIN` = "n",
-                          `brand_descrCTL BR` = "n",
-                          `brand_descrKLEENEX COTTONELLE` = "n",
-                          `brand_descrQUILTED NORTHERN` = "n"),
-                 R = 25, halton = NA)
+  reg1 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + large + largeHome + small + smallHome + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ])
   stargazer(reg1, reg2, reg3, type = "text")
   print(lrtest(reg1, reg2, reg3))
   save(reg3, file = paste0("/scratch/upenn/hossaine/mlogit/newModel2016OnlyRand/",

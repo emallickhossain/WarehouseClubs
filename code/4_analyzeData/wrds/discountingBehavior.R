@@ -151,6 +151,107 @@ ggplot(data = ex, aes(x = household_income, y = bulk, color = foodChar)) +
 ggsave("./figures/savingsBehaviorVariation.pdf", height = 4, width = 6)
 # ggsave("./figures/savingsBehaviorVariationColor.pdf", height = 4, width = 6)
 
+# Avg bulk buying by income
+avgBulk <- discBehaviorFood[, .(bulk = weighted.mean(bulk, w = projection_factor)),
+                            by = .(household_income, food)]
+avgBulk[, "household_income" := factor(household_income,
+                                       levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17,
+                                                  18, 19, 21, 23, 26, 27),
+                                       labels = c(6.5, 9, 11, 13.5, 17.5, 22.5,
+                                                  27.5, 32.5, 37.5, 42.5, 47.5,
+                                                  55, 65, 85, 100),
+                                       ordered = TRUE)]
+avgBulk[, "foodChar" := ifelse(food == 0, "Non-Food", "Food")]
+avgBulk[, "household_income" := as.numeric(as.character(household_income))]
+ggplot(data = avgBulk, aes(x = household_income, y = bulk * 100, color = foodChar,
+                           shape = foodChar)) +
+  geom_point(size = 3) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 35) +
+  labs(x = "Annual Household Income ($000s)",
+       y = "Annual Bulk Buying Share (%)",
+       color = "Product Type",
+       shape = "Product Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_color_fivethirtyeight()
+
+ggsave("./figures/savingsBehaviorAvgBulkRaw.pdf", height = 4, width = 6)
+
+# Bin-scatter'd version
+discBehaviorFood[, "household_income_cts" :=
+                   as.numeric(as.character(factor(household_income,
+                          levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17,
+                                     18, 19, 21, 23, 26, 27),
+                          labels = c(6.5, 9, 11, 13.5, 17.5, 22.5, 27.5, 32.5,
+                                     37.5, 42.5, 47.5, 55, 65, 85, 100),
+                          ordered = TRUE)))]
+bin1 <- with(discBehaviorFood[food == 1],
+             binsreg(y = bulk, x = household_income_cts,
+                     w = cbind(married, age, adults, nChildren, carShare, college,
+                               as.factor(panel_year), as.factor(type_of_residence),
+                               as.factor(dma_cd)),
+                     weights = projection_factor))
+bin1DT <- as.data.table(bin1$data.plot$`Group Full Sample`$data.dots)
+bin1DT[, "food" := "Food"]
+bin2 <- with(discBehaviorFood[food == 0],
+             binsreg(y = bulk, x = household_income_cts,
+                     w = cbind(married, age, adults, nChildren, carShare, college,
+                               as.factor(panel_year), as.factor(type_of_residence),
+                               as.factor(dma_cd)),
+                     weights = projection_factor))
+bin2DT <- as.data.table(bin2$data.plot$`Group Full Sample`$data.dots)
+bin2DT[, "food" := "Non-Food"]
+graphData <- rbindlist(list(bin1DT, bin2DT), use.names = TRUE)
+
+ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) +
+  geom_point(size = 3) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 25) +
+  labs(x = "Annual Household Income ($000s)",
+       y = "Annual Bulk Buying Share (%)",
+       color = "Product Type",
+       shape = "Product Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_color_fivethirtyeight()
+
+ggsave("./figures/savingsBehaviorBinScatter.pdf", height = 4, width = 6)
+
+# Binscatter with only adults, kids, marital status
+bin1 <- with(discBehaviorFood[food == 1],
+             binsreg(y = bulk, x = household_income_cts,
+                     w = cbind(married, adults, nChildren),
+                     weights = projection_factor))
+bin1DT <- as.data.table(bin1$data.plot$`Group Full Sample`$data.dots)
+bin1DT[, "food" := "Food"]
+bin2 <- with(discBehaviorFood[food == 0],
+             binsreg(y = bulk, x = household_income_cts,
+                     w = cbind(married, age, adults, nChildren),
+                     weights = projection_factor))
+bin2DT <- as.data.table(bin2$data.plot$`Group Full Sample`$data.dots)
+bin2DT[, "food" := "Non-Food"]
+graphData <- rbindlist(list(bin1DT, bin2DT), use.names = TRUE)
+
+ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) +
+  geom_point(size = 3) +
+  geom_vline(xintercept = 0) +
+  geom_hline(yintercept = 35) +
+  labs(x = "Annual Household Income ($000s)",
+       y = "Annual Bulk Buying Share (%)",
+       color = "Product Type",
+       shape = "Product Type") +
+  theme_tufte() +
+  theme(axis.title = element_text(),
+        plot.caption = element_text(hjust = 0),
+        legend.position = "bottom") +
+  scale_color_fivethirtyeight()
+
+ggsave("./figures/savingsBehaviorBinScatterSizeKids.pdf", height = 4, width = 6)
 
 # Running regressions
 # If you add an interaction with panel year, you can test if there have been

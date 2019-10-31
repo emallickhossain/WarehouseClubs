@@ -19,7 +19,7 @@ beta <- rbindlist(map(c("1a", "1b", "1c1501",
                         #"1c1503", "1c1505", # Missing carb. bevs and cookies
                         "1c1506", "1c1507", "1c1508", "2", "3", "4", "5", "6", "7", "7b"),
                       getCoefs), use.names = TRUE)
-beta <- beta[reg == "Store-Week-Brand FE"]
+beta <- unique(beta[reg == "Store-Week-Brand FE"])
 beta[`Pr(>|t|)` > 0.05, "Estimate" := 0]
 beta <- beta[, .(beta = Estimate, mod = mod)]
 
@@ -93,6 +93,7 @@ getDiff <- function(mod) {
   }, error = function(e){})
 }
 
+rm(fullData, fullPurch)
 mods <- sort(unique(avgSize$product_module_code))
 hhDiffs <- rbindlist(map(mods, getDiff), use.names = TRUE)
 fwrite(hhDiffs, file = "/scratch/upenn/hossaine/bulkDiscountSavingsEstimated.csv",
@@ -130,6 +131,17 @@ poorWeights <- avgSize[household_income_coarse == "<25k",
 finalSavings <- merge(richDiffs, poorWeights, by = "mod")
 finalSavings[, .(weighted.mean(savings, w = realExp), sum(realExp * savings))]
 finalSavings[savings < 0, .(weighted.mean(savings, w = realExp), sum(realExp * savings))]
+
+# Getting savings by food type
+prod <- unique(fread("/scratch/upenn/hossaine/fullProd.csv",
+                     select = c("product_module_code", "food"),
+                     col.names = c("mod", "food")))
+finalSavings <- merge(richDiffs, poorWeights, by = "mod")
+finalSavings <- merge(finalSavings, prod, by = "mod")
+finalSavings[, .(weighted.mean(savings, w = realExp),
+                 sum(realExp * savings)), by = food]
+finalSavings[savings < 0, .(weighted.mean(savings, w = realExp),
+                            sum(realExp * savings)), by = food]
 
 # Getting annual expenditures by income group
 annualSpend <- avgSize[, .(annualSpend = sum(realExp)),

@@ -125,25 +125,25 @@ reg1 <- felm(bulk ~ lawInd | 0 | 0 | state,
 reg2 <- felm(bulk ~ lawInd + household_income_coarse + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
-reg3 <- felm(bulk ~ lawInd * household_income_coarse + adult + nChildren +
-               age + carShare + type_of_residence + college + married | 0 | 0 | state,
-             data = discBehaviorNonFood)
+# reg3 <- felm(bulk ~ lawInd * household_income_coarse + adult + nChildren +
+#                age + carShare + type_of_residence + college + married | 0 | 0 | state,
+#              data = discBehaviorNonFood)
 reg4 <- felm(bulk ~ display + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood)
 reg5 <- felm(bulk ~ display + adult + nChildren +
                age + carShare + type_of_residence + college + married | 0 | 0 | state,
              data = discBehaviorNonFood[state != 6])
-stargazer(reg1, reg2, reg3, reg4, reg5, type = "text",
-          add.lines = list(c("Demographics", "N", "Y", "Y", "Y", "Y"),
-                           c("Omit California", "N", "N", "N", "N", "Y")),
+stargazer(reg1, reg2, reg4, reg5, type = "text",
+          add.lines = list(c("Demographics", "N", "Y", "Y", "Y"),
+                           c("Omit California", "N", "N", "N", "Y")),
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           dep.var.caption = "", dep.var.labels.include = FALSE,
           keep = c("lawInd*", "mandatory*", "display*", "voluntary*"),
           order = c(1, 16, 17, 15, 7, 6, 5),
-          covariate.labels = c("Regulation", " . : 25-50k", " . : 50-100k", " . : >100k",
-                               "Vol. Disp","Mand. Disp", "Mand. Disp, Strict"),
+          covariate.labels = c("Regulation", "Vol. Disp",
+                               "Mand. Disp", "Mand. Disp, Strict"),
           notes.align = "l",
           notes.append = TRUE,
           digits = 3,

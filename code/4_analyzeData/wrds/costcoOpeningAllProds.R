@@ -185,7 +185,6 @@ for (i in c(5, 10, 15, 20)) {
   purchData <- fread(paste0("/scratch/upenn/hossaine/quarterShares", i, "Mi.csv"),
                             nThread = threads)
   purchData[, "hhMarket" := paste(household_code, zip_code, sep = "_")]
-  purchData[, "hhMarketInc" := paste(household_code, zip_code, household_income_coarse, sep = "_")]
 
   # Cleaning up groups. If household entered right when warehouse club entered, they
   # are not a treatment group
@@ -213,7 +212,8 @@ for (i in c(5, 10, 15, 20)) {
                                 by = .(household_code, panel_year, quarter, YQ,
                                        married, household_income_coarse,
                                        men, women, age, nChildren, group, college,
-                                       postOpenQtr, postOpen, hhMarket, hhMarketInc)]
+                                       postOpenQtr, postOpen, hhMarket,
+                                       openDateQtr)]
 
   # Running diff-in-diff on treatment and never club group. I ignore whether they
   # are a club shopper or not. This should be a lower bound on the effect
@@ -228,11 +228,13 @@ for (i in c(5, 10, 15, 20)) {
 
   reg1 <- felm(bulk ~ postOpen | hhMarket + YQ | 0 | household_code,
                data = quarterSharesAll)
-  reg2 <- felm(bulk ~ postOpen + men + women + nChildren + married + age + college |
+  reg2 <- felm(bulk ~ postOpen + men + women + nChildren + married + age +
+                 college + household_income_coarse |
                  hhMarket + YQ | 0 | household_code, data = quarterSharesAll)
-  reg3 <- felm(bulk ~ postOpen + postOpen2550 + postOpen50100 + postOpen100 +
-                 men + women + nChildren + married + age + college |
-                 hhMarket + YQ | 0 | household_code, data = quarterSharesAll)
+  reg3 <- felm(bulk ~ postOpen25 + postOpen2550 + postOpen50100 + postOpen100 +
+                 men + women + nChildren + married + age + college +
+                 household_income_coarse | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesAll)
 
   stargazer(reg1, reg2, reg3, type = "text",
             add.lines = list(c("Household-ZIP FE's", "Y", "Y", "Y"),
@@ -242,52 +244,39 @@ for (i in c(5, 10, 15, 20)) {
             out.header = FALSE,
             dep.var.caption = "", dep.var.labels.include = FALSE,
             keep = c("postOpen*"),
-            covariate.labels = c("Post-Entry", "Post-Entry : 25-50k",
-                                 "Post-Entry : 50-100k", "Post-Entry : >100k"),
+            covariate.labels = c("Post-Entry", "Post-Entry : <25k",
+                                 "Post-Entry : 25-50k", "Post-Entry : 50-100k",
+                                 "Post-Entry : >100k"),
             notes.align = "l",
             notes.append = TRUE,
             digits = 3,
             out = paste0("tables/costcoEntryDD", i, "Mi.tex"))
 
-  # Event study
-  # quarterSharesAll[is.na(postOpenQtr), "postOpenQtr" := 0L]
-  # quarterSharesAll[group != "Treatment", "postOpenQtr" := 0L]
-  quarterSharesAll[, "postOpenQtr_25" := postOpenQtr * (household_income_coarse == "<25k")]
-  quarterSharesAll[, "postOpenQtr_2550" := postOpenQtr * (household_income_coarse == "25-50k")]
-  quarterSharesAll[, "postOpenQtr_50100" := postOpenQtr * (household_income_coarse == "50-100k")]
-  quarterSharesAll[, "postOpenQtr_100" := postOpenQtr * (household_income_coarse == ">100k")]
-  quarterSharesAll[, "postOpenQtrFactor" := relevel(as.factor(postOpenQtr), ref = "-1")]
-  quarterSharesAll[, "postOpenQtrFactor_25" := relevel(as.factor(postOpenQtr_25), ref = "-1")]
-  quarterSharesAll[, "postOpenQtrFactor_2550" := relevel(as.factor(postOpenQtr_2550), ref = "-1")]
-  quarterSharesAll[, "postOpenQtrFactor_50100" := relevel(as.factor(postOpenQtr_50100), ref = "-1")]
-  quarterSharesAll[, "postOpenQtrFactor_100" := relevel(as.factor(postOpenQtr_100), ref = "-1")]
+  # Checking for pre-trends
+  quarterSharesAll[, "qtrEntry" := as.character((YQ - openDateQtr) * 4)]
+  quarterSharesAll[is.na(qtrEntry), "qtrEntry" := "No Entry"]
+  quarterSharesAll[, "qtrEntry" := relevel(as.factor(qtrEntry), ref = "No Entry")]
+  quarterSharesAll[, "open" := (qtrEntry == "No Entry")]
+  quarterSharesAll[qtrEntry == "-1", "qtrEntry" := "No Entry"]
 
-  reg1 <- felm(bulk ~ postOpenQtrFactor | hhMarket + YQ | 0 | household_code,
-               data = quarterSharesAll[group == "Treatment" & postOpenQtr %in% paste(-4:8)])
-  reg2 <- felm(bulk ~ postOpenQtrFactor + men + women + nChildren + age + college +
-                 married | hhMarket + YQ | 0 | household_code,
-               data = quarterSharesAll[group == "Treatment" & postOpenQtr %in% paste(-4:8)])
-  reg3 <- felm(bulk ~ postOpenQtrFactor + postOpenQtrFactor_2550 +
-                 postOpenQtrFactor_50100 + postOpenQtrFactor_100 +
-                 men + women + nChildren + age + college + married | hhMarket + YQ | 0 | household_code,
-               data = quarterSharesAll[group == "Treatment" & postOpenQtr %in% paste(-4:8)])
-  stargazer(reg1, reg2, reg3, type = "text")
+  reg1 <- felm(bulk ~ qtrEntry | hhMarket + YQ | 0 | household_code,
+               data = quarterSharesAll)
+  reg2 <- felm(bulk ~ qtrEntry + men + women + nChildren + married + age +
+                 college + household_income_coarse | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesAll)
+  stargazer(reg1, reg2, type = "text")
 
-  # Computing proportion of households that actually took up "treatment"
-  quarterSharesAll[, mean(bulk), keyby = .(household_income_coarse, postOpen, group)]
-
-  # Plotting Event study
+  # Plotting pre-trends
   graphData <- as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE)
   confInt <- as.data.table(confint(reg2), keep.rownames = TRUE)
   graphData <- merge(graphData, confInt, by = "rn")
-  graphData <- graphData[grepl("postOpenQtrFactor*", rn)]
-  graphData[, "rn" := as.integer(gsub("postOpenQtrFactor", "", rn))]
+  graphData <- graphData[grepl("qtrEntry*", rn)]
+  graphData[, "rn" := as.integer(gsub("qtrEntry", "", rn))]
   graphData <- rbindlist(list(graphData, list(-1, 0, 0, 0, 0, 0, 0)))
 
   setnames(graphData, c("quarter", "betas", "se", "t", "p", "LCL", "UCL"))
-  ggplot(graphData, aes(x = quarter, y = betas)) +
+  ggplot(graphData[quarter %between% c(-8, 8)], aes(x = quarter, y = betas)) +
     geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
-    #geom_ribbon(aes(ymin = LCL, ymax = UCL), alpha = 0.4) +
     geom_point() +
     geom_hline(yintercept = 0) +
     geom_vline(xintercept = 0) +
@@ -295,35 +284,49 @@ for (i in c(5, 10, 15, 20)) {
          y = "Change in Bulk Purchasing (pp)") +
     theme_tufte() +
     theme(axis.title = element_text(),
-          legend.position = "bottom") +
-    scale_color_grey()
+          legend.position = "bottom")
   ggsave(filename = paste0("./figures/eventStudy", i, "Mi.pdf"), height = 4, width = 6)
+
+  # Checking pre-trends by income group
+  quarterSharesAll[household_income_coarse == "<25k", "qtrEntry0025" := qtrEntry]
+  quarterSharesAll[is.na(qtrEntry0025), "qtrEntry0025" := "No Entry"]
+  quarterSharesAll[household_income_coarse == "25-50k", "qtrEntry2550" := qtrEntry]
+  quarterSharesAll[is.na(qtrEntry2550), "qtrEntry2550" := "No Entry"]
+  quarterSharesAll[household_income_coarse == "50-100k", "qtrEntry5010" := qtrEntry]
+  quarterSharesAll[is.na(qtrEntry5010), "qtrEntry5010" := "No Entry"]
+  quarterSharesAll[household_income_coarse == ">100k", "qtrEntry100k" := qtrEntry]
+  quarterSharesAll[is.na(qtrEntry100k), "qtrEntry100k" := "No Entry"]
+
+  reg3 <- felm(bulk ~ qtrEntry0025 + qtrEntry2550 + qtrEntry5010 + qtrEntry100k +
+                 men + women + nChildren + married + age + college +
+                 household_income_coarse | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesAll)
+  stargazer(reg3, type = "text")
 
   # Plotting Event study by income
   graphData <- as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE)
   confInt <- as.data.table(confint(reg3), keep.rownames = TRUE)
   graphData <- merge(graphData, confInt, by = "rn")
-  graphData <- graphData[grepl("postOpenQtrFactor*", rn)]
-  graphData[, "rn" := gsub("postOpenQtrFactor", "", rn)]
-  graphData[, "quarter" := as.integer(str_sub(rn, -2))]
-  graphData[, "income" := substr(rn, 2, 4)]
-  graphData[income == "100", "incomeBin" := ">100k"]
-  graphData[income == "501", "incomeBin" := "50-100k"]
-  graphData[income == "255", "incomeBin" := "25-50k"]
+  graphData <- graphData[grepl("qtrEntry*", rn)]
+  graphData[, "rn" := gsub("qtrEntry", "", rn)]
+  graphData[, "income" := substr(rn, 1, 4)]
+  graphData[income == "100k", "incomeBin" := ">100k"]
+  graphData[income == "5010", "incomeBin" := "50-100k"]
+  graphData[income == "2550", "incomeBin" := "25-50k"]
   graphData[is.na(incomeBin), "incomeBin" := "<25k"]
+  graphData[, "quarter" := as.integer(substring(rn, 5, nchar(rn)))]
   graphData[, c("income", "rn") := NULL]
   graphData <- rbindlist(list(graphData,
-                              list(0, 0, 0, 0, 0, 0, -1, "<25k"),
-                              list(0, 0, 0, 0, 0, 0, -1, "25-50k"),
-                              list(0, 0, 0, 0, 0, 0, -1, "50-100k"),
-                              list(0, 0, 0, 0, 0, 0, -1, ">100k")))
+                              list(0, 0, 0, 0, 0, 0, "<25k", -1),
+                              list(0, 0, 0, 0, 0, 0, "25-50k", -1),
+                              list(0, 0, 0, 0, 0, 0, "50-100k", -1),
+                              list(0, 0, 0, 0, 0, 0, ">100k", -1)))
 
-  setnames(graphData, c("betas", "se", "t", "p", "LCL", "UCL", "quarter", "income"))
+  setnames(graphData, c("betas", "se", "t", "p", "LCL", "UCL", "income", "quarter"))
   graphData[, "income" := factor(income, levels = c("<25k", "25-50k", "50-100k", ">100k"),
                                  ordered = TRUE)]
-  ggplot(graphData, aes(x = quarter, y = betas)) +
+  ggplot(graphData[quarter %between% c(-8, 8)], aes(x = quarter, y = betas)) +
     geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2) +
-    #geom_ribbon(aes(ymin = LCL, ymax = UCL), alpha = 0.4) +
     geom_point() +
     geom_hline(yintercept = 0) +
     geom_vline(xintercept = 0) +
@@ -332,8 +335,7 @@ for (i in c(5, 10, 15, 20)) {
          y = "Change in Bulk Purchasing (pp)") +
     theme_tufte() +
     theme(axis.title = element_text(),
-          legend.position = "bottom") +
-    scale_color_grey()
+          legend.position = "bottom")
   ggsave(filename = paste0("./figures/eventStudyIncome", i, "Mi.pdf"), height = 4, width = 6)
 }
 
@@ -345,7 +347,6 @@ for (i in c("5Mi", "10Mi", "15Mi", "20Mi")) {
   purchData <- fread(paste0("/scratch/upenn/hossaine/quarterShares", i, ".csv"),
                      nThread = threads)
   purchData[, "hhMarket" := paste(household_code, zip_code, sep = "_")]
-  purchData[, "hhMarketInc" := paste(household_code, zip_code, household_income_coarse, sep = "_")]
 
   # Cleaning up groups. If household entered right when warehouse club entered, they
   # are not a treatment group
@@ -373,7 +374,7 @@ for (i in c("5Mi", "10Mi", "15Mi", "20Mi")) {
                                 by = .(household_code, panel_year, quarter, YQ,
                                        married, household_income_coarse,
                                        men, women, age, nChildren, group, college,
-                                       postOpenQtr, postOpen, hhMarket, hhMarketInc)]
+                                       postOpenQtr, postOpen, hhMarket)]
 
   # Running diff-in-diff on treatment and never club group. I ignore whether they
   # are a club shopper or not. This should be a lower bound on the effect
