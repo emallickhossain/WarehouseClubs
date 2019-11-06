@@ -165,6 +165,9 @@ graphDataZIP[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18
 graphDataZIP[, "rn" := as.numeric(as.character(rn))]
 setnames(graphDataZIP, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
+fwrite(graphDataZIP, "./figures/discountingBehaviorFEZipColor.csv")
+graphDataZIP <- fread("./figures/discountingBehaviorFEZipColor.csv")
+
 group.colors <- c("Without FE" = "#FF2700", "With FE" = "#008FD5")
 group.shapes <- c("Without FE" = 17, "With FE" = 16)
 ggplot(data = graphDataZIP,
@@ -175,11 +178,13 @@ ggplot(data = graphDataZIP,
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Household Income ($000s)",
-       y = "Difference in Bulk Purchasing (Percentage Points)") +
+       y = "Difference in Bulk Purchasing\n(Percentage Points)") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_manual(values = group.colors) +
   scale_shape_manual(values = group.shapes)
 ggsave(filename = "./figures/discountingBehaviorFEZIPColor.pdf", height = 4, width = 6)
@@ -224,6 +229,9 @@ graphDataFIP[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18
 graphDataFIP[, "rn" := as.numeric(as.character(rn))]
 setnames(graphDataFIP, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
+fwrite(graphDataFIP, "./figures/AppendixDiscountingBehaviorFEFIPColor.csv")
+graphDataFIP <- fread("./figures/AppendixDiscountingBehaviorFEFIPColor.csv")
+
 ggplot(data = graphDataFIP,
        aes(x = rn, y = beta * 100, color = Type)) +
   geom_errorbar(aes(ymin = 100 * LCL,
@@ -236,8 +244,11 @@ ggplot(data = graphDataFIP,
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
-  scale_color_colorblind()
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_manual(values = group.colors) +
+  scale_shape_manual(values = group.shapes)
 ggsave(filename = "./figures/AppendixDiscountingBehaviorFEFIPColor.pdf", height = 4, width = 6)
 
 ################################################################################
@@ -277,6 +288,9 @@ graphData[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18, 1
 graphData[, "rn" := as.numeric(as.character(rn))]
 setnames(graphData, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
+fwrite(graphData, "./figures/AppendixDiscountingBehaviorFEStoreColor.csv")
+graphData <- fread("./figures/AppendixDiscountingBehaviorFEStoreColor.csv")
+
 ggplot(data = graphData,
        aes(x = rn, y = beta * 100, color = Type)) +
   geom_errorbar(aes(ymin = 100 * LCL,
@@ -289,8 +303,11 @@ ggplot(data = graphData,
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
-  scale_color_colorblind()
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_manual(values = group.colors) +
+  scale_shape_manual(values = group.shapes)
 ggsave(filename = "./figures/AppendixDiscountingBehaviorFEStoreColor.pdf", height = 4, width = 6)
 
 # Regressions of bulk buying within retail chains
@@ -339,6 +356,9 @@ graphDataRetailer[, "rn" := as.numeric(as.character(rn))]
 setnames(graphDataRetailer, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
 
 # Retailer and Channel FE graph
+fwrite(graphDataRetailer, "./figures/discountingBehaviorFEColor.csv")
+graphDataRetailer <- fread("./figures/discountingBehaviorFEColor.csv")
+
 group.colors <- c("Without FE" = "#FF2700", "Channel FE" = "#77AB43",
                   "Channel + Retailer FE" = "#008FD5")
 group.shapes <- c("Without FE" = 17, "Channel FE" = 15,
@@ -351,11 +371,13 @@ ggplot(data = graphDataRetailer,
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Household Income ($000s)",
-       y = "Difference in Bulk Purchasing (Percentage Points)") +
+       y = "Difference in Bulk Purchasing\n(Percentage Points)") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_manual(values = group.colors) +
   scale_shape_manual(values = group.shapes)
 ggsave(filename = "./figures/discountingBehaviorFEColor.pdf", height = 4, width = 6)

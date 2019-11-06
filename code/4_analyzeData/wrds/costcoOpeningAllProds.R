@@ -335,7 +335,9 @@ for (i in c(5, 10, 15, 20)) {
          y = "Change in Bulk Purchasing (pp)") +
     theme_tufte() +
     theme(axis.title = element_text(),
-          legend.position = "bottom")
+          legend.position = "bottom",
+          text = element_text(size = 14),
+          axis.ticks.length = unit(0.25, "cm"))
   ggsave(filename = paste0("./figures/eventStudyIncome", i, "Mi.pdf"), height = 4, width = 6)
 }
 
@@ -387,9 +389,10 @@ for (i in c("5Mi", "10Mi", "15Mi", "20Mi")) {
   quarterSharesAll[, "postOpen100" := ifelse(group == "Treatment",
                                              postOpen * (household_income_coarse == ">100k"), 0L)]
 
-  reg4 <- felm(bulk ~ postOpen + postOpen2550 + postOpen50100 + postOpen100 +
-                 men + women + nChildren + married + age + college |
-                 hhMarket, data = quarterSharesAll)
+  reg4 <- felm(bulk ~ postOpen25 + postOpen2550 + postOpen50100 + postOpen100 +
+                 men + women + nChildren + married + age + college +
+                 household_income_coarse | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesAll)
   fullReg[[i]] <- reg4
 }
 

@@ -1,0 +1,23 @@
+\begin{table}[!htbp] \centering
+  \caption{Relationship Between Bulk Buying and Housing Changes}
+  \label{tab:storageCosts}
+\begin{tabular}{@{\extracolsep{5pt}}lccc}
+\\[-1.8ex]\hline
+\hline \\[-1.8ex]
+\\[-1.8ex] & (1) & (2) & (3)\\
+\hline \\[-1.8ex]
+ Single-Family Home & 0.012$^{***}$ & 0.010$^{***}$ & 0.010$^{***}$ \\
+  & (0.002) & (0.002) & (0.003) \\
+ \hline \\[-1.8ex]
+Market FE's & Y & Y & Y \\
+Year FE's & Y & Y & Y \\
+Demographics & N & Y & Y \\
+Future Income & N & N & Y \\
+Observations & 731,762 & 731,762 & 566,535 \\
+Adjusted R$^{2}$ & 0.687 & 0.687 & 0.690 \\
+\hline
+\hline \\[-1.8ex]
+\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
+\end{tabular}
+\caption*{Notes: Using Nielsen 2004--2017 Consumer Panel data, this table shows the results of estimating Equation \ref{eq:storageCosts}. The dependent variable is the annual share of bulk purchases made by households and the independent variables are housing and other household characteristics. Estimating includes household, market, and year fixed effects. "Future Income" denotes a household's income one year in the future. Standard errors are clustered by household.}
+\end{table}

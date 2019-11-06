@@ -47,7 +47,7 @@ ggsave(filename = "./code/5_figures/unitPriceLaws.pdf", height = 4, width = 6)
 # Loading panel data
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "household_income",
-                          "men", "women", "age", "nChildren", "fips",
+                          "men", "women", "age", "nChildren", "fips", "projection_factor",
                           "household_income_coarse", "married", "carShare",
                           "law", "college", "type_of_residence"),
                key = c("household_code", "panel_year"))
@@ -80,9 +80,12 @@ panel[, "display" := relevel(as.factor(display), ref = "None")]
 
 # Getting summary stats for laws with and without regulations
 cols <- c("household_income", "household_size", "child", "married", "college", "age")
-summaryMeans <- panel[, lapply(.SD, mean), .SDcols = cols, by = lawInd]
+summaryMeans <- panel[, lapply(.SD, weighted.mean, w = projection_factor),
+                      .SDcols = cols, by = lawInd]
 summaryMeans[, "type" := "Mean"]
-summarySD <- panel[, lapply(.SD, sd), .SDcols = cols, by = lawInd]
+summarySD <- panel[, lapply(.SD, function(x, w) sqrt(wtd.var(x, weights = w)),
+                            w = projection_factor),
+                   .SDcols = cols, by = lawInd]
 summarySD[, "type" := "SD"]
 
 # Assembling final table
@@ -229,8 +232,8 @@ stargazer(reg1, reg2, reg3, reg4, type = "text",
           dep.var.caption = "", dep.var.labels.include = FALSE,
           column.separate = c(2, 1, 1),
           column.labels = c("All Households", "No Law To Law", "Law To No Law"),
-          keep = c("lawInd", "type_of_residence"),
-          covariate.labels = c("Regulation", "Single-Family Home"),
+          keep = c("lawInd"),
+          covariate.labels = c("Regulation"),
           notes.align = "l",
           digits = 3,
           out = "tables/unitPriceLawMovers.tex")
@@ -241,46 +244,54 @@ stargazer(reg1, reg2, reg3, reg4, type = "text",
 moveYear <- discBehaviorNonFood[move != "0", .(moveYear = min(panel_year)), by = household_code]
 discBehaviorNonFood <- merge(discBehaviorNonFood, moveYear, by = "household_code", all = TRUE)
 discBehaviorNonFood[, "Y" := panel_year - moveYear]
+discBehaviorNonFood[is.na(Y), "Y" := -1]
 discBehaviorNonFood[, "Y" := relevel(as.factor(Y), ref = "-1")]
-discBehaviorNonFood[is.na(Y), "Y" := "-1"]
+discBehaviorNonFood[, "moveLags" := paste(moverType, Y, sep = "_")]
+discBehaviorNonFood[moveLags == "Move To Reg_-1", "moveLags" := "No Move_-1"]
+discBehaviorNonFood[moveLags == "Move To No Reg_-1", "moveLags" := "No Move_-1"]
+discBehaviorNonFood[, "moveLags" := relevel(as.factor(moveLags), ref = "No Move_-1")]
 
-regEvent1 <- felm(bulk ~ lawInd * Y | household_code |
+regEvent1 <- felm(bulk ~ moveLags | household_code + panel_year |
                     0 | household_code,
-                  data = discBehaviorNonFood[Y %in% -2:2])
-regEvent2 <- felm(bulk ~ lawInd * Y + household_income_coarse + adult +
+                  data = discBehaviorNonFood)
+regEvent2 <- felm(bulk ~ moveLags + household_income_coarse + adult +
                     nChildren + age + married + college |
                     household_code + panel_year | 0 | household_code,
-                  data = discBehaviorNonFood[Y %in% -2:2])
+                  data = discBehaviorNonFood)
 stargazer(regEvent1, regEvent2, type = "text")
 
 finalCoefs <- as.data.table(summary(regEvent2)$coefficients, keep.rownames = TRUE)
 finalInt <- as.data.table(confint(regEvent2), keep.rownames = TRUE)
 finalCoefs <- merge(finalCoefs, finalInt, by = "rn")
-finalCoefs <- finalCoefs[grepl("(To)|(Away)", rn)]
-finalCoefs[grepl("To", rn), c("rn", "type") := .(gsub("To", "", rn), "To")]
-finalCoefs[grepl("Away", rn), c("rn", "type") := .(gsub("Away", "", rn), "Away")]
-finalCoefs[, "rn" := as.integer(rn)]
+finalCoefs <- finalCoefs[grepl("move", rn)]
+finalCoefs[, c("direction", "Year") := tstrsplit(rn, "_", fixed = TRUE)]
+finalCoefs[direction == "moveLagsMove To Reg", direction := "To Law"]
+finalCoefs[direction == "moveLagsMove To No Reg", direction := "To No Law"]
+finalCoefs[, "Year" := as.integer(Year)]
+finalCoefs[, "rn" := NULL]
 
-setnames(finalCoefs, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "moveType"))
+setnames(finalCoefs, c("beta", "se", "t", "p", "LCL", "UCL", "direction", "Year"))
 finalCoefs <- rbindlist(list(finalCoefs,
-                             list(-1, 0, 0, 0, 0, 0, 0, "To"),
-                             list(-1, 0, 0, 0, 0, 0, 0, "Away")))
+                             list(0, 0, 0, 0, 0, 0, "To Law", -1),
+                             list(0, 0, 0, 0, 0, 0, "To No Law", -1)))
 
 pd <- position_dodge(width = 0.4)
-ggplot(data = finalCoefs, aes(x = rn, y = beta, color = moveType)) +
+ggplot(data = finalCoefs[Year %in% -3:2],
+       aes(x = Year, y = beta, color = direction, shape = direction)) +
   geom_errorbar(aes(ymin = LCL, ymax = UCL), width = 0.2, position = pd) +
-  geom_point(position = pd) +
+  geom_point(position = pd, size = 3) +
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Years After Moving",
        y = "Difference in Bulk Purchasing (Percentage Points)",
-       color = "Law Status After Household Move") +
+       color = "Law Status After Household Move",
+       shape = "Law Status After Household Move") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
-  scale_color_grey()
-  # scale_color_fivethirtyeight()
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_fivethirtyeight()
 
-ggsave(filename = "./figures/unitPriceEventStudy.pdf", height = 4, width = 6)
-# ggsave(filename = "./figures/unitPriceEventStudyColor.pdf", height = 4, width = 6)
+ggsave(filename = "./figures/unitPriceEventStudyColor.pdf", height = 4, width = 6)

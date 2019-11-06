@@ -165,7 +165,9 @@ ggplot(data = coefs[reg == "Store-Week-Brand FE"],
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_fill_brewer(palette = "Paired")
 
 ggsave(filename = "./code/5_figures/bulkDiscountAllProdsScanner.pdf", height = 4, width = 6)

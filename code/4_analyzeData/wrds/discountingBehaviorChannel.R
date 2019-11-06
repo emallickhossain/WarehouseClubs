@@ -145,8 +145,10 @@ ggplot(data = histData,
         plot.caption = element_text(hjust = 0),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
-        legend.position = "bottom") +
-  scale_fill_brewer(palette = "OrRd", direction = -1)
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_fill_economist()
 ggsave("./code/5_figures/discountingBehaviorChannelAll.pdf", height = 4, width = 6)
 
 # Plotting coefficients for only nonfood products (dropping bath oil dry [8602])
@@ -173,11 +175,12 @@ ggplot(data = histData[food == 0 & mod != 8602],
         plot.caption = element_text(hjust = 0),
         axis.ticks.x = element_blank(),
         axis.text.x = element_blank(),
-        legend.position = "bottom") +
-  scale_fill_grey()
-  # scale_fill_economist()
-ggsave("./code/5_figures/discountingBehaviorChannelNonFood.pdf", height = 4, width = 6)
-# ggsave("./code/5_figures/discountingBehaviorChannelNonFoodColor.pdf", height = 4, width = 6)
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_fill_manual(values = c("#084594", "#4292c6", "#9ecae1"))
+
+ggsave("./code/5_figures/discountingBehaviorChannelNonFoodColor.pdf", height = 4, width = 6)
 
 # Download
 # scp hossaine@wrds-cloud.wharton.upenn.edu:/scratch/upenn/hossaine/discountingBehaviorChannel2.csv /home/mallick/Downloads

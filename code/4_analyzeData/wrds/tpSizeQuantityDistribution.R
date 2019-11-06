@@ -66,8 +66,10 @@ ggplot(data = tp[brand_descr %in% topBrands & rolls <= 24],
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "none") +
-  scale_color_colorblind()
+        legend.position = "none",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_manual(values = rep("#253494", 6))
 ggsave(filename = "./figures/tpSizeQuantityDistributionAllProdsColor.pdf", height = 4, width = 6)
 
 ################################################################################

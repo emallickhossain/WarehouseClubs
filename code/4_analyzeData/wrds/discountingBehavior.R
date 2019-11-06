@@ -26,6 +26,7 @@ library(lfe)
 library(purrr)
 library(stringr)
 library(stargazer)
+library(binsreg)
 threads <- 8
 
 # Getting trips and panel data for demographics and to deflate expenditures
@@ -163,6 +164,10 @@ avgBulk[, "household_income" := factor(household_income,
                                        ordered = TRUE)]
 avgBulk[, "foodChar" := ifelse(food == 0, "Non-Food", "Food")]
 avgBulk[, "household_income" := as.numeric(as.character(household_income))]
+
+fwrite(avgBulk, "./figures/savingsBehaviorAvgBulkRaw.csv")
+avgBulk <- fread("./figures/savingsBehaviorAvgBulkRaw.csv")
+
 ggplot(data = avgBulk, aes(x = household_income, y = bulk * 100, color = foodChar,
                            shape = foodChar)) +
   geom_point(size = 3) +
@@ -175,7 +180,9 @@ ggplot(data = avgBulk, aes(x = household_income, y = bulk * 100, color = foodCha
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_fivethirtyeight()
 
 ggsave("./figures/savingsBehaviorAvgBulkRaw.pdf", height = 4, width = 6)
@@ -206,6 +213,9 @@ bin2DT <- as.data.table(bin2$data.plot$`Group Full Sample`$data.dots)
 bin2DT[, "food" := "Non-Food"]
 graphData <- rbindlist(list(bin1DT, bin2DT), use.names = TRUE)
 
+fwrite(graphData, "./figures/savingsBehaviorBinScatter.csv")
+graphData <- fread("./figures/savingsBehaviorBinScatter.csv")
+
 ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) +
   geom_point(size = 3) +
   geom_vline(xintercept = 0) +
@@ -217,7 +227,9 @@ ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) 
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_fivethirtyeight()
 
 ggsave("./figures/savingsBehaviorBinScatter.pdf", height = 4, width = 6)
@@ -237,6 +249,9 @@ bin2DT <- as.data.table(bin2$data.plot$`Group Full Sample`$data.dots)
 bin2DT[, "food" := "Non-Food"]
 graphData <- rbindlist(list(bin1DT, bin2DT), use.names = TRUE)
 
+fwrite(graphData, "./figures/savingsBehaviorBinScatterSizeKids.csv")
+graphData <- fread("./figures/savingsBehaviorBinScatterSizeKids.csv")
+
 ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) +
   geom_point(size = 3) +
   geom_vline(xintercept = 0) +
@@ -248,7 +263,9 @@ ggplot(data = graphData, aes(x = x, y = fit * 100, color = food, shape = food)) 
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_fivethirtyeight()
 
 ggsave("./figures/savingsBehaviorBinScatterSizeKids.pdf", height = 4, width = 6)
@@ -320,6 +337,9 @@ graphData[disc == "two", "disc" := "Two"]
 graphData[disc == "three", "disc" := "Three"]
 
 # Graphing
+fwrite(graphData, "./figures/savingsBehavior.csv")
+graphData <- fread("./figures/savingsBehavior.csv")
+
 panels <- c("Coupon", "Generic", "Bulk")
 ggplot(data = graphData[disc %in% "Bulk" & `Product Type` != "All"],
        aes(x = rn, y = beta * 100, color = `Product Type`)) +
@@ -333,12 +353,12 @@ ggplot(data = graphData[disc %in% "Bulk" & `Product Type` != "All"],
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
-  scale_color_grey()
-  # scale_color_fivethirtyeight()
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_fivethirtyeight()
 
 ggsave("./figures/savingsBehavior.pdf", height = 4, width = 6)
-# ggsave("./figures/savingsBehaviorColor.pdf", height = 4, width = 6)
 
 ################################################################################
 ############### ROBUSTNESS #####################################################
@@ -518,6 +538,9 @@ graphData[rn > 6.5 & `Product Type` == "Food", "beta" := beta + intFood]
 graphData[rn > 6.5 & `Product Type` == "Non-Food", "beta" := beta + intNonFood]
 
 # Graphing
+fwrite(graphData, "./figures/savingsBehaviorAvg.csv")
+graphData <- fread("./figures/savingsBehaviorAvg.csv")
+
 ggplot(data = graphData,
        aes(x = rn, y = beta * 100, color = `Product Type`)) +
   geom_point(aes(shape = `Product Type`), size = 3) +
@@ -528,7 +551,9 @@ ggplot(data = graphData,
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
   scale_color_fivethirtyeight()
 ggsave(filename = "./figures/savingsBehaviorAvg.pdf", height = 4, width = 6)
 

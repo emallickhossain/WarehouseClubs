@@ -5,6 +5,7 @@ library(ggplot2)
 library(lfe)
 library(stringr)
 library(stargazer)
+library(binsreg)
 yrs <- 2004:2017
 threads <- 8
 
@@ -93,23 +94,22 @@ ggsave("./figures/expendituresByChannelVariation.pdf", height = 4, width = 6)
 
 # Running regression
 annualSpend[, "household_income" := as.factor(household_income)]
+annualSpend[channel_type %in% c("Grocery", "Discount Store", "Drug Store"),
+            "channel_type" := "Grocery/Discount/Drug Store"]
+annualSpend <- annualSpend[, .(share = sum(share)),
+                           by = .(household_code, panel_year, channel_type,
+                                  projection_factor, household_income, men,
+                                  women, nChildren, age, college, dma_cd, married,
+                                  household_income_coarse)]
 reg1 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
-             data = annualSpend[channel_type == "Grocery"],
-             weights = annualSpend[channel_type == "Grocery"]$projection_factor)
+             data = annualSpend[channel_type == "Grocery/Discount/Drug Store"],
+             weights = annualSpend[channel_type == "Grocery/Discount/Drug Store"]$projection_factor)
 reg2 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
-               dma_cd + panel_year,
-             data = annualSpend[channel_type == "Discount Store"],
-             weights = annualSpend[channel_type == "Discount Store"]$projection_factor)
-reg3 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
              data = annualSpend[channel_type == "Dollar Store"],
              weights = annualSpend[channel_type == "Dollar Store"]$projection_factor)
-reg4 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
-               dma_cd + panel_year,
-             data = annualSpend[channel_type == "Drug Store"],
-             weights = annualSpend[channel_type == "Drug Store"]$projection_factor)
-reg5 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
+reg3 <- felm(share ~ household_income + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
              data = annualSpend[channel_type == "Warehouse Club"],
              weights = annualSpend[channel_type == "Warehouse Club"]$projection_factor)
@@ -118,29 +118,19 @@ reg5 <- felm(share ~ household_income + men + women + nChildren + age + college 
 coef1 <- as.data.table(summary(reg1)$coefficients, keep.rownames = TRUE)
 confInt1 <- as.data.table(confint(reg1), keep.rownames = TRUE)
 coef1 <- merge(coef1, confInt1, by = "rn")
-coef1[, "reg" := "Grocery"]
+coef1[, "reg" := "Grocery/Discount/Drug Store"]
 
 coef2 <- as.data.table(summary(reg2)$coefficients, keep.rownames = TRUE)
 confInt2 <- as.data.table(confint(reg2), keep.rownames = TRUE)
 coef2 <- merge(coef2, confInt2, by = "rn")
-coef2[, "reg" := "Discount Store"]
+coef2[, "reg" := "Dollar Store"]
 
 coef3 <- as.data.table(summary(reg3)$coefficients, keep.rownames = TRUE)
 confInt3 <- as.data.table(confint(reg3), keep.rownames = TRUE)
 coef3 <- merge(coef3, confInt3, by = "rn")
-coef3[, "reg" := "Dollar Store"]
+coef3[, "reg" := "Warehouse Club"]
 
-coef4 <- as.data.table(summary(reg4)$coefficients, keep.rownames = TRUE)
-confInt4 <- as.data.table(confint(reg4), keep.rownames = TRUE)
-coef4 <- merge(coef4, confInt4, by = "rn")
-coef4[, "reg" := "Drug Store"]
-
-coef5 <- as.data.table(summary(reg5)$coefficients, keep.rownames = TRUE)
-confInt5 <- as.data.table(confint(reg5), keep.rownames = TRUE)
-coef5 <- merge(coef5, confInt5, by = "rn")
-coef5[, "reg" := "Warehouse Club"]
-
-finalCoefs <- rbindlist(list(coef1, coef2, coef3, coef4, coef5), use.names = TRUE)
+finalCoefs <- rbindlist(list(coef1, coef2, coef3), use.names = TRUE)
 graphData <- finalCoefs[grepl("household_income", rn)]
 graphData[, "rn" := gsub("household_income", "", rn)]
 graphData[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
@@ -148,6 +138,9 @@ graphData[, "rn" := factor(rn, levels = c(4, 6, 8, 10, 11, 13, 15, 16, 17, 18, 1
                                   ordered = TRUE)]
 graphData[, "rn" := as.numeric(as.character(rn))]
 setnames(graphData, c("rn", "beta", "se", "t", "p", "LCL", "UCL", "Type"))
+
+fwrite(graphData, "./figures/expendituresByChannelColor.csv")
+graphData <- fread("./figures/expendituresByChannelColor.csv")
 
 ggplot(data = graphData,
        aes(x = rn, y = beta * 100, color = Type)) +
@@ -161,30 +154,23 @@ ggplot(data = graphData,
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),
-        legend.position = "bottom") +
-  scale_shape_manual(values = c(15:19)) +
-  scale_color_manual(values = c("#009E73", "#F0E442", "#E69F00", "#56B4E9", "#000000"))
+        legend.position = "bottom",
+        text = element_text(size = 14),
+        axis.ticks.length = unit(0.25, "cm")) +
+  scale_color_fivethirtyeight()
 ggsave("./figures/expendituresByChannelColor.pdf", height = 4, width = 6)
 
 # Stargazer table for income quartiles
 reg1 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
-             data = annualSpend[channel_type == "Grocery"],
-             weights = annualSpend[channel_type == "Grocery"]$projection_factor)
+             data = annualSpend[channel_type == "Grocery/Discount/Drug Store"],
+             weights = annualSpend[channel_type == "Grocery/Discount/Drug Store"]$projection_factor)
 reg2 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
-               dma_cd + panel_year,
-             data = annualSpend[channel_type == "Discount Store"],
-             weights = annualSpend[channel_type == "Discount Store"]$projection_factor)
-reg3 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
              data = annualSpend[channel_type == "Dollar Store"],
              weights = annualSpend[channel_type == "Dollar Store"]$projection_factor)
-reg4 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
-               dma_cd + panel_year,
-             data = annualSpend[channel_type == "Drug Store"],
-             weights = annualSpend[channel_type == "Drug Store"]$projection_factor)
-reg5 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
+reg3 <- felm(share ~ household_income_coarse + men + women + nChildren + age + college + married |
                dma_cd + panel_year,
              data = annualSpend[channel_type == "Warehouse Club"],
              weights = annualSpend[channel_type == "Warehouse Club"]$projection_factor)
-stargazer(reg1, reg2, reg3, reg4, reg5, type = "text")
+stargazer(reg1, reg2, reg3, type = "text")
