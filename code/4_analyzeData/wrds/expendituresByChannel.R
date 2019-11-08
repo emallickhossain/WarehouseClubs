@@ -150,7 +150,7 @@ ggplot(data = graphData,
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Annual Household Income ($000s)",
-       y = "Diff. in Annual Budget Share (Percentage Points)") +
+       y = "Diff. in Annual Budget Share\n(Percentage Points)") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),

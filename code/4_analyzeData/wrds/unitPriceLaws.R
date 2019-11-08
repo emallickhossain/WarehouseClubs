@@ -239,8 +239,6 @@ stargazer(reg1, reg2, reg3, reg4, type = "text",
           out = "tables/unitPriceLawMovers.tex")
 
 # Generating event study.
-# There's something weird with collinearity or something. Regression keeps
-# dropping one of the lags when year fixed effects are added.
 moveYear <- discBehaviorNonFood[move != "0", .(moveYear = min(panel_year)), by = household_code]
 discBehaviorNonFood <- merge(discBehaviorNonFood, moveYear, by = "household_code", all = TRUE)
 discBehaviorNonFood[, "Y" := panel_year - moveYear]
@@ -283,7 +281,7 @@ ggplot(data = finalCoefs[Year %in% -3:2],
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Years After Moving",
-       y = "Difference in Bulk Purchasing (Percentage Points)",
+       y = "Difference in Bulk Purchasing\n(Percentage Points)",
        color = "Law Status After Household Move",
        shape = "Law Status After Household Move") +
   theme_tufte() +

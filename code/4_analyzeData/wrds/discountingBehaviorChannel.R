@@ -138,7 +138,7 @@ ggplot(data = histData,
   #facet_wrap(vars(product_group_descr), scales = "free") +
   #facet_wrap(vars(food), scales = "free_x") +
   labs(x = "Product Category",
-       y = "Log-Point Increase Over Poorest Households",
+       y = "Log-Point Increase Over\nPoorest Households",
        fill = "Household Income") +
   theme_tufte() +
   theme(axis.title = element_text(),
@@ -168,7 +168,7 @@ ggplot(data = histData[food == 0 & mod != 8602],
   geom_text_repel(nudge_x = 0.5, nudge_y = 0.2, box.padding = 0.25,
                   segment.alpha = 0.4) +
   labs(x = "Product Category",
-       y = "Log-Point Increase Over Poorest Households",
+       y = "Log-Point Increase Over\nPoorest Households",
        fill = "Household Income") +
   theme_tufte() +
   theme(axis.title = element_text(),
@@ -210,7 +210,7 @@ ggplot(data = histData[food == 0 & mod != 8602],
   geom_text_repel(nudge_x = 0.5, nudge_y = 0.2, box.padding = 0.25,
                   segment.alpha = 0.4) +
   labs(x = "Product Category",
-       y = "Log-Point Increase Over Poorest Households",
+       y = "Log-Point Increase Over\nPoorest Households",
        fill = "Household Income") +
   theme_tufte() +
   theme(axis.title = element_text(),

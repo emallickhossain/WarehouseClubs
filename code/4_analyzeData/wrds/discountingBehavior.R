@@ -349,7 +349,7 @@ ggplot(data = graphData[disc %in% "Bulk" & `Product Type` != "All"],
   geom_vline(xintercept = 0) +
   geom_hline(yintercept = 0) +
   labs(x = "Annual Household Income ($000s)",
-       y = "Difference in Bulk Purchasing (Percentage Points)") +
+       y = "Difference in Bulk Purchasing\n(Percentage Points)") +
   theme_tufte() +
   theme(axis.title = element_text(),
         plot.caption = element_text(hjust = 0),

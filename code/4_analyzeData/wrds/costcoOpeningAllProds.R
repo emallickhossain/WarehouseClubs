@@ -332,7 +332,7 @@ for (i in c(5, 10, 15, 20)) {
     geom_vline(xintercept = 0) +
     facet_wrap(vars(income)) +
     labs(x = "Quarters After Entry",
-         y = "Change in Bulk Purchasing (pp)") +
+         y = "Change in Bulk Purchasing\n(Percentage Points)") +
     theme_tufte() +
     theme(axis.title = element_text(),
           legend.position = "bottom",
