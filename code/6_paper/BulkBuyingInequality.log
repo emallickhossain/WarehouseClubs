@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2019.10.19)  8 NOV 2019 12:42
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2019.10.19)  9 NOV 2019 13:00
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -776,79 +776,79 @@ LaTeX Font Info:    External font `lmex10' loaded for size
 [1
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}] [2] [3] [4] [5] (./finalTa
-bles/homescanSummaryStats.tex) [6]
-<../5_figures/bulkDiscountAllProdsScanner.pdf, id=180, 433.62pt x 289.08pt>
+bles/homescanSummaryStats.tex) [6] [7]
+<../5_figures/bulkDiscountAllProdsScanner.pdf, id=191, 433.62pt x 289.08pt>
 File: ../5_figures/bulkDiscountAllProdsScanner.pdf Graphic file (type pdf)
 <use ../5_figures/bulkDiscountAllProdsScanner.pdf>
 Package pdftex.def Info: ../5_figures/bulkDiscountAllProdsScanner.pdf  used on 
-input line 406.
+input line 426.
 (pdftex.def)             Requested size: 379.41656pt x 252.94437pt.
-[7] [8 <../5_figures/bulkDiscountAllProdsScanner.pdf>]
+[8 <../5_figures/bulkDiscountAllProdsScanner.pdf>]
 <../5_figures/savingsBehavior.pdf, id=211, 433.62pt x 289.08pt>
 File: ../5_figures/savingsBehavior.pdf Graphic file (type pdf)
 <use ../5_figures/savingsBehavior.pdf>
 Package pdftex.def Info: ../5_figures/savingsBehavior.pdf  used on input line 4
-59.
+79.
 (pdftex.def)             Requested size: 368.57213pt x 245.71474pt.
-[9 <../5_figures/savingsBehavior.pdf>] [10] [11]
-<../5_figures/unitPriceLaws.pdf, id=255, 433.62pt x 289.08pt>
+[9] [10 <../5_figures/savingsBehavior.pdf>] [11]
+<../5_figures/unitPriceLaws.pdf, id=253, 433.62pt x 289.08pt>
 File: ../5_figures/unitPriceLaws.pdf Graphic file (type pdf)
 <use ../5_figures/unitPriceLaws.pdf>
-Package pdftex.def Info: ../5_figures/unitPriceLaws.pdf  used on input line 606
+Package pdftex.def Info: ../5_figures/unitPriceLaws.pdf  used on input line 625
 .
 (pdftex.def)             Requested size: 368.57213pt x 245.71474pt.
-[12 <../5_figures/unitPriceLaws.pdf>] (./finalTables/unitPriceLaw.tex) [13] (./
+[12] (./finalTables/unitPriceLaw.tex) [13 <../5_figures/unitPriceLaws.pdf>] (./
 finalTables/unitPriceLawTable.tex
 Overfull \hbox (1.10721pt too wide) in paragraph at lines 12--12
 []\T1/lmr/m/n/12 (-20) Massachusetts| 
  []
 
-) [14]
-<../5_figures/unitPriceEventStudyColor.pdf, id=290, 433.62pt x 289.08pt>
+) [14] [15]
+<../5_figures/unitPriceEventStudyColor.pdf, id=295, 433.62pt x 289.08pt>
 File: ../5_figures/unitPriceEventStudyColor.pdf Graphic file (type pdf)
 <use ../5_figures/unitPriceEventStudyColor.pdf>
 Package pdftex.def Info: ../5_figures/unitPriceEventStudyColor.pdf  used on inp
-ut line 716.
+ut line 735.
 (pdftex.def)             Requested size: 314.36975pt x 209.57983pt.
-(./finalTables/unitPriceLawMovers.tex) [15] [16 <../5_figures/unitPriceEventStu
-dyColor.pdf>] [17]
-<../5_figures/discountingBehaviorFEZIPColor.pdf, id=327, 433.62pt x 289.08pt>
+(./finalTables/unitPriceLawMovers.tex [16 <../5_figures/unitPriceEventStudyColo
+r.pdf>]) [17] [18]
+<../5_figures/discountingBehaviorFEZIPColor.pdf, id=333, 433.62pt x 289.08pt>
 File: ../5_figures/discountingBehaviorFEZIPColor.pdf Graphic file (type pdf)
 <use ../5_figures/discountingBehaviorFEZIPColor.pdf>
 Package pdftex.def Info: ../5_figures/discountingBehaviorFEZIPColor.pdf  used o
-n input line 828.
+n input line 847.
 (pdftex.def)             Requested size: 234.87912pt x 156.58607pt.
-<../5_figures/discountingBehaviorFEColor.pdf, id=328, 433.62pt x 289.08pt>
+<../5_figures/discountingBehaviorFEColor.pdf, id=334, 433.62pt x 289.08pt>
 File: ../5_figures/discountingBehaviorFEColor.pdf Graphic file (type pdf)
 <use ../5_figures/discountingBehaviorFEColor.pdf>
 Package pdftex.def Info: ../5_figures/discountingBehaviorFEColor.pdf  used on i
-nput line 833.
+nput line 852.
 (pdftex.def)             Requested size: 234.87912pt x 156.58607pt.
-[18]
-<../5_figures/expendituresByChannelColor.pdf, id=340, 433.62pt x 289.08pt>
+[19 <../5_figures/discountingBehaviorFEZIPColor.pdf> <../5_figures/discountingB
+ehaviorFEColor.pdf>]
+<../5_figures/expendituresByChannelColor.pdf, id=358, 433.62pt x 289.08pt>
 File: ../5_figures/expendituresByChannelColor.pdf Graphic file (type pdf)
 <use ../5_figures/expendituresByChannelColor.pdf>
 Package pdftex.def Info: ../5_figures/expendituresByChannelColor.pdf  used on i
-nput line 880.
+nput line 899.
 (pdftex.def)             Requested size: 368.57213pt x 245.71474pt.
-[19 <../5_figures/discountingBehaviorFEZIPColor.pdf> <../5_figures/discountingB
-ehaviorFEColor.pdf>] (./finalTables/costcoDist.tex) [20 <../5_figures/expenditu
-resByChannelColor.pdf>]
-<../5_figures/eventStudyIncome15Mi.pdf, id=379, 433.62pt x 289.08pt>
+[20 <../5_figures/expendituresByChannelColor.pdf>] (./finalTables/costcoDist.te
+x) [21]
+<../5_figures/eventStudyIncome15Mi.pdf, id=385, 433.62pt x 289.08pt>
 File: ../5_figures/eventStudyIncome15Mi.pdf Graphic file (type pdf)
 <use ../5_figures/eventStudyIncome15Mi.pdf>
 Package pdftex.def Info: ../5_figures/eventStudyIncome15Mi.pdf  used on input l
-ine 960.
+ine 979.
 (pdftex.def)             Requested size: 325.2142pt x 216.80946pt.
-[21] (./finalTables/costcoEntryDD.tex) [22 <../5_figures/eventStudyIncome15Mi.p
-df>] [23] (./finalTables/storageCosts.tex) [24] [25]
+[22 <../5_figures/eventStudyIncome15Mi.pdf>] (./finalTables/costcoEntryDD.tex) 
+[23] (./finalTables/storageCosts.tex) [24] [25]
 <../5_figures/discountingBehaviorChannelNonFoodColor.pdf, id=427, 433.62pt x 28
 9.08pt>
 File: ../5_figures/discountingBehaviorChannelNonFoodColor.pdf Graphic file (typ
 e pdf)
 <use ../5_figures/discountingBehaviorChannelNonFoodColor.pdf>
 Package pdftex.def Info: ../5_figures/discountingBehaviorChannelNonFoodColor.pd
-f  used on input line 1088.
+f  used on input line 1107.
 (pdftex.def)             Requested size: 379.41656pt x 252.94437pt.
 [26 <../5_figures/discountingBehaviorChannelNonFoodColor.pdf>] [27]
 <../5_figures/tpSizeQuantityDistributionAllProdsColor.pdf, id=455, 433.62pt x 2
@@ -857,18 +857,18 @@ File: ../5_figures/tpSizeQuantityDistributionAllProdsColor.pdf Graphic file (ty
 pe pdf)
 <use ../5_figures/tpSizeQuantityDistributionAllProdsColor.pdf>
 Package pdftex.def Info: ../5_figures/tpSizeQuantityDistributionAllProdsColor.p
-df  used on input line 1190.
+df  used on input line 1209.
 (pdftex.def)             Requested size: 325.2142pt x 216.80946pt.
-[28 <../5_figures/tpSizeQuantityDistributionAllProdsColor.pdf>] [29] (./finalTa
+[28] [29 <../5_figures/tpSizeQuantityDistributionAllProdsColor.pdf>] (./finalTa
 bles/mlogit2016.tex)
-<../5_figures/elasticity2016.pdf, id=481, 433.62pt x 289.08pt>
+<../5_figures/elasticity2016.pdf, id=478, 433.62pt x 289.08pt>
 File: ../5_figures/elasticity2016.pdf Graphic file (type pdf)
 <use ../5_figures/elasticity2016.pdf>
-Package pdftex.def Info: ../5_figures/elasticity2016.pdf  used on input line 12
-95.
+Package pdftex.def Info: ../5_figures/elasticity2016.pdf  used on input line 13
+14.
 (pdftex.def)             Requested size: 379.41656pt x 252.94437pt.
-[30] [31] (./finalTables/modelFit.tex [32 <../5_figures/elasticity2016.pdf>]) (
-./finalTables/counterfactualMNLDays.tex) [33] (./finalTables/unitPriceLawMovers
+[30] [31] [32 <../5_figures/elasticity2016.pdf>] (./finalTables/modelFit.tex) [
+33] (./finalTables/counterfactualMNLDays.tex) (./finalTables/unitPriceLawMovers
 TP.tex) (./finalTables/counterfactualMNLPrice.tex) [34] [35] [36] [37] [38] [39
 ] [40] (./finalTables/homeScanClean.tex) (./finalTables/homeScanProductsFinal.t
 ex
@@ -877,27 +877,27 @@ Overfull \hbox (4.27524pt too wide) in paragraph at lines 4--32
  []
 
 ) [41] [42]
-<../5_figures/couponBulkSavingsColor.pdf, id=621, 433.62pt x 289.08pt>
+<../5_figures/couponBulkSavingsColor.pdf, id=617, 433.62pt x 289.08pt>
 File: ../5_figures/couponBulkSavingsColor.pdf Graphic file (type pdf)
 <use ../5_figures/couponBulkSavingsColor.pdf>
 Package pdftex.def Info: ../5_figures/couponBulkSavingsColor.pdf  used on input
- line 1764.
+ line 1765.
 (pdftex.def)             Requested size: 379.41656pt x 252.94437pt.
 [43]
-<../5_figures/savingsBehaviorModulesColor.pdf, id=632, 433.62pt x 289.08pt>
+<../5_figures/savingsBehaviorModulesColor.pdf, id=628, 433.62pt x 289.08pt>
 File: ../5_figures/savingsBehaviorModulesColor.pdf Graphic file (type pdf)
 <use ../5_figures/savingsBehaviorModulesColor.pdf>
 Package pdftex.def Info: ../5_figures/savingsBehaviorModulesColor.pdf  used on 
-input line 1786.
+input line 1787.
 (pdftex.def)             Requested size: 325.2142pt x 216.80946pt.
 [44 <../5_figures/couponBulkSavingsColor.pdf>] (./finalTables/lowestPrice.tex) 
 [45 <../5_figures/savingsBehaviorModulesColor.pdf>] (./finalTables/lowestPriceR
 egFin.tex) [46]
-<../5_figures/annualPurchasesTP.pdf, id=676, 433.62pt x 289.08pt>
+<../5_figures/annualPurchasesTP.pdf, id=671, 433.62pt x 289.08pt>
 File: ../5_figures/annualPurchasesTP.pdf Graphic file (type pdf)
 <use ../5_figures/annualPurchasesTP.pdf>
 Package pdftex.def Info: ../5_figures/annualPurchasesTP.pdf  used on input line
- 1879.
+ 1880.
 (pdftex.def)             Requested size: 379.41656pt x 252.94437pt.
 [47] (./finalTables/AppendixDiscountingBehaviorFood.tex) (./finalTables/Appendi
 xDiscountingBehaviorNonFood.tex) (./finalTables/AppendixDiscountingBehaviorFEAl
@@ -911,29 +911,29 @@ LaTeX Warning: Float too large for page by 4.72908pt on input line 118.
 
 ) (./finalTables/summaryStatsUnitLaws.tex) (./finalTables/appendixCostcoEntryDi
 fferentRadii.tex)
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1929.
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1930.
 [48 <../5_figures/annualPurchasesTP.pdf>] [49] [50] [51] [52] [53] [54]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1929.
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1930.
 (./BulkBuyingInequality.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1929.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1929.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1930.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1930.
 
 Package rerunfilecheck Info: File `BulkBuyingInequality.out' has not changed.
 (rerunfilecheck)             Checksum: F027FC31842136BA9D3EC7CA58FF28B9;4758.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1929.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1930.
  )
 (\end occurred inside a group at level 1)
 
 ### semi simple group (level 1) entered at line 89 (\begingroup)
 ### bottom level 
 Here is how much of TeX's memory you used:
- 14986 strings out of 492609
- 224762 string characters out of 6131461
- 471008 words of memory out of 5000000
+ 14982 strings out of 492609
+ 224690 string characters out of 6131461
+ 470009 words of memory out of 5000000
  18213 multiletter control sequences out of 15000+600000
  88266 words of font info for 169 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 36i,11n,39p,1316b,1646s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 36i,11n,39p,1368b,1646s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/share/
 texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-
 rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share/texmf/fonts/e
@@ -950,10 +950,10 @@ lic/lm/lmr8.pfb></usr/share/texmf/fonts/type1/public/lm/lmri10.pfb></usr/share/
 texmf/fonts/type1/public/lm/lmri12.pfb></usr/share/texmf/fonts/type1/public/lm/
 lmsy10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsy6.pfb></usr/share/texmf/
 fonts/type1/public/lm/lmsy8.pfb>
-Output written on BulkBuyingInequality.pdf (54 pages, 607121 bytes).
+Output written on BulkBuyingInequality.pdf (54 pages, 607395 bytes).
 PDF statistics:
- 843 PDF objects out of 1000 (max. 8388607)
- 706 compressed objects within 8 object streams
- 202 named destinations out of 1000 (max. 500000)
+ 838 PDF objects out of 1000 (max. 8388607)
+ 701 compressed objects within 8 object streams
+ 198 named destinations out of 1000 (max. 500000)
  18743 words of extra memory for PDF output out of 20736 (max. 10000000)
 
