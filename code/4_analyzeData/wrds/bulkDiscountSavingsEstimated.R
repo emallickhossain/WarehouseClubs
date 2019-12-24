@@ -78,12 +78,12 @@ getDiff <- function(mod) {
     reg1 <- felm(lSize ~ household_income_coarse,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)
-    reg2 <- felm(lSize ~ household_income_coarse + married + age + adults +
-                   nChildren + type_of_residence + carShare + college,
+    reg2 <- felm(lSize ~ household_income_coarse + age + adults + nChildren +
+                   married + college + type_of_residence + carShare,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)
-    reg3 <- felm(lSize ~ household_income_coarse + married + age + adults +
-                   nChildren + type_of_residence + carShare + college |
+    reg3 <- felm(lSize ~ household_income_coarse + age + adults + nChildren +
+                   married + college + type_of_residence + carShare |
                    panel_year + dma_cd,
                 data = avgSize[product_module_code == mod],
                 weights = avgSize[product_module_code == mod]$projection_factor)

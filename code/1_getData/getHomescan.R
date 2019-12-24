@@ -1,5 +1,5 @@
 # All transferring, unzipping and cleaning of Homescan data
-# find /scratch/upenn/hossaine/nielsen_extracts/RMS/2016 -exec touch {} \;
+# find /scratch/upenn/hossaine/nielsen_extracts/ -exec touch {} \;
 library(data.table)
 library(purrr)
 library(stringr)

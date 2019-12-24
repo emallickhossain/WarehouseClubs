@@ -61,9 +61,6 @@ tp <- tp[, .(price = mean(stdPrice),
                 lawInd, lDays, type_of_residence)]
 tp[, "unitPrice" := price / days]
 
-# Generating price interactions
-tp[, "pReg"      := price * lawInd]
-
 # Generating unit price interactions
 tp[, "unitReg"      := unitPrice * lawInd]
 
@@ -92,30 +89,19 @@ r <- foreach(i = 2016) %:%
     tpSub <- tp[panel_year == i]
     tpML <- mlogit.data(tpSub, choice = "choice", shape = "long",
                         alt.var = "brandRollSheet", chid.var = "trip_code_uc")
-    reg1 <- mlogit(choice ~ price + 0,
+    reg1 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
-    reg2 <- mlogit(choice ~ price + unitPrice + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg3 <- mlogit(choice ~ price + unitPrice + lDays + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg4 <- mlogit(choice ~ price + unitPrice + lDays + large + small + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg5 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg6 <- mlogit(choice ~ price + pReg +
-                     unitPrice + lDays + large + small + brand_descr + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg7 <- mlogit(choice ~ price + pReg +
+    reg2 <- mlogit(choice ~ price +
                      unitPrice + unitReg +
                      lDays + large + small + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
-    reg8 <- mlogit(choice ~ price + pReg +
+    reg3 <- mlogit(choice ~ price +
                      unitPrice + unitReg +
                      lDays + large + largeHome + small + smallHome + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
-    stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, type = "text")
-    print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8))
-    save(reg8, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016Only/mlogit",
+    stargazer(reg1, reg2, reg3, type = "text")
+    print(lrtest(reg1, reg2, reg3))
+    save(reg3, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit",
                              incBin, i, ".rda"), compress = TRUE)
   }
 
@@ -125,12 +111,12 @@ r <- foreach(i = 2016) %:%
 fullElast <- NULL
 fullCoefs <- NULL
 for (i in c("<25k", "25-50k", "50-100k", ">100k")) {
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016Only/mlogit", i, "2016.rda"))
-  margs <- effects(reg8, covariate = "price", type = "rr")
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit", i, "2016.rda"))
+  margs <- effects(reg3, covariate = "price", type = "rr")
   ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
   ownElast[, "household_income_coarse" := i]
   fullElast <- rbindlist(list(fullElast, ownElast), use.names = TRUE)
-  fullCoefs[[i]] <- reg8
+  fullCoefs[[i]] <- reg3
 }
 
 stargazer(fullCoefs, type = "text",
@@ -140,7 +126,7 @@ stargazer(fullCoefs, type = "text",
           column.labels = c("<25k", "25-50k", "50-100k", ">100k"),
           dep.var.caption = "", dep.var.labels.include = FALSE,
           omit = c("brand_descr*"),
-          covariate.labels = c("Total Price", ". : Reg",
+          covariate.labels = c("Total Price",
                                "Unit Price", ". : Reg",
                                "Log(Days)",
                                "Large Size", ". : Home",
@@ -177,10 +163,9 @@ ggsave(filename = "./figures/elasticity2016.pdf", height = 4, width = 6)
 ################ STEP 3: Counterfactual Exercise: PREDICTING AVERAGE SHEETS ####
 ################################################################################
 # Load parameters
-yr <- 2016
 getCoefs <- function(income) {
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016Only/mlogit", income, "2016.rda"))
-  return(reg8)
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016OnlyV4/mlogit", income, "2016.rda"))
+  return(reg3)
 }
 r <- map(c("<25k", "25-50k", "50-100k", ">100k"), getCoefs)
 
@@ -205,9 +190,12 @@ getProbs <- function(reg, X, beta = NULL) {
   }
   beta[`Pr(>|z|)` > 0.05, "Estimate" := 0]
   XB <- X %*% beta$Estimate
+  XDT <- as.data.table(X, keep.rownames = TRUE)[, .(rn, unitPrice)]
   eXB <- exp(XB)
   eXB[is.na(eXB), ] <- 0
   eXBDT <- as.data.table(eXB, keep.rownames = TRUE)
+  unitPrice <- na.omit(merge(XDT, eXBDT, by = "rn"))
+  unitPrice <- unitPrice[, weighted.mean(unitPrice, w = V1)]
   eXBDT[, c("trip_code_uc", "rn") := tstrsplit(rn, ".", fixed = TRUE)]
   eXBDT[, c("brand_descr", "rolls", "sheets") := tstrsplit(rn, "_", fixed = TRUE)]
   eXBDT[, "prob" := V1 / sum(V1), by = trip_code_uc]
@@ -215,7 +203,7 @@ getProbs <- function(reg, X, beta = NULL) {
   surplus <- unique(eXBDT[, .(trip_code_uc, logsum)])
   probs <- eXBDT[, .(predictedShare = mean(prob)), keyby = .(brand_descr, rolls, sheets)]
   probs[, "sheets" := as.integer(sheets)]
-  return(list(probs = probs, surplus = surplus))
+  return(list(probs = probs, surplus = surplus, unitPrice = unitPrice))
 }
 
 ################################################################################
@@ -230,11 +218,16 @@ baseCase[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
                               labels = c("<25k", "25-50k", "50-100k", ">100k"))]
 baseCaseSheets <- baseCase[, .(Base = sum(sheets * predictedShare)), by = Income]
 
-getPSSurplus <- function(X) {
-  getProbs(X, model.matrix(X))[["surplus"]]
+# getPSSurplus <- function(X) {
+#   getProbs(X, model.matrix(X))[["surplus"]]
+# }
+# baseCaseSurplus <- rbindlist(lapply(r, getPSSurplus), use.names = TRUE, idcol = "Income")
+# setnames(baseCaseSurplus, "logsum", "baseLogSum")
+
+getPSUnitPrice <- function(X) {
+  getProbs(X, model.matrix(X))[["unitPrice"]]
 }
-baseCaseSurplus <- rbindlist(lapply(r, getPSSurplus), use.names = TRUE, idcol = "Income")
-setnames(baseCaseSurplus, "logsum", "baseLogSum")
+baseCaseUnitPrice <- lapply(r, getPSUnitPrice)
 
 # Comparing predictions
 comp <- merge(actualShares, baseCase, by = c("brand_descr", "rolls", "sheets", "Income"))
@@ -245,7 +238,6 @@ comp[abs(diff) > 0.01]
 # Add regulations
 getAllRegs <- function(X) {
   allRegs <- model.matrix(X)
-  allRegs[, "pReg"] <- allRegs[, "price"]
   allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
   getProbs(X, allRegs)[["probs"]]
 }
@@ -254,27 +246,30 @@ allRegs[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
                              labels = c("<25k", "25-50k", "50-100k", ">100k"))]
 allRegsSheets <- allRegs[, .(allRegs = sum(predictedShare * sheets)), by = Income]
 
-getAllRegsSurplus <- function(X) {
-  allRegs <- model.matrix(X)
-  allRegs[, "pReg"] <- allRegs[, "price"]
-  allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
-  getProbs(X, allRegs)[["surplus"]]
-}
-allRegsSurplus <- rbindlist(lapply(r, getAllRegsSurplus), use.names = TRUE, idcol = "Income")
-setnames(allRegsSurplus, "logsum", "allRegsLogSum")
+# getAllRegsSurplus <- function(X) {
+#   allRegs <- model.matrix(X)
+#   allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
+#   getProbs(X, allRegs)[["surplus"]]
+# }
+# allRegsSurplus <- rbindlist(lapply(r, getAllRegsSurplus), use.names = TRUE, idcol = "Income")
+# setnames(allRegsSurplus, "logsum", "allRegsLogSum")
 
-fullSurplus <- merge(baseCaseSurplus, allRegsSurplus, by = c("Income", "trip_code_uc"))
-fullSurplus[Income == 1, "price" := coef(r[[1]])["price"]]
-fullSurplus[Income == 2, "price" := coef(r[[2]])["price"]]
-fullSurplus[Income == 3, "price" := coef(r[[3]])["price"]]
-fullSurplus[Income == 4, "price" := coef(r[[4]])["price"]]
-fullSurplus[Income == 1, "pReg" := coef(r[[1]])["pReg"] + price]
-fullSurplus[Income == 2, "pReg" := coef(r[[2]])["pReg"] + price]
-fullSurplus[Income == 3, "pReg" := coef(r[[3]])["pReg"] + price]
-fullSurplus[Income == 4, "pReg" := coef(r[[4]])["pReg"] + price]
-fullSurplus[, "baseSurplus" := - baseLogSum / price]
-fullSurplus[, "allRegSurplus" := - allRegsLogSum / pReg]
-fullSurplus[, "change" := allRegSurplus - baseSurplus]
+getAllRegsUnitPrice <- function(X) {
+  allRegs <- model.matrix(X)
+  allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
+  getProbs(X, allRegs)[["unitPrice"]]
+}
+allRegsUnitPrice <- lapply(r, getAllRegsUnitPrice)
+
+# fullSurplus <- merge(baseCaseSurplus, allRegsSurplus, by = c("Income", "trip_code_uc"))
+# fullSurplus[Income == 1, "price" := coef(r[[1]])["price"]]
+# fullSurplus[Income == 2, "price" := coef(r[[2]])["price"]]
+# fullSurplus[Income == 3, "price" := coef(r[[3]])["price"]]
+# fullSurplus[Income == 4, "price" := coef(r[[4]])["price"]]
+# fullSurplus[, "baseSurplus" := - baseLogSum / price]
+# fullSurplus[, "allRegSurplus" := - allRegsLogSum / price]
+# fullSurplus[, "change" := allRegSurplus - baseSurplus]
+# quantile(fullSurplus[Income == 1]$change)
 
 # Same storage costs
 richBeta <- as.data.table(summary(r[[4]])$CoefTable, keep.rownames = TRUE)
@@ -293,23 +288,32 @@ noStorage[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
                                labels = c("<25k", "25-50k", "50-100k", ">100k"))]
 noStorageSheets <- noStorage[, .(noStorage = sum(predictedShare * sheets)), by = Income]
 
-getNSSurplus <- function(X) {
+# getNSSurplus <- function(X) {
+#   betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
+#   betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
+#   betaNew[grepl("small*", rn), "Estimate"] <- richBeta[grepl("small*", rn), "Estimate"]
+#   getProbs(X, model.matrix(X), beta = betaNew)[["surplus"]]
+# }
+# noStorageSurplus <- rbindlist(lapply(r, getNSSurplus), use.names = TRUE, idcol = "Income")
+# setnames(noStorageSurplus, "logsum", "noStorageLogSum")
+# fullSurplus <- merge(fullSurplus, noStorageSurplus, by = c("Income", "trip_code_uc"))
+# fullSurplus[, "noStorageSurplus" := - noStorageLogSum / price]
+# fullSurplus[, "baseToNoStorage" := noStorageSurplus - baseSurplus]
+# quantile(fullSurplus[Income == 1]$baseToNoStorage)
+
+getNSUnitPrice <- function(X) {
   betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
   betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
+  betaNew[grepl("large*", rn), "Pr(>|z|)"] <- richBeta[grepl("large*", rn), "Pr(>|z|)"]
   betaNew[grepl("small*", rn), "Estimate"] <- richBeta[grepl("small*", rn), "Estimate"]
-  getProbs(X, model.matrix(X), beta = betaNew)[["surplus"]]
+  betaNew[grepl("small*", rn), "Pr(>|z|)"] <- richBeta[grepl("small*", rn), "Pr(>|z|)"]
+  getProbs(X, model.matrix(X), beta = betaNew)[["unitPrice"]]
 }
-noStorageSurplus <- rbindlist(lapply(r, getNSSurplus), use.names = TRUE, idcol = "Income")
-setnames(noStorageSurplus, "logsum", "noStorageLogSum")
-fullSurplus <- merge(fullSurplus, noStorageSurplus, by = c("Income", "trip_code_uc"))
-fullSurplus[, "noStorageSurplus" := - noStorageLogSum / price]
-fullSurplus[, "baseToNoStorage" := noStorageSurplus - baseSurplus]
-quantile(fullSurplus[Income == 1]$baseToNoStorage)
+NSUnitPrice <- lapply(r, getNSUnitPrice)
 
 # All regs and no storage
 getNSAR <- function(X) {
   mat <- model.matrix(X)
-  mat[, "pReg"] <- mat[, "price"]
   mat[, "unitReg"] <- mat[, "unitPrice"]
   betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
   betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
@@ -324,6 +328,18 @@ noStorageAllRegs[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
 noStorageAllRegsSheets <- noStorageAllRegs[, .(noStorageAllRegs = sum(predictedShare * sheets)),
                                            by = Income]
 
+getNSARUnitPrice <- function(X) {
+  mat <- model.matrix(X)
+  mat[, "unitReg"] <- mat[, "unitPrice"]
+  betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
+  betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
+  betaNew[grepl("large*", rn), "Pr(>|z|)"] <- richBeta[grepl("large*", rn), "Pr(>|z|)"]
+  betaNew[grepl("small*", rn), "Estimate"] <- richBeta[grepl("small*", rn), "Estimate"]
+  betaNew[grepl("small*", rn), "Pr(>|z|)"] <- richBeta[grepl("small*", rn), "Pr(>|z|)"]
+  getProbs(X, mat, beta = betaNew)[["unitPrice"]]
+}
+NSARUnitPrice <- lapply(r, getNSARUnitPrice)
+
 # Summary Table
 avgSheetTable <- merge(actualSheets, baseCaseSheets, by = "Income")
 avgSheetTable <- merge(avgSheetTable, allRegsSheets, by = "Income")
@@ -334,10 +350,30 @@ stargazer(avgSheetTable, summary = FALSE, type = "text", digits = 0)
 # Saving in counterfactualMNLDays.tex
 # Save actual and base in modelFit.tex
 
+# Summary of Unit prices
+unitPriceTable <- rbindlist(list(baseCaseUnitPrice, allRegsUnitPrice, NSARUnitPrice))
+setnames(unitPriceTable, c("<25k", "25-50k", "50-100k", ">100k"))
+unitPriceTable <- as.data.table(t(unitPriceTable), keep.rownames = TRUE)
+setnames(unitPriceTable, c("Income", "Base", "allRegs", "noStorageAllRegs"))
+# Saving in counterfactualMNLPrice.tex
+
+
+# Finding where people shift their purchases
+purch <- merge(baseCase, allRegs, by = c("Income", "brand_descr", "rolls", "sheets"))
+setnames(purch, c("predictedShare.x", "predictedShare.y"), c("baseCase", "allRegs"))
+purch <- merge(purch, noStorage, by = c("Income", "brand_descr", "rolls", "sheets"))
+setnames(purch, c("predictedShare"), c("noStorage"))
+purch <- merge(purch, noStorageAllRegs, by = c("Income", "brand_descr", "rolls", "sheets"))
+setnames(purch, c("predictedShare"), c("noStorageAllRegs"))
+
+
+
+
+
+
 ################################################################################
-############ DOLLAR -> ALL REG -> NO STORAGE COSTS #############################
+############ CLUB -> ALL REG -> NO STORAGE COSTS ###############################
 ################################################################################
-# Getting estimates on dollar store assortments #######################
 getStore <- function(storeType) {
   tpData <- fread(paste0("/scratch/upenn/hossaine/tp", storeType, ".csv"))
   tpData[, "brand_descr" := factor(brand_descr,
@@ -346,194 +382,84 @@ getStore <- function(storeType) {
                                               "SCOTT 1000"))]
   tpData[, "brand_descr" := relevel(brand_descr, ref = "SCOTT 1000")]
   fullMerge <- as.data.table(expand.grid(brandRollSheet = tpData$brandRollSheet,
-                                         household_code = unique(tp[panel_year == 2016]$household_code)))
+                                         trip_code_uc = unique(tp[panel_year == 2016]$trip_code_uc)))
   fullMerge <- merge(fullMerge, tpData, by = "brandRollSheet")
   fullMerge <- merge(fullMerge, unique(tp[panel_year == 2016,
                                           .(household_code, household_income_coarse,
-                                            adults, nChildren, married, age,
-                                            college, lawInd)]),
-                     by = "household_code")
+                                            adults, nChildren, married, age, dma_cd,
+                                            college, lawInd, type_of_residence,
+                                            panel_year, projection_factor, trip_code_uc)]),
+                     by = "trip_code_uc")
 
   # Generating price interactions
-  fullMerge[, "pReg"      := price * lawInd]
+  fullMerge[, "days" := totalSheet / (57 * 2)]
+  fullMerge[, "lDays" := log(days)]
+  fullMerge[, "unitPrice" := price / days]
 
   # Generating unit price interactions
   fullMerge[, "unitReg"      := unitPrice * lawInd]
 
   # Generating size interactions
   fullMerge[, "large"       := (rolls > 12)]
+  fullMerge[, "largeHome"   := large * (type_of_residence == "Single-Family")]
   fullMerge[, "small"       := (rolls < 12)]
+  fullMerge[, "smallHome"   := small * (type_of_residence == "Single-Family")]
+
+  # Coding package sizes and brands
+  fullMerge[, "brand_descr" := relevel(as.factor(brand_descr), ref = "SCOTT 1000")]
 
   fullMerge[, "choice" := 0L]
   fullMerge[, "household_income_coarse" := factor(household_income_coarse,
                                                   ordered = TRUE,
                                                   levels = c("<25k", "25-50k",
                                                              "50-100k", ">100k"))]
+  setnames(fullMerge, "totalSheet", "sheets")
   return(fullMerge)
 }
-tpDollar <- getStore("Dollar")
 
-inc25DT <- tpDollar[household_income_coarse == "<25k"]
-Xds <- model.matrix(formula(r[[1]]), inc25DT)
-rownames(Xds) <- with(inc25DT, paste0(household_code, ".", brandRollSheet))
-ds1 <- getProbs(r[[1]], Xds)
-ds1[, "Income" := "<25k"]
-
-inc2550DT <- tpDollar[household_income_coarse == "25-50k"]
-Xds <- model.matrix(formula(r[[2]]), inc2550DT)
-rownames(Xds) <- with(inc2550DT, paste0(household_code, ".", brandRollSheet))
-ds2 <- getProbs(r[[2]], Xds)
-ds2[, "Income" := "25-50k"]
-
-inc50100DT <- tpDollar[household_income_coarse == "50-100k"]
-Xds <- model.matrix(formula(r[[3]]), inc50100DT)
-rownames(Xds) <- with(inc50100DT, paste0(household_code, ".", brandRollSheet))
-ds3 <- getProbs(r[[3]], Xds)
-ds3[, "Income" := "50-100k"]
-
-inc100DT <- tpDollar[household_income_coarse == ">100k"]
-Xds <- model.matrix(formula(r[[4]]), inc100DT)
-rownames(Xds) <- with(inc100DT, paste0(household_code, ".", brandRollSheet))
-ds4 <- getProbs(r[[4]], Xds)
-ds4[, "Income" := ">100k"]
-
-dollarAssort <- rbindlist(list(ds1, ds2, ds3, ds4), use.names = TRUE)
-dollarAssortSheets <- dollarAssort[, .(dollarAssort = sum(predictedShare * sheets)), by = Income]
-
-# Adding regulations
-inc25DT[, "pReg"] <- inc25DT[, "unitPrice"]
-Xds <- model.matrix(formula(r[[1]]), inc25DT)
-rownames(Xds) <- with(inc25DT, paste0(household_code, ".", brandRollSheet))
-ar1 <- getProbs(r[[1]], Xds)
-ar1[, "Income" := "<25k"]
-
-inc2550DT[, "pReg"] <- inc2550DT[, "unitPrice"]
-Xds <- model.matrix(formula(r[[2]]), inc2550DT)
-rownames(Xds) <- with(inc2550DT, paste0(household_code, ".", brandRollSheet))
-ar2 <- getProbs(r[[2]], Xds)
-ar2[, "Income" := "25-50k"]
-
-inc50100DT[, "pReg"] <- inc50100DT[, "unitPrice"]
-Xds <- model.matrix(formula(r[[3]]), inc50100DT)
-rownames(Xds) <- with(inc50100DT, paste0(household_code, ".", brandRollSheet))
-ar3 <- getProbs(r[[3]], Xds)
-ar3[, "Income" := "50-100k"]
-
-inc100DT[, "pReg"] <- inc100DT[, "unitPrice"]
-Xds <- model.matrix(formula(r[[4]]), inc100DT)
-rownames(Xds) <- with(inc100DT, paste0(household_code, ".", brandRollSheet))
-ar4 <- getProbs(r[[4]], Xds)
-ar4[, "Income" := ">100k"]
-
-allRegs <- rbindlist(list(ar1, ar2, ar3, ar4), use.names = TRUE)
-allRegsSheets <- allRegs[, .(allRegs = sum(predictedShare * sheets)), by = Income]
-
-# Same storage costs
-richBeta <- as.data.table(summary(r[[4]])$CoefTable, keep.rownames = TRUE)
-richBeta[`Pr(>|z|)` > 0.05, "Estimate" := 0]
-
-beta25 <- as.data.table(summary(r[[1]])$CoefTable, keep.rownames = TRUE)
-beta25[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
-Xds <- model.matrix(formula(r[[1]]), inc25DT)
-rownames(Xds) <- with(inc25DT, paste0(household_code, ".", brandRollSheet))
-ns1 <- getProbs(r[[1]], Xds, beta = beta25)
-ns1[, "Income" := "<25k"]
-
-beta2550 <- as.data.table(summary(r[[2]])$CoefTable, keep.rownames = TRUE)
-beta2550[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
-Xds <- model.matrix(formula(r[[2]]), inc2550DT)
-rownames(Xds) <- with(inc2550DT, paste0(household_code, ".", brandRollSheet))
-ns2 <- getProbs(r[[2]], Xds, beta = beta2550)
-ns2[, "Income" := "25-50k"]
-
-beta50100 <- as.data.table(summary(r[[3]])$CoefTable, keep.rownames = TRUE)
-beta50100[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
-Xds <- model.matrix(formula(r[[3]]), inc50100DT)
-rownames(Xds) <- with(inc50100DT, paste0(household_code, ".", brandRollSheet))
-ns3 <- getProbs(r[[3]], Xds, beta = beta50100)
-ns3[, "Income" := "50-100k"]
-
-beta100 <- as.data.table(summary(r[[4]])$CoefTable, keep.rownames = TRUE)
-beta100[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
-Xds <- model.matrix(formula(r[[4]]), inc100DT)
-rownames(Xds) <- with(inc100DT, paste0(household_code, ".", brandRollSheet))
-ns4 <- getProbs(r[[4]], Xds, beta = beta100)
-ns4[, "Income" := ">100k"]
-
-noStorage <- rbindlist(list(ns1, ns2, ns3, ns4), use.names = TRUE)
-noStorageSheets <- noStorage[, .(noStorage = sum(predictedShare * sheets)), by = Income]
-
-# All regs and no storage
-Xds <- model.matrix(formula(r[[1]]), inc25DT)
-Xds[, "pReg"] <- Xds[, "unitPrice"]
-rownames(Xds) <- with(inc25DT, paste0(household_code, ".", brandRollSheet))
-nsar1 <- getProbs(r[[1]], Xds, beta = beta25)
-nsar1[, "Income" := "<25k"]
-
-Xds <- model.matrix(formula(r[[2]]), inc2550DT)
-Xds[, "pReg"] <- Xds[, "unitPrice"]
-rownames(Xds) <- with(inc2550DT, paste0(household_code, ".", brandRollSheet))
-nsar2 <- getProbs(r[[2]], Xds, beta = beta2550)
-nsar2[, "Income" := "25-50k"]
-
-Xds <- model.matrix(formula(r[[3]]), inc50100DT)
-Xds[, "pReg"] <- Xds[, "unitPrice"]
-rownames(Xds) <- with(inc50100DT, paste0(household_code, ".", brandRollSheet))
-nsar3 <- getProbs(r[[3]], Xds, beta = beta50100)
-nsar3[, "Income" := "50-100k"]
-
-Xds <- model.matrix(formula(r[[4]]), inc100DT)
-Xds[, "pReg"] <- Xds[, "unitPrice"]
-rownames(Xds) <- with(inc100DT, paste0(household_code, ".", brandRollSheet))
-nsar4 <- getProbs(r[[4]], Xds, beta = beta100)
-nsar4[, "Income" := ">100k"]
-
-noStorageAllRegs <- rbindlist(list(nsar1, nsar2, nsar3, nsar4), use.names = TRUE)
-noStorageAllRegsSheets <- noStorageAllRegs[, .(noStorageAllRegs = sum(predictedShare * sheets)),
-                                           by = Income]
-
-# Summary Table
-# baseCaseSheets[Income == "25-50k", "Income" := ">100k"]
-avgSheetTable <- merge(actualSheets, baseCaseSheets, by = "Income")
-avgSheetTable <- merge(avgSheetTable, dollarAssortSheets, by = "Income")
-avgSheetTable <- merge(avgSheetTable, allRegsSheets, by = "Income")
-#avgSheetTable <- merge(avgSheetTable, noStorageSheets, by = "Income")
-avgSheetTable <- merge(avgSheetTable, noStorageAllRegsSheets, by = "Income")
-avgSheetTable[, "Income" := factor(Income, ordered = TRUE,
-                                   levels = c("<25k", "25-50k", "50-100k", ">100k"))]
-setorder(avgSheetTable, Income)
-stargazer(avgSheetTable, summary = FALSE, type = "text", digits = 0)
-
-# Saved in counterfactualMNL.tex
-
-################################################################################
-############ CLUB -> ALL REG -> NO STORAGE COSTS ###############################
-################################################################################
 # Getting estimates on Club store assortments #######################
 tpClub <- getStore("Club")
+tpClub[, c("channel_type", "large12") := NULL]
+tpClubFull <- rbindlist(list(tpClub, tp), use.names = TRUE)
+
+getClub <- function(X) {
+  mat <- model.matrix(~ price + unitPrice + unitReg + lDays + large +
+                        largeHome + small + smallHome + brand_descr + 0,
+                      data = tpClubFull)
+  rownames(mat) <- paste(tpClubFull$trip_code_uc, tpClubFull$brandRollSheet, sep = ".")
+  mat <- mat[, -5]
+  getProbs(X, mat)[["probs"]]
+}
+clubAssort <- rbindlist(lapply(r, getClub), use.names = TRUE, idcol = "Income")
+clubAssort[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
+                                      labels = c("<25k", "25-50k", "50-100k", ">100k"))]
+clubAssortSheets <- clubAssort[, .(clubAssort = sum(predictedShare * sheets)),
+                               by = Income]
+
+
 
 inc25DT <- tpClub[household_income_coarse == "<25k"]
 Xds <- model.matrix(formula(r[[1]]), inc25DT)
 rownames(Xds) <- with(inc25DT, paste0(household_code, ".", brandRollSheet))
-ds1 <- getProbs(r[[1]], Xds)
+ds1 <- getProbs(r[[1]], Xds)[["probs"]]
 ds1[, "Income" := "<25k"]
 
 inc2550DT <- tpClub[household_income_coarse == "25-50k"]
 Xds <- model.matrix(formula(r[[2]]), inc2550DT)
 rownames(Xds) <- with(inc2550DT, paste0(household_code, ".", brandRollSheet))
-ds2 <- getProbs(r[[2]], Xds)
+ds2 <- getProbs(r[[2]], Xds)[["probs"]]
 ds2[, "Income" := "25-50k"]
 
 inc50100DT <- tpClub[household_income_coarse == "50-100k"]
 Xds <- model.matrix(formula(r[[3]]), inc50100DT)
 rownames(Xds) <- with(inc50100DT, paste0(household_code, ".", brandRollSheet))
-ds3 <- getProbs(r[[3]], Xds)
+ds3 <- getProbs(r[[3]], Xds)[["probs"]]
 ds3[, "Income" := "50-100k"]
 
 inc100DT <- tpClub[household_income_coarse == ">100k"]
 Xds <- model.matrix(formula(r[[4]]), inc100DT)
 rownames(Xds) <- with(inc100DT, paste0(household_code, ".", brandRollSheet))
-ds4 <- getProbs(r[[4]], Xds)
+ds4 <- getProbs(r[[4]], Xds)[["probs"]]
 ds4[, "Income" := ">100k"]
 
 clubAssort <- rbindlist(list(ds1, ds2, ds3, ds4), use.names = TRUE)

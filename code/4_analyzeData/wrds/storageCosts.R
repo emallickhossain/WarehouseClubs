@@ -2,6 +2,7 @@
 library(data.table)
 library(lfe)
 library(stargazer)
+threads <- 8
 
 # Adding demographics
 discBehaviorAll <- fread("/scratch/upenn/hossaine/discBehaviorAll.csv", nThread = threads)

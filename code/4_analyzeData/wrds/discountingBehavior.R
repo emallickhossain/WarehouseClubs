@@ -26,13 +26,13 @@ library(lfe)
 library(purrr)
 library(stringr)
 library(stargazer)
-library(binsreg)
+# library(binsreg)
 threads <- 8
 
 # Getting trips and panel data for demographics and to deflate expenditures
 trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
                select = c("trip_code_uc", "household_code", "panel_year", "purchase_date"))
-trips[, c("yearMonth", "purchase_date") := .(substr(purchase_date, 1, 7), NULL)]
+trips[, c("yearMonth") := .(substr(purchase_date, 1, 7))]
 
 # Getting CPI to deflate values to Jan-2010 base
 cpi <- fread("/scratch/upenn/hossaine/cpi.csv")
@@ -54,6 +54,7 @@ setkey(fullData, trip_code_uc)
 # Getting all purchases and coding them by discounting behavior
 discBehaviorAll <- NULL
 discBehaviorFood <- NULL
+discBehaviorWOM <- NULL
 for (yr in 2004:2017) {
   print(yr)
   purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", yr, ".csv"),
@@ -73,6 +74,10 @@ for (yr in 2004:2017) {
   purch <- merge(purch, fullData, by = "trip_code_uc")[, "trip_code_uc" := NULL]
   purch[, "realExp" := totalExpenditure / newIndex * 100]
   purch[, c("totalExpenditure", "newIndex") := NULL]
+  purch[, "dayOfMonth" := as.integer(substr(purchase_date, 9, 10))]
+  purch[, "WOM" := ceiling(dayOfMonth / 7)]
+  purch[WOM > 4, "WOM" := 4]
+  purch[, "WOM" := as.factor(WOM)]
 
   # Coding combination discounts
   purch[, "savingsTypes" := coupon + generic + bulk]
@@ -89,21 +94,28 @@ for (yr in 2004:2017) {
   householdAvgFood <- purch[, lapply(.SD, weighted.mean, w = realExp),
                                .SDcols = cols,
                                by = .(household_code, panel_year, food)]
+  householdWOM <- purch[, lapply(.SD, weighted.mean, w = realExp),
+                        .SDcols = cols,
+                        by = .(household_code, panel_year, food, WOM)]
 
   # Combining
   discBehaviorAll <- rbindlist(list(discBehaviorAll, householdAvgAll),
                                use.names = TRUE)
   discBehaviorFood <- rbindlist(list(discBehaviorFood, householdAvgFood),
                                    use.names = TRUE)
+  discBehaviorWOM <- rbindlist(list(discBehaviorWOM, householdWOM),
+                               use.names = TRUE)
 }
 
 # Saving
 fwrite(discBehaviorAll, "/scratch/upenn/hossaine/discBehaviorAll.csv", nThread = threads)
 fwrite(discBehaviorFood, "/scratch/upenn/hossaine/discBehaviorFood.csv", nThread = threads)
+fwrite(discBehaviorWOM, "/scratch/upenn/hossaine/discBehaviorWOM.csv", nThread = threads)
 
 # Adding demographics
 discBehaviorAll <- fread("/scratch/upenn/hossaine/discBehaviorAll.csv", nThread = threads)
 discBehaviorFood <- fread("/scratch/upenn/hossaine/discBehaviorFood.csv", nThread = threads)
+discBehaviorWOM <- fread("/scratch/upenn/hossaine/discBehaviorWOM.csv", nThread = threads)
 
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
@@ -119,6 +131,7 @@ panel[, "lawInd" := (law >= 3)]
 
 discBehaviorAll <- merge(discBehaviorAll, panel, by = c("household_code", "panel_year"))
 discBehaviorFood <- merge(discBehaviorFood, panel, by = c("household_code", "panel_year"))
+discBehaviorWOM <- merge(discBehaviorWOM, panel, by = c("household_code", "panel_year"))
 
 # Identifying variation example
 ex <- discBehaviorFood[men == 1 & women == 1 & nChildren == 2 & married == 1 &
@@ -151,6 +164,11 @@ ggplot(data = ex, aes(x = household_income, y = bulk, color = foodChar)) +
 
 ggsave("./figures/savingsBehaviorVariation.pdf", height = 4, width = 6)
 # ggsave("./figures/savingsBehaviorVariationColor.pdf", height = 4, width = 6)
+
+# Histogram of bulk buying by income group
+ggplot(data = discBehaviorFood, aes(x = bulk)) +
+  geom_density() +
+  facet_grid(rows = vars(household_income_coarse))
 
 # Avg bulk buying by income
 avgBulk <- discBehaviorFood[, .(bulk = weighted.mean(bulk, w = projection_factor)),
@@ -511,6 +529,40 @@ stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7nf, reg8, reg9, type = "text",
 # (i.e. reg 7) is 33.4% for non-food products. High income are an additional 13 pp
 # above that. Coarsening income bins gives 35.7% with 10.1pp above.
 
+# Adding interactions just to check. Overall, there are some significant interactions,
+# but the story is similar. The effects of other demographics are attenuated
+# for richer households, which is likely because they are already buying
+# more in bulk without the push of another household member to force that.
+reg10 <- felm(formula = bulk ~ household_income * married + age +
+                adults + nChildren +
+                type_of_residence + carShare + college | dma_cd + panel_year,
+             data = discBehaviorFood[food == 0],
+             weights = discBehaviorFood[food == 0]$projection_factor)
+reg11 <- felm(formula = bulk ~ household_income * married + age +
+                household_income * adults + household_income * nChildren +
+                type_of_residence + carShare + college | dma_cd + panel_year,
+              data = discBehaviorFood[food == 0],
+              weights = discBehaviorFood[food == 0]$projection_factor)
+reg12 <- felm(formula = bulk ~ household_income * married + age +
+                household_income * adults + household_income * nChildren +
+                household_income * type_of_residence + carShare + college |
+                dma_cd + panel_year,
+              data = discBehaviorFood[food == 0],
+              weights = discBehaviorFood[food == 0]$projection_factor)
+reg13 <- felm(formula = bulk ~ household_income * married + age +
+                household_income * adults + household_income * nChildren +
+                household_income * type_of_residence + household_income * carShare +
+                college | dma_cd + panel_year,
+              data = discBehaviorFood[food == 0],
+              weights = discBehaviorFood[food == 0]$projection_factor)
+reg14 <- felm(formula = bulk ~ household_income * married + household_income * age +
+                household_income * adults + household_income * nChildren +
+                household_income * type_of_residence + household_income * carShare +
+                college | dma_cd + panel_year,
+              data = discBehaviorFood[food == 0],
+              weights = discBehaviorFood[food == 0]$projection_factor)
+stargazer(reg9, reg10, reg11, reg12, reg13, reg14, type = "text")
+
 # Plotting food and non food averages without market and year FE's, just for illustration
 coefs7f <- as.data.table(summary(reg7f)$coefficients, keep.rownames = TRUE)
 confInt7f <- as.data.table(confint(reg7f), keep.rownames = TRUE)
@@ -556,6 +608,57 @@ ggplot(data = graphData,
         axis.ticks.length = unit(0.25, "cm")) +
   scale_color_fivethirtyeight()
 ggsave(filename = "./figures/savingsBehaviorAvg.pdf", height = 4, width = 6)
+
+# Robusness for over-the-month liquidity changes
+discBehaviorWOM[, "WOM" := as.factor(WOM)]
+reg1 <- felm(bulk ~ household_income_coarse * WOM,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg1, file = "/scratch/upenn/hossaine/reg1.rda", compress = TRUE)
+rm(reg1)
+
+reg2 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age +
+               adults + nChildren + type_of_residence + carShare + college,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg2, file = "/scratch/upenn/hossaine/reg2.rda", compress = TRUE)
+rm(reg2)
+
+reg3 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age +
+               adults + nChildren + type_of_residence + carShare + college | dma_cd,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg3, file = "/scratch/upenn/hossaine/reg3.rda", compress = TRUE)
+rm(reg3)
+
+reg4 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age + adults +
+               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg4, file = "/scratch/upenn/hossaine/reg4.rda", compress = TRUE)
+rm(reg4)
+
+reg5 <- felm(formula = bulk ~ WOM | household_code,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg5, file = "/scratch/upenn/hossaine/reg5.rda", compress = TRUE)
+rm(reg5)
+
+reg6 <- felm(formula = bulk ~ WOM * household_income_coarse | household_code,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg6, file = "/scratch/upenn/hossaine/reg6.rda", compress = TRUE)
+rm(reg6)
+
+reg7 <- felm(formula = bulk ~ WOM * household_income_coarse + married + age +
+               adults + nChildren + type_of_residence + carShare +
+               college | household_code,
+             data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
+save(reg7, file = "/scratch/upenn/hossaine/reg7.rda", compress = TRUE)
+rm(reg7)
+
+load("/scratch/upenn/hossaine/reg1.rda")
+load("/scratch/upenn/hossaine/reg2.rda")
+load("/scratch/upenn/hossaine/reg3.rda")
+load("/scratch/upenn/hossaine/reg4.rda")
+load("/scratch/upenn/hossaine/reg5.rda")
+load("/scratch/upenn/hossaine/reg6.rda")
+load("/scratch/upenn/hossaine/reg7.rda")
+stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, type = "text", omit.stat = "ser")
 
 ################################################################################
 ########### END ROBUSTNESS #####################################################

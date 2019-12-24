@@ -77,7 +77,6 @@ setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "LCL", "UCL", "food")
 histData <- na.omit(fullCoefs[rn %in% c("25-50k", "50-100k", ">100k")])
 histData[, "income" := factor(rn, levels = c("25-50k", "50-100k", ">100k"), ordered = TRUE)]
 histData[p > 0.05, "beta" := 0]
-histData <- merge(histData, topMods, by.y = "product_module_code", by.x = "mod", all.x = TRUE)
 fwrite(histData, "/scratch/upenn/hossaine/discountingBehaviorChannel1.csv")
 
 ###################### BIGGEST PACKAGE PURCHASED BY INCOME OVERALL #############
@@ -152,11 +151,14 @@ ggplot(data = histData,
 ggsave("./code/5_figures/discountingBehaviorChannelAll.pdf", height = 4, width = 6)
 
 # Plotting coefficients for only nonfood products (dropping bath oil dry [8602])
-histData[mod == 7734 & income == ">100k", "labels" := "Paper Towel"]
+histData[mod == 7003 & income == ">100k", "labels" := "Packaged Detergent"]
+histData[mod == 7008 & income == ">100k", "labels" := "Light Detergent"]
+histData[mod == 7012 & income == ">100k", "labels" := "Heavy Detergent"]
 histData[mod == 7260 & income == ">100k", "labels" := "Toilet Paper"]
-histData[mod == 7012 & income == ">100k", "labels" := "Detergent"]
+histData[mod == 7370 & income == ">100k", "labels" := "Charcoal"]
+histData[mod == 7373 & income == ">100k", "labels" := "Logs"]
+histData[mod == 7734 & income == ">100k", "labels" := "Paper Towels"]
 histData[mod == 8444 & income == ">100k", "labels" := "Diapers"]
-histData[mod == 7285 & income == ">100k", "labels" := "Plastic Wrap"]
 
 ggplot(data = histData[food == 0 & mod != 8602],
        aes(fill = income, y = beta, x = reorder(as.factor(mod), -beta),

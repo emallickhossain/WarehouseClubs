@@ -147,7 +147,7 @@ annot <- coefs[reg == "Store-Week-Brand FE",
                .(Mean = round(mean(Estimate, na.rm = TRUE), 2),
                  SD = round(sd(Estimate, na.rm = TRUE), 2),
                  Median = round(median(Estimate, na.rm = TRUE), 2)), by = foodChar]
-ggplot(data = coefs[reg == "Store-Week-Brand FE"],
+ggplot(data = unique(coefs[reg == "Store-Week-Brand FE"]),
        aes(x = Estimate, y = stat(density), fill = foodChar)) +
   geom_histogram(bins = 30, alpha = 0.65, position = "identity") +
   geom_vline(xintercept = annot$Median[1], linetype = 2,
@@ -335,8 +335,10 @@ quantCheck <- rbindlist(list(coefs[reg == "Store-Week-Brand FE", .(mod, Estimate
 quantCheck <- dcast(unique(quantCheck), mod ~ reg, value.var = "Estimate")
 quantCheck[, c("diff1", "diff5") := .(`Store-Week-Brand FE` - `Store-Week-Brand Winsor 1`,
                                       `Store-Week-Brand FE` - `Store-Week-Brand Winsor 5`)]
-quantile(quantCheck$diff1, na.rm = TRUE, seq(0, 1, 0.1))
-quantile(quantCheck$diff5, na.rm = TRUE, seq(0, 1, 0.1))
+round(quantile(quantCheck$diff1 / quantCheck$`Store-Week-Brand FE`,
+               na.rm = TRUE, seq(0, 1, 0.01)), digits = 3)
+round(quantile(quantCheck$diff5 / quantCheck$`Store-Week-Brand FE`,
+               na.rm = TRUE, seq(0, 1, 0.01)), digits = 3)
 
 # Getting share of products with bulk discounts
 nrow(coefsWins[reg == "Store-Week-Brand Winsor 1" & Estimate < 0]) / nrow(prod)

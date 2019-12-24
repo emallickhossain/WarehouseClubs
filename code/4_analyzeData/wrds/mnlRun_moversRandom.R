@@ -18,11 +18,12 @@ library(ggplot2)
 library(ggthemes)
 library(stringr)
 threads <- 8
+yrs <- 2012:2016
 
 ################################################################################
 ############### STEP 1: ESTIMATION #############################################
 ################################################################################
-tp <- unique(fread("/scratch/upenn/hossaine/fullChoiceFinal.csv", nThread = threads))
+tp <- unique(fread("/scratch/upenn/hossaine/fullChoiceFinalMovers.csv", nThread = threads))
 
 # Because UPCs might denote insubstantial differences, I define a product as a
 # unique brand-roll-size, where I've also collapsed some similar sheet count rolls
@@ -32,10 +33,9 @@ tp[, c("upc", "upc_ver_uc", "brand_descr", "rolls", "sheet", "totalSheet",
 
 # Getting panel and trips
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
-               select = c("household_code", "panel_year", "dma_name", "dma_cd",
-                          "household_income_coarse", "adults", "nChildren",
-                          "married", "college", "projection_factor", "law", "age",
-                          "type_of_residence"))
+               select = c("household_code", "panel_year", "household_income_coarse",
+                          "adults", "nChildren", "married", "college",
+                          "projection_factor", "law", "age", "type_of_residence"))
 panel[, "lawInd" := (law >= 3)]
 tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 
@@ -45,6 +45,7 @@ tp[, "rolls" := as.integer(rolls)]
 tp[, "sheets" := as.integer(sheets)]
 tp[, "days" := sheets / (57 * 2)]
 tp[, "lDays" := log(days)]
+tp[, "lDaysHHSize" := lDays * (adults + nChildren)]
 
 # Assessing how different prices are for cases where there are duplicate
 # brand-roll-size combinations. Usually, the prices seem to be the same
@@ -56,21 +57,21 @@ round(quantile(tp$priceDiff, seq(0, 1, 0.01)), 2)
 tp <- tp[, .(price = mean(stdPrice),
              choice = sum(choice)),
          by = .(household_code, panel_year, trip_code_uc, brandRollSheet, age,
-                dma_cd, household_income_coarse, adults, nChildren, married,
+                household_income_coarse, adults, nChildren, married,
                 brand_descr, rolls, sheets, days, projection_factor, college,
-                lawInd, lDays, type_of_residence)]
+                lawInd, lDays, type_of_residence, lDaysHHSize)]
 tp[, "unitPrice" := price / days]
 
 # Generating unit price interactions
 tp[, "unitReg"      := unitPrice * lawInd]
 
 # Generating size interactions
-tp[, "large"       := (rolls > 12)]
+tp[, "large"       := as.integer(rolls > 12)]
 tp[, "largeHome"   := large * (type_of_residence == "Single-Family")]
-tp[, "small"       := (rolls < 12)]
+tp[, "small"       := as.integer(rolls < 12)]
 tp[, "smallHome"   := small * (type_of_residence == "Single-Family")]
 
-# Coding package sizes and brands
+# Coding brands and years
 tp[, "brand_descr" := relevel(as.factor(brand_descr), ref = "SCOTT 1000")]
 
 # Running in parallel on years
@@ -78,32 +79,55 @@ registerDoParallel()
 getDoParWorkers()
 
 # hhInc <- unique(tp[, .(household_code, panel_year, household_income_coarse)])
-# ids <- hhInc[panel_year == 2016, .SD[sample(.N, 250)],
+# ids <- hhInc[panel_year == 2016, .SD[sample(.N, 150)],
 #              by = household_income_coarse]$household_code
 
-r <- foreach(i = 2016) %:%
-  foreach(incBin = c("<25k", "25-50k", "50-100k", ">100k")) %dopar% {
-    print(c(i, incBin))
-    # Running MNL model
-    # Creating mlogit data for analysis
-    tpSub <- tp[panel_year == i]
-    tpML <- mlogit.data(tpSub, choice = "choice", shape = "long",
-                        alt.var = "brandRollSheet", chid.var = "trip_code_uc")
-    reg1 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg2 <- mlogit(choice ~ price +
-                     unitPrice + unitReg +
-                     lDays + large + small + brand_descr + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    reg3 <- mlogit(choice ~ price +
-                     unitPrice + unitReg +
-                     lDays + large + largeHome + small + smallHome + brand_descr + 0,
-                   data = tpML[tpML$household_income_coarse == incBin, ])
-    stargazer(reg1, reg2, reg3, type = "text")
-    print(lrtest(reg1, reg2, reg3))
-    save(reg3, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016OnlyV4/mlogit",
-                             incBin, i, ".rda"), compress = TRUE)
-  }
+foreach(incBin = c("<25k", "25-50k", "50-100k", ">100k")) %dopar% {
+  # Running MNL model
+  # Creating mlogit data for analysis
+  tpSub <- tp[panel_year %in% yrs]
+  tpML <- mlogit.data(tpSub, choice = "choice", shape = "long",
+                      id.var = "household_code", alt.var = "brandRollSheet",
+                      chid.var = "trip_code_uc", opposite = c("price", "unitPrice"))
+  reg1 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ])
+  reg2 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + lDaysHHSize +
+                   large + small + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ])
+  reg3 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + lDaysHHSize +
+                   large + largeHome + small + smallHome + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ])
+  reg4 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + lDaysHHSize +
+                   large + largeHome + small + smallHome + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ],
+                 rpar = c(unitPrice = "ln"),
+                 R = 25, halton = NA, panel = TRUE)
+  reg5 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + lDaysHHSize +
+                   large + largeHome + small + smallHome + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ],
+                 rpar = c(unitPrice = "ln", lDays = "n"),
+                 R = 25, halton = NA, panel = TRUE)
+  reg6 <- mlogit(choice ~ price +
+                   unitPrice + unitReg +
+                   lDays + lDaysHHSize +
+                   large + largeHome + small + smallHome + brand_descr + 0,
+                 data = tpML[tpML$household_income_coarse == incBin, ],
+                 rpar = c(unitPrice = "ln", lDays = "n", large = "n", small = "n"),
+                 R = 25, halton = NA, panel = TRUE)
+  print(incBin)
+  stargazer(reg1, reg2, reg3, reg4, reg5, reg6, type = "text")
+  print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6))
+  save(reg6, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLMovers/mlogit",
+                           incBin, ".rda"), compress = TRUE)
+}
 
 ################################################################################
 ############## STEP 1A: ELASTICITIES ###########################################
@@ -111,7 +135,7 @@ r <- foreach(i = 2016) %:%
 fullElast <- NULL
 fullCoefs <- NULL
 for (i in c("<25k", "25-50k", "50-100k", ">100k")) {
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016OnlyV4/mlogit", i, "2016.rda"))
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLMovers/mlogit", i, ".rda"))
   margs <- effects(reg3, covariate = "price", type = "rr")
   ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
   ownElast[, "household_income_coarse" := i]
@@ -432,7 +456,7 @@ getClub <- function(X) {
 }
 clubAssort <- rbindlist(lapply(r, getClub), use.names = TRUE, idcol = "Income")
 clubAssort[, "Income" := factor(Income, levels = 1:4, ordered = TRUE,
-                                      labels = c("<25k", "25-50k", "50-100k", ">100k"))]
+                                labels = c("<25k", "25-50k", "50-100k", ">100k"))]
 clubAssortSheets <- clubAssort[, .(clubAssort = sum(predictedShare * sheets)),
                                by = Income]
 
