@@ -4,20 +4,21 @@
 \begin{tabular}{@{\extracolsep{5pt}}lcccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{2}{c}{All Households} & No Law To Law & Law To No Law \\
+ & \multicolumn{2}{c}{All Movers} & No Law To Law & Law To No Law \\
 \\[-1.8ex] & (1) & (2) & (3) & (4)\\
 \hline \\[-1.8ex]
- Regulation & 0.011$^{***}$ & 0.013$^{***}$ & 0.004 & 0.022$^{***}$ \\
-  & (0.004) & (0.004) & (0.006) & (0.006) \\
+ Regulation & 0.008 & 0.009$^{*}$ & 0.003 & 0.014$^{**}$ \\
+  & (0.005) & (0.005) & (0.007) & (0.006) \\
  \hline \\[-1.8ex]
+Avg Bulk & 0.5 & 0.5 & 0.5 & 0.5 \\
 Household FE & Y & Y & Y & Y \\
 Year FE & Y & Y & Y & Y \\
 Demographics & N & Y & Y & Y \\
-Observations & 731,762 & 731,762 & 723,926 & 723,394 \\
-Adjusted R$^{2}$ & 0.658 & 0.659 & 0.659 & 0.659 \\
+Observations & 92,739 & 92,739 & 86,712 & 88,479 \\
+Adjusted R$^{2}$ & 0.625 & 0.627 & 0.627 & 0.628 \\
 \hline
 \hline \\[-1.8ex]
 \textit{Note:}  & \multicolumn{4}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
 \end{tabular}
-\caption*{Notes: Using 2004--2017 Nielsen Consumer Panel data and state-level regulations, this table shows estimates of Equation \ref{eq:unitPriceMove} which regresses household bulk buying on unit price regulation after controlling for household fixed effects. "Regulation" denotes the estimated effect of moving from a state without regulation to a state with regulation. Columns (3) and (4) only include one set of movers in each specification with the remaining households that do not move. Column (3) excludes households that move to states without unit price regulations to restrict identification of the regulatory effect to households moving to states with regulations. Column (4) excludes households that move to states with unit price regulations to restrict identification of the regulatory effect to households moving to states without regulations. Standard errors are clustered at the household level.}
+\caption*{Notes: Using 2004--2017 Nielsen Consumer Panel data and state-level regulations, this table shows estimates of Equation \ref{eq:unitPriceMove} which regresses household bulk buying on unit price regulation after controlling for household fixed effects. "Regulation" denotes the estimated effect of moving from a state without regulation to a state with regulation. Columns (3) and (4) only include one set of movers that switch regimes in each specification with the remaining households that move, but do not switch regimes. Column (3) excludes households that move to states without unit price regulations to restrict identification of the regulatory effect to households moving to states with regulations. Column (4) excludes households that move to states with unit price regulations to restrict identification of the regulatory effect to households moving to states without regulations. Standard errors are clustered at the household level.}
 \end{table}

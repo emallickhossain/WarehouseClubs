@@ -215,6 +215,28 @@ for (i in c(5, 10, 15, 20)) {
                                        postOpenQtr, postOpen, hhMarket,
                                        openDateQtr)]
 
+  quarterSharesClub <- purchData[, .(bulk = weighted.mean(bulk, w = totalExp)),
+                                 by = .(household_code, panel_year, quarter, club)]
+
+  # Filling in zeros for households that do not shop at clubs
+  fillDat <- unique(quarterSharesClub[, .(household_code, panel_year, quarter)])
+  fillDat[, "hh_yr_qtr" := paste(household_code, panel_year, quarter, sep = "_")]
+  toFill <- setDT(expand.grid(hh_yr_qtr = fillDat$hh_yr_qtr, club = 0:1))
+  toFill[, c("household_code", "panel_year", "quarter") := tstrsplit(hh_yr_qtr, "_", fixed = TRUE)]
+  toFill[, "hh_yr_qtr" := NULL]
+  toFill <- toFill[, lapply(.SD, as.integer)]
+  quarterSharesClub <- merge(quarterSharesClub, toFill, all.y = TRUE,
+                             by = c("household_code", "panel_year", "quarter", "club"))
+  quarterSharesClub[is.na(bulk), "bulk" := 0]
+
+  # Adding demographics
+  panel <- unique(purchData[, .(household_code, panel_year, quarter, YQ,
+                                married, household_income_coarse,
+                                men, women, age, nChildren, group, college,
+                                postOpenQtr, postOpen, hhMarket, openDateQtr)])
+  quarterSharesClub <- merge(quarterSharesClub, panel,
+                             by = c("household_code", "panel_year", "quarter"))
+
   # Running diff-in-diff on treatment and never club group. I ignore whether they
   # are a club shopper or not. This should be a lower bound on the effect
   quarterSharesAll[, "postOpen25" := ifelse(group == "Treatment",
@@ -236,8 +258,11 @@ for (i in c(5, 10, 15, 20)) {
                  household_income_coarse | hhMarket + YQ | 0 |
                  household_code, data = quarterSharesAll)
 
+  mean1 <- round(quarterSharesAll[, mean(bulk)], 2)
+
   stargazer(reg1, reg2, reg3, type = "text",
-            add.lines = list(c("Household-ZIP FE's", "Y", "Y", "Y"),
+            add.lines = list(c("Avg Bulk", rep(mean1, 3)),
+                             c("Household-ZIP FE's", "Y", "Y", "Y"),
                              c("Year-Quarter FE's", "Y", "Y", "Y"),
                              c("Demographic Controls", "N", "Y", "Y")),
             single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
@@ -251,6 +276,96 @@ for (i in c(5, 10, 15, 20)) {
             notes.append = TRUE,
             digits = 3,
             out = paste0("tables/costcoEntryDD", i, "Mi.tex"))
+
+  # Checking various margins (bulk buying at non-club stores)
+  reg1 <- felm(bulk ~ postOpen | hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 0])
+  reg2 <- felm(bulk ~ postOpen + men + women + nChildren + married + age +
+                 college + household_income_coarse |
+                 hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 0])
+  reg3 <- felm(bulk ~ postOpen * household_income_coarse + men + women +
+                 nChildren + married + age + college | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesClub[club == 0])
+
+  # Checking various margins (bulk buying at club stores, including zeros)
+  reg4 <- felm(bulk ~ postOpen | hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1])
+  reg5 <- felm(bulk ~ postOpen + men + women + nChildren + married + age +
+                 college + household_income_coarse |
+                 hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1])
+  reg6 <- felm(bulk ~ postOpen * household_income_coarse + men + women +
+                 nChildren + married + age + college | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesClub[club == 1])
+
+  # Checking various margins (bulk buying at club stores, only positive spending)
+  reg7 <- felm(bulk ~ postOpen | hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1 & bulk > 0])
+  reg8 <- felm(bulk ~ postOpen + men + women + nChildren + married + age +
+                 college + household_income_coarse |
+                 hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1 & bulk > 0])
+  reg9 <- felm(bulk ~ postOpen * household_income_coarse + men + women +
+                 nChildren + married + age + college | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesClub[club == 1 & bulk > 0])
+
+  mean1 <- round(quarterSharesClub[club == 0, mean(bulk)], 2)
+  mean2 <- round(quarterSharesClub[club == 1, mean(bulk)], 2)
+  mean3 <- round(quarterSharesClub[club == 1 & bulk > 0, mean(bulk)], 2)
+
+  stargazer(reg3, reg6, reg9, type = "text",
+            add.lines = list(c("Avg Bulk", mean1, mean2, mean3),
+                             c("Household-ZIP FE's", "Y", "Y", "Y"),
+                             c("Year-Quarter FE's", "Y", "Y", "Y"),
+                             c("Demographic Controls", "Y", "Y", "Y")),
+            single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+            out.header = FALSE,
+            dep.var.caption = "", dep.var.labels.include = FALSE,
+            order = c(1, 9, 10, 8),
+            keep = c("postOpen*"),
+            column.labels = c("Non-Club", "Club", "Club Intensive"),
+            covariate.labels = c("Post-Entry", "Post-Entry : 25-50k",
+                                 "Post-Entry : 50-100k", "Post-Entry : >100k"),
+            notes.align = "l",
+            notes.append = TRUE,
+            digits = 3,
+            out = paste0("tables/costcoEntryDD", i, "MiClubStoresExtIntMargins.tex"))
+
+  # Getting number of households that switch to club buying post-entry
+  apple <- quarterSharesClub[club == 1, .(clubTrips = sum(bulkInd)),
+                             by = .(household_code, group, postOpen)]
+
+  # Checking various margins (probability of shopping at club stores)
+  quarterSharesClub[, "bulkInd" := (bulk > 0)]
+  reg1 <- felm(bulkInd ~ postOpen | hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1])
+  reg2 <- felm(bulkInd ~ postOpen + men + women + nChildren + married + age +
+                 college + household_income_coarse |
+                 hhMarket + YQ | 0 | household_code,
+               data = quarterSharesClub[club == 1])
+  reg3 <- felm(bulkInd ~ postOpen * household_income_coarse + men + women +
+                 nChildren + married + age + college | hhMarket + YQ | 0 |
+                 household_code, data = quarterSharesClub[club == 1])
+
+  mean1 <- round(quarterSharesClub[club == 1, mean((bulk > 0))], 2)
+
+  stargazer(reg1, reg2, reg3, type = "text",
+            add.lines = list(c("Avg Bulk", rep(mean1, 3)),
+                             c("Household-ZIP FE's", "Y", "Y", "Y"),
+                             c("Year-Quarter FE's", "Y", "Y", "Y"),
+                             c("Demographic Controls", "N", "Y", "Y")),
+            single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+            out.header = FALSE,
+            dep.var.caption = "", dep.var.labels.include = FALSE,
+            order = c(1, 9, 10, 8),
+            keep = c("postOpen*"),
+            covariate.labels = c("Post-Entry", "Post-Entry : 25-50k",
+                                 "Post-Entry : 50-100k", "Post-Entry : >100k"),
+            notes.align = "l",
+            notes.append = TRUE,
+            digits = 3,
+            out = paste0("tables/costcoEntryDD", i, "MiClubStoresIndicator.tex"))
 
   # Checking for pre-trends
   quarterSharesAll[, "qtrEntry" := as.character((YQ - openDateQtr) * 4)]

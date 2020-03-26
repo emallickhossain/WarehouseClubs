@@ -43,9 +43,11 @@ tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 tp[, c("brand_descr", "rolls", "sheets") := tstrsplit(brandRollSheet, "_", fixed = TRUE)]
 tp[, "rolls" := as.integer(rolls)]
 tp[, "sheets" := as.integer(sheets)]
+tp[, "sheetsPP" := sheets / (adults + nChildren)]
 tp[, "days" := sheets / (57 * 2)]
+tp[, "daysPP" := sheetsPP / (57 * 2)]
 tp[, "lDays" := log(days)]
-tp[, "lDaysHHSize" := lDays * (adults + nChildren)]
+tp[, "lDaysPP" := log(daysPP)]
 
 # Assessing how different prices are for cases where there are duplicate
 # brand-roll-size combinations. Usually, the prices seem to be the same
@@ -59,7 +61,7 @@ tp <- tp[, .(price = mean(stdPrice),
          by = .(household_code, panel_year, trip_code_uc, brandRollSheet, age,
                 household_income_coarse, adults, nChildren, married,
                 brand_descr, rolls, sheets, days, projection_factor, college,
-                lawInd, lDays, type_of_residence, lDaysHHSize)]
+                lawInd, lDays, lDaysPP, type_of_residence)]
 tp[, "unitPrice" := price / days]
 
 # Generating unit price interactions
@@ -85,48 +87,50 @@ getDoParWorkers()
 foreach(incBin = c("<25k", "25-50k", "50-100k", ">100k")) %dopar% {
   # Running MNL model
   # Creating mlogit data for analysis
-  tpSub <- tp[panel_year %in% yrs]
+  tpSub <- tp[panel_year %in% yrs & household_code %in% ids]
   tpML <- mlogit.data(tpSub, choice = "choice", shape = "long",
                       id.var = "household_code", alt.var = "brandRollSheet",
                       chid.var = "trip_code_uc", opposite = c("price", "unitPrice"))
-  reg1 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
+  reg1 <- mlogit(choice ~ price + unitPrice + lDaysPP + large + small + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ])
   reg2 <- mlogit(choice ~ price +
                    unitPrice + unitReg +
-                   lDays + lDaysHHSize +
+                   lDaysPP +
                    large + small + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ])
   reg3 <- mlogit(choice ~ price +
                    unitPrice + unitReg +
-                   lDays + lDaysHHSize +
+                   lDaysPP +
                    large + largeHome + small + smallHome + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ])
   reg4 <- mlogit(choice ~ price +
                    unitPrice + unitReg +
-                   lDays + lDaysHHSize +
+                   lDaysPP +
                    large + largeHome + small + smallHome + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ],
                  rpar = c(unitPrice = "ln"),
                  R = 25, halton = NA, panel = TRUE)
   reg5 <- mlogit(choice ~ price +
                    unitPrice + unitReg +
-                   lDays + lDaysHHSize +
+                   lDaysPP +
                    large + largeHome + small + smallHome + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ],
-                 rpar = c(unitPrice = "ln", lDays = "n"),
+                 rpar = c(unitPrice = "ln", lDaysPP = "n"),
                  R = 25, halton = NA, panel = TRUE)
   reg6 <- mlogit(choice ~ price +
                    unitPrice + unitReg +
-                   lDays + lDaysHHSize +
+                   lDaysPP +
                    large + largeHome + small + smallHome + brand_descr + 0,
                  data = tpML[tpML$household_income_coarse == incBin, ],
-                 rpar = c(unitPrice = "ln", lDays = "n", large = "n", small = "n"),
+                 rpar = c(unitPrice = "ln", lDaysPP = "n", large = "n", small = "n"),
                  R = 25, halton = NA, panel = TRUE)
   print(incBin)
   stargazer(reg1, reg2, reg3, reg4, reg5, reg6, type = "text")
   print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6))
+  save(reg3, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLMovers/mlogit",
+                           incBin, "reg3.rda"), compress = TRUE)
   save(reg6, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLMovers/mlogit",
-                           incBin, ".rda"), compress = TRUE)
+                           incBin, "reg6.rda"), compress = TRUE)
 }
 
 ################################################################################
@@ -136,11 +140,11 @@ fullElast <- NULL
 fullCoefs <- NULL
 for (i in c("<25k", "25-50k", "50-100k", ">100k")) {
   load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLMovers/mlogit", i, ".rda"))
-  margs <- effects(reg3, covariate = "price", type = "rr")
-  ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
-  ownElast[, "household_income_coarse" := i]
-  fullElast <- rbindlist(list(fullElast, ownElast), use.names = TRUE)
-  fullCoefs[[i]] <- reg3
+  # margs <- effects(reg6, covariate = "price", type = "rr")
+  # ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
+  # ownElast[, "household_income_coarse" := i]
+  # fullElast <- rbindlist(list(fullElast, ownElast), use.names = TRUE)
+  fullCoefs[[i]] <- reg6
 }
 
 stargazer(fullCoefs, type = "text",
@@ -148,7 +152,8 @@ stargazer(fullCoefs, type = "text",
           single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
           out.header = FALSE,
           column.labels = c("<25k", "25-50k", "50-100k", ">100k"),
-          dep.var.caption = "", dep.var.labels.include = FALSE,
+          dep.var.caption = "", dep.var.labels.include = FALSE)
+,
           omit = c("brand_descr*"),
           covariate.labels = c("Total Price",
                                "Unit Price", ". : Reg",
@@ -157,7 +162,8 @@ stargazer(fullCoefs, type = "text",
                                "Small Size", ". : Home"),
           notes.align = "l",
           notes.append = TRUE,
-          digits = 3,
+          digits = 3)
+,
           out = "tables/mlogit2016.tex")
 
 fullElast[, c("brand_descr", "rolls", "totalSheet") := tstrsplit(V1, "_", fixed = TRUE)]

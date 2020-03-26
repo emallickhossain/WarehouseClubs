@@ -27,6 +27,19 @@ panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
 panel[, "household_income" := as.factor(household_income)]
 panel[, "household_income_coarse" := as.factor(household_income_coarse)]
 
+# Getting bulk discount magnitude to control for it
+getCoefs <- function(i) {
+  data <- fread(paste0("/home/upenn/hossaine/Nielsen/Data/scannerBulkDiscountBetas", i, ".csv"))
+  return(data)
+}
+coefs <- rbindlist(map(c("1a", "1b", "1c1501",
+                         #"1c1503", "1c1505",
+                         "1c1506", "1c1507", "1c1508", "2", "3", "4", "5", "6", "7", "7b"),
+                       getCoefs), use.names = TRUE)
+coefs[abs(`t value`) <= 3, "Estimate" := 0]
+coefs <- unique(coefs[reg == "Store-Week-Brand FE",
+                      .(discount = Estimate, product_module_code = mod)])
+
 # Getting all purchases and coding them by discounting behavior
 fullPurch <- NULL
 for (yr in 2004:2017) {
@@ -48,6 +61,7 @@ for (yr in 2004:2017) {
 
 ###################### PACKAGE SIZE BY INCOME OVERALL ##########################
 fullPurch[, "lPkgSize" := log(pkgSize)]
+fullPurch <- merge(fullPurch, coefs, by = "product_module_code")
 allPurchases <- merge(fullPurch, panel, by = c("household_code", "panel_year"))
 
 getReg <- function(mod) {
@@ -55,7 +69,7 @@ getReg <- function(mod) {
   regData <- allPurchases[product_module_code == mod]
   tryCatch({
     reg <- felm(data = regData,
-                lPkgSize ~ household_income_coarse + men + women + age +
+                lPkgSize ~ discount + household_income_coarse + men + women + age +
                   nChildren + married + college | dma_cd + panel_year,
                 weights = regData$projection_factor)
     coefs <- as.data.table(summary(reg)$coefficients, keep.rownames = TRUE)
@@ -77,7 +91,8 @@ setnames(fullCoefs, c("mod", "rn", "beta", "se", "t", "p", "LCL", "UCL", "food")
 histData <- na.omit(fullCoefs[rn %in% c("25-50k", "50-100k", ">100k")])
 histData[, "income" := factor(rn, levels = c("25-50k", "50-100k", ">100k"), ordered = TRUE)]
 histData[p > 0.05, "beta" := 0]
-fwrite(histData, "/scratch/upenn/hossaine/discountingBehaviorChannel1.csv")
+# fwrite(histData, "/scratch/upenn/hossaine/discountingBehaviorChannel1.csv")
+fwrite(histData, "/scratch/upenn/hossaine/discountingBehaviorChannel1AddDiscount.csv")
 
 ###################### BIGGEST PACKAGE PURCHASED BY INCOME OVERALL #############
 allPurchases[, "lMaxSize" := log(maxSize)]
@@ -114,6 +129,7 @@ fwrite(histData, "/scratch/upenn/hossaine/discountingBehaviorChannel2.csv")
 # Download
 # scp hossaine@wrds-cloud.wharton.upenn.edu:/scratch/upenn/hossaine/discountingBehaviorChannel1.csv /home/mallick/Downloads
 histData <- fread("/home/mallick/Downloads/discountingBehaviorChannel1.csv")
+# histData <- fread("/home/mallick/Downloads/discountingBehaviorChannel1AddDiscount.csv")
 
 # Add product groups
 groupData <- setDT(readxl::read_excel("/home/mallick/Desktop/Nielsen/Data/Panel/Product_Hierarchy_01.31.2019.xlsx"))
@@ -151,12 +167,12 @@ ggplot(data = histData,
 ggsave("./code/5_figures/discountingBehaviorChannelAll.pdf", height = 4, width = 6)
 
 # Plotting coefficients for only nonfood products (dropping bath oil dry [8602])
-histData[mod == 7003 & income == ">100k", "labels" := "Packaged Detergent"]
-histData[mod == 7008 & income == ">100k", "labels" := "Light Detergent"]
-histData[mod == 7012 & income == ">100k", "labels" := "Heavy Detergent"]
+histData[mod == 7003 & income == ">100k", "labels" := "Detergent"]
+# histData[mod == 7008 & income == ">100k", "labels" := "Light Detergent"]
+# histData[mod == 7012 & income == ">100k", "labels" := "Heavy Detergent"]
 histData[mod == 7260 & income == ">100k", "labels" := "Toilet Paper"]
-histData[mod == 7370 & income == ">100k", "labels" := "Charcoal"]
-histData[mod == 7373 & income == ">100k", "labels" := "Logs"]
+# histData[mod == 7370 & income == ">100k", "labels" := "Charcoal"]
+# histData[mod == 7373 & income == ">100k", "labels" := "Logs"]
 histData[mod == 7734 & income == ">100k", "labels" := "Paper Towels"]
 histData[mod == 8444 & income == ">100k", "labels" := "Diapers"]
 
@@ -183,6 +199,7 @@ ggplot(data = histData[food == 0 & mod != 8602],
   scale_fill_manual(values = c("#084594", "#4292c6", "#9ecae1"))
 
 ggsave("./code/5_figures/discountingBehaviorChannelNonFoodColor.pdf", height = 4, width = 6)
+# ggsave("./code/5_figures/discountingBehaviorChannelNonFoodColorAddDiscount.pdf", height = 4, width = 6)
 
 # Download
 # scp hossaine@wrds-cloud.wharton.upenn.edu:/scratch/upenn/hossaine/discountingBehaviorChannel2.csv /home/mallick/Downloads

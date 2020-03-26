@@ -128,3 +128,34 @@ for (i in 2004:2017) {
 channelShares <- fullPurch[, .(total = sum(total)), by = .(channel_type, panel_year)]
 channelShares[, "share" := total / sum(total), by = panel_year]
 channelShares[channel_type == "Other"]
+
+# Examining demographic changes between years
+panel <- fread("/scratch/upenn/hossaine/fullPanel.csv",
+               select = c("household_code", "panel_year", "household_income_coarse",
+                          "age", "college", "married", "household_size",
+                          "type_of_residence"))
+setorder(panel, household_code, panel_year)
+
+panel[, ':=' (income_lag = shift(household_income_coarse, 1, type = "lag"),
+              age_lag = shift(age, 1, type = "lag"),
+              college_lag = shift(college, 1, type = "lag"),
+              married_lag = shift(married, 1, type = "lag"),
+              size_lag = shift(household_size, 1, type = "lag"),
+              residence_lag = shift(type_of_residence, 1, type = "lag"))]
+
+getMat <- function(x, y) {
+  transMat <- prop.table(with(panel, table(get(x), get(y))), 1)
+  meltTransMat <- setDT(melt(transMat))
+  setnames(meltTransMat, c("From", "To", "value"))
+  ggplot(data = meltTransMat,
+         aes(x = as.factor(To), y = as.factor(From), fill = value)) +
+    geom_tile() +
+    geom_text(aes(as.factor(To), as.factor(From), label = round(value, 2)),
+              color = "white", size = 4)
+}
+
+getMat("household_income_coarse", "income_lag")
+getMat("college", "college_lag")
+getMat("married", "married_lag")
+getMat("household_size", "size_lag")
+getMat("type_of_residence", "residence_lag")

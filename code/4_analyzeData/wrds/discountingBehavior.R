@@ -21,7 +21,6 @@
 library(data.table)
 library(ggplot2)
 library(ggthemes)
-library(ggridges)
 library(lfe)
 library(purrr)
 library(stringr)
@@ -31,8 +30,25 @@ threads <- 8
 
 # Getting trips and panel data for demographics and to deflate expenditures
 trips <- fread("/scratch/upenn/hossaine/fullTrips.csv", nThread = threads,
-               select = c("trip_code_uc", "household_code", "panel_year", "purchase_date"))
+               select = c("trip_code_uc", "household_code", "panel_year",
+                          "purchase_date", "channel_type", "retailer_code"))
 trips[, c("yearMonth") := .(substr(purchase_date, 1, 7))]
+
+# Getting chain type for retailers (counting unique states a retailer is in)
+# Using local, regional, national definition from "The Role of Retail Chains" by
+# Jarmin, Klimek, and Miranda 2005 CESWP 05-30
+panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
+               select = c("panel_year", "household_code", "fips"),
+               key = c("household_code", "panel_year"))
+panel[, "fips" := str_pad(fips, 5, "left", "0")]
+panel[, "state" := substr(fips, 1, 2)][, "fips" := NULL]
+trips <- merge(trips, panel, by = c("household_code", "panel_year"))
+chainType <- trips[, .(nStates = uniqueN(state)), by = retailer_code]
+chainType[nStates == 1, "chainType" := "Local"]
+chainType[nStates %in% 2:10, "chainType" := "Regional"]
+chainType[nStates > 10, "chainType" := "National"]
+chainType[, "nStates" := NULL]
+trips <- merge(trips, chainType, by = "retailer_code")
 
 # Getting CPI to deflate values to Jan-2010 base
 cpi <- fread("/scratch/upenn/hossaine/cpi.csv")
@@ -55,6 +71,8 @@ setkey(fullData, trip_code_uc)
 discBehaviorAll <- NULL
 discBehaviorFood <- NULL
 discBehaviorWOM <- NULL
+discBehaviorChannel <- NULL
+discBehaviorChain <- NULL
 for (yr in 2004:2017) {
   print(yr)
   purch <- fread(paste0("/scratch/upenn/hossaine/fullPurch", yr, ".csv"),
@@ -97,6 +115,12 @@ for (yr in 2004:2017) {
   householdWOM <- purch[, lapply(.SD, weighted.mean, w = realExp),
                         .SDcols = cols,
                         by = .(household_code, panel_year, food, WOM)]
+  householdChannel <- purch[, lapply(.SD, weighted.mean, w = realExp),
+                            .SDcols = cols,
+                            by = .(household_code, panel_year, food, channel_type)]
+  householdChain <- purch[, lapply(.SD, weighted.mean, w = realExp),
+                          .SDcols = cols,
+                          by = .(household_code, panel_year, food, chainType)]
 
   # Combining
   discBehaviorAll <- rbindlist(list(discBehaviorAll, householdAvgAll),
@@ -105,22 +129,30 @@ for (yr in 2004:2017) {
                                    use.names = TRUE)
   discBehaviorWOM <- rbindlist(list(discBehaviorWOM, householdWOM),
                                use.names = TRUE)
+  discBehaviorChannel <- rbindlist(list(discBehaviorChannel, householdChannel),
+                                   use.names = TRUE)
+  discBehaviorChain <- rbindlist(list(discBehaviorChain, householdChain),
+                                   use.names = TRUE)
 }
 
 # Saving
 fwrite(discBehaviorAll, "/scratch/upenn/hossaine/discBehaviorAll.csv", nThread = threads)
 fwrite(discBehaviorFood, "/scratch/upenn/hossaine/discBehaviorFood.csv", nThread = threads)
 fwrite(discBehaviorWOM, "/scratch/upenn/hossaine/discBehaviorWOM.csv", nThread = threads)
+fwrite(discBehaviorChannel, "/scratch/upenn/hossaine/discBehaviorChannel.csv", nThread = threads)
+fwrite(discBehaviorChain, "/scratch/upenn/hossaine/discBehaviorChain.csv", nThread = threads)
 
 # Adding demographics
 discBehaviorAll <- fread("/scratch/upenn/hossaine/discBehaviorAll.csv", nThread = threads)
 discBehaviorFood <- fread("/scratch/upenn/hossaine/discBehaviorFood.csv", nThread = threads)
 discBehaviorWOM <- fread("/scratch/upenn/hossaine/discBehaviorWOM.csv", nThread = threads)
+discBehaviorChannel <- fread("/scratch/upenn/hossaine/discBehaviorChannel.csv", nThread = threads)
+discBehaviorChain <- fread("/scratch/upenn/hossaine/discBehaviorChain.csv", nThread = threads)
 
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "household_size", "age", "child",
-                          "dma_cd", "household_income_coarse", "married",
+                          "fips", "household_income_coarse", "married",
                           "carShare", "law", "zip_code", "college", "men", "women",
                           "nChildren", "type_of_residence"),
                key = c("household_code", "panel_year"))
@@ -132,6 +164,8 @@ panel[, "lawInd" := (law >= 3)]
 discBehaviorAll <- merge(discBehaviorAll, panel, by = c("household_code", "panel_year"))
 discBehaviorFood <- merge(discBehaviorFood, panel, by = c("household_code", "panel_year"))
 discBehaviorWOM <- merge(discBehaviorWOM, panel, by = c("household_code", "panel_year"))
+discBehaviorChannel <- merge(discBehaviorChannel, panel, by = c("household_code", "panel_year"))
+discBehaviorChain <- merge(discBehaviorChain, panel, by = c("household_code", "panel_year"))
 
 # Identifying variation example
 ex <- discBehaviorFood[men == 1 & women == 1 & nChildren == 2 & married == 1 &
@@ -217,7 +251,7 @@ bin1 <- with(discBehaviorFood[food == 1],
              binsreg(y = bulk, x = household_income_cts,
                      w = cbind(married, age, adults, nChildren, carShare, college,
                                as.factor(panel_year), as.factor(type_of_residence),
-                               as.factor(dma_cd)),
+                               as.factor(fips)),
                      weights = projection_factor))
 bin1DT <- as.data.table(bin1$data.plot$`Group Full Sample`$data.dots)
 bin1DT[, "food" := "Food"]
@@ -225,7 +259,7 @@ bin2 <- with(discBehaviorFood[food == 0],
              binsreg(y = bulk, x = household_income_cts,
                      w = cbind(married, age, adults, nChildren, carShare, college,
                                as.factor(panel_year), as.factor(type_of_residence),
-                               as.factor(dma_cd)),
+                               as.factor(fips)),
                      weights = projection_factor))
 bin2DT <- as.data.table(bin2$data.plot$`Group Full Sample`$data.dots)
 bin2DT[, "food" := "Non-Food"]
@@ -302,7 +336,7 @@ print(discBehaviorFood[food == 0, weighted.mean(bulk, w = projection_factor),
 runRegAll <- function(y) {
   regForm <- as.formula(paste0(y, "~", "household_income + married + ",
                                "age + adults + nChildren + type_of_residence + ",
-                               "carShare + college | dma_cd + panel_year"))
+                               "carShare + college | fips + panel_year"))
 
   # All products
   regData <- discBehaviorAll
@@ -401,10 +435,10 @@ reg7 <- felm(formula = bulk ~ household_income + married + age + adults +
                nChildren + type_of_residence + carShare + college,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
 reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd,
+               nChildren + type_of_residence + carShare + college | fips,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
 reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+               nChildren + type_of_residence + carShare + college | fips + panel_year,
              data = discBehaviorAll, weights = discBehaviorAll$projection_factor)
 stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, reg8, reg9, type = "text", omit.stat = "ser")
 # Average bulk purchasing, residual of marital status, age, composition,
@@ -439,11 +473,11 @@ reg7f <- felm(formula = bulk ~ household_income + married + age + adults +
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
 reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd,
+               nChildren + type_of_residence + carShare + college | fips,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
 reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+               nChildren + type_of_residence + carShare + college | fips + panel_year,
              data = discBehaviorFood[food == 1],
              weights = discBehaviorFood[food == 1]$projection_factor)
 stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7f, reg8, reg9, type = "text",
@@ -498,11 +532,11 @@ reg7nf <- felm(formula = bulk ~ household_income + married + age + adults +
               data = discBehaviorFood[food == 0],
               weights = discBehaviorFood[food == 0]$projection_factor)
 reg8 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd,
+               nChildren + type_of_residence + carShare + college | fips,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
 reg9 <- felm(formula = bulk ~ household_income + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+               nChildren + type_of_residence + carShare + college | fips + panel_year,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
 stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7nf, reg8, reg9, type = "text",
@@ -535,30 +569,30 @@ stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7nf, reg8, reg9, type = "text",
 # more in bulk without the push of another household member to force that.
 reg10 <- felm(formula = bulk ~ household_income * married + age +
                 adults + nChildren +
-                type_of_residence + carShare + college | dma_cd + panel_year,
+                type_of_residence + carShare + college | fips + panel_year,
              data = discBehaviorFood[food == 0],
              weights = discBehaviorFood[food == 0]$projection_factor)
 reg11 <- felm(formula = bulk ~ household_income * married + age +
                 household_income * adults + household_income * nChildren +
-                type_of_residence + carShare + college | dma_cd + panel_year,
+                type_of_residence + carShare + college | fips + panel_year,
               data = discBehaviorFood[food == 0],
               weights = discBehaviorFood[food == 0]$projection_factor)
 reg12 <- felm(formula = bulk ~ household_income * married + age +
                 household_income * adults + household_income * nChildren +
                 household_income * type_of_residence + carShare + college |
-                dma_cd + panel_year,
+                fips + panel_year,
               data = discBehaviorFood[food == 0],
               weights = discBehaviorFood[food == 0]$projection_factor)
 reg13 <- felm(formula = bulk ~ household_income * married + age +
                 household_income * adults + household_income * nChildren +
                 household_income * type_of_residence + household_income * carShare +
-                college | dma_cd + panel_year,
+                college | fips + panel_year,
               data = discBehaviorFood[food == 0],
               weights = discBehaviorFood[food == 0]$projection_factor)
 reg14 <- felm(formula = bulk ~ household_income * married + household_income * age +
                 household_income * adults + household_income * nChildren +
                 household_income * type_of_residence + household_income * carShare +
-                college | dma_cd + panel_year,
+                college | fips + panel_year,
               data = discBehaviorFood[food == 0],
               weights = discBehaviorFood[food == 0]$projection_factor)
 stargazer(reg9, reg10, reg11, reg12, reg13, reg14, type = "text")
@@ -611,6 +645,7 @@ ggsave(filename = "./figures/savingsBehaviorAvg.pdf", height = 4, width = 6)
 
 # Robusness for over-the-month liquidity changes
 discBehaviorWOM[, "WOM" := as.factor(WOM)]
+discBehaviorWOM[, "firstWeek" := (WOM == 1)]
 reg1 <- felm(bulk ~ household_income_coarse * WOM,
              data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
 save(reg1, file = "/scratch/upenn/hossaine/reg1.rda", compress = TRUE)
@@ -623,13 +658,13 @@ save(reg2, file = "/scratch/upenn/hossaine/reg2.rda", compress = TRUE)
 rm(reg2)
 
 reg3 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age +
-               adults + nChildren + type_of_residence + carShare + college | dma_cd,
+               adults + nChildren + type_of_residence + carShare + college | fips,
              data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
 save(reg3, file = "/scratch/upenn/hossaine/reg3.rda", compress = TRUE)
 rm(reg3)
 
 reg4 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age + adults +
-               nChildren + type_of_residence + carShare + college | dma_cd + panel_year,
+               nChildren + type_of_residence + carShare + college | fips + panel_year,
              data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
 save(reg4, file = "/scratch/upenn/hossaine/reg4.rda", compress = TRUE)
 rm(reg4)
@@ -639,12 +674,12 @@ reg5 <- felm(formula = bulk ~ WOM | household_code,
 save(reg5, file = "/scratch/upenn/hossaine/reg5.rda", compress = TRUE)
 rm(reg5)
 
-reg6 <- felm(formula = bulk ~ WOM * household_income_coarse | household_code,
+reg6 <- felm(formula = bulk ~ household_income_coarse * WOM | household_code,
              data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
 save(reg6, file = "/scratch/upenn/hossaine/reg6.rda", compress = TRUE)
 rm(reg6)
 
-reg7 <- felm(formula = bulk ~ WOM * household_income_coarse + married + age +
+reg7 <- felm(formula = bulk ~ household_income_coarse * WOM + married + age +
                adults + nChildren + type_of_residence + carShare +
                college | household_code,
              data = discBehaviorWOM[food == 0], weights = discBehaviorWOM[food == 0]$projection_factor)
@@ -660,83 +695,30 @@ load("/scratch/upenn/hossaine/reg6.rda")
 load("/scratch/upenn/hossaine/reg7.rda")
 stargazer(reg1, reg2, reg3, reg4, reg5, reg6, reg7, type = "text", omit.stat = "ser")
 
+# Average weekly bulk buying
+meanBulk <- round(discBehaviorWOM[, weighted.mean(bulk, w = projection_factor)], 2)
+
+stargazer(reg5, reg6, reg7, type = "text",
+          add.lines = list(c("Mean Bulk", rep(meanBulk, 3)),
+                           c("Household FE's", "Y", "Y", "Y"),
+                           c("Demographics", "N", "N", "Y")),
+          single.row = FALSE, no.space = TRUE, omit.stat = c("ser", "rsq"),
+          out.header = FALSE,
+          dep.var.caption = "", dep.var.labels.include = FALSE,
+          keep = c("WOM", "household_income_coarse"),
+          order = c(4, 5, 6, 2, 15, 18, 21, 3, 16, 19, 22, 1, 14, 17, 20),
+          covariate.labels = c("Week 2", "Week 3", "Week 4",
+                               "25-50k", "Week 2 : 25-50k", "Week 3 : 25-50k", "Week 4 : 25-50k",
+                               "50-100k", "Week 2 : 50-100k", "Week 3 : 50-100k", "Week 4 : 50-100k",
+                               ">100k", "Week 2 : >100k", "Week 3 : >100k", "Week 4 : >100k"),
+          notes.align = "l",
+          notes.append = TRUE,
+          digits = 3,
+          label = "tab:discountingBehaviorLiquidity",
+          title = "Over-the-Month Changes in Bulk Buying",
+          out = "tables/AppendixDiscountingBehaviorLiquidity.tex")
+
+
 ################################################################################
 ########### END ROBUSTNESS #####################################################
 ################################################################################
-#
-# panels <- c("None", "One", "Two")
-# ggplot(data = graphData[disc %in% panels], aes(x = rn, y = beta, color = `Product Type`)) +
-#   geom_errorbar(aes(ymin = beta - 1.96 * se, ymax = beta + 1.96 * se), width = 0.2) +
-#   geom_point() +
-#   geom_hline(yintercept = 0) +
-#   geom_vline(xintercept = 0) +
-#   facet_wrap(vars(disc), scales = "fixed") +
-#   labs(title = "Most Households Use One or Fewer Discounts",
-#        x = "Household Income", y = "Share of Purchases",
-#        caption = paste0("Source: Author calulations from Nielsen Consumer Panel. \n",
-#                         "Note: Demographic adjustments control for household size, \n",
-#                         "age, presence of children, year, and market.")) +
-#   theme_fivethirtyeight() +
-#   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-#   scale_color_grey()
-#
-# ggsave("./figures/numberOfDiscounts.png", height = 6, width = 6)
-#
-# # Getting distributions around binned scatterplot by subtracting coefficients
-# # on household characteristics from the households propensity
-# discBehaviorAll[, "ageComp" := age * finalCoefs[rn == "age" & reg == "All"]$Estimate]
-# discBehaviorAll[, "sizeComp" := household_size * finalCoefs[rn == "household_size" & reg == "All"]$Estimate]
-# discBehaviorAll[, "childComp" := child * finalCoefs[rn == "child" & reg == "All"]$Estimate]
-# discBehaviorAll[, "bulkAdj" := bulk - ageComp - sizeComp - childComp]
-# discBehaviorAll[, "couponAdj" := coupon - ageComp - sizeComp - childComp]
-# discBehaviorAll[, "genericAdj" := generic - ageComp - sizeComp - childComp]
-#
-# # Graphing distributions
-# graphData <- melt(discBehaviorAll, id.vars = c("household_code", "panel_year", "household_income"),
-#                   measure.vars = patterns("*Adj"))
-# graphData[, "household_income" := factor(household_income,
-#                                          levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
-#                                          labels = c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
-#                                          ordered = TRUE)]
-# ggplot(na.omit(graphData), aes(x = value, y = as.factor(household_income))) +
-#   stat_density_ridges(quantile_lines = TRUE, quantiles = 2) +
-#   #scale_x_continuous(limits = c(0, 1)) +
-#   facet_wrap(vars(variable), scales = "fixed") +
-#   labs(title = "Most Households Use One or Fewer Discounts",
-#        x = "Share of Purchases", y = "Household Income",
-#        caption = paste0("Source: Author calulations from Nielsen Consumer Panel. \n",
-#                         "Note: Demographic adjustments control for household size, \n",
-#                         "age, and presence of children.")) +
-#   theme_fivethirtyeight() +
-#   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-#   scale_color_grey()
-#
-# # Storable / Non-Storable items
-# discBehaviorStorage[, "ageComp" := age * finalCoefs[rn == "age"]$Estimate]
-# discBehaviorStorage[, "sizeComp" := household_size * finalCoefs[rn == "household_size"]$Estimate]
-# discBehaviorStorage[, "childComp" := child * finalCoefs[rn == "child"]$Estimate]
-# discBehaviorStorage[, "bulkAdj" := bulk - ageComp - sizeComp - childComp]
-# discBehaviorStorage[, "couponAdj" := coupon - ageComp - sizeComp - childComp]
-# discBehaviorStorage[, "saleAdj" := sale - ageComp - sizeComp - childComp]
-# discBehaviorStorage[, "genericAdj" := generic - ageComp - sizeComp - childComp]
-#
-# # Graphing distributions
-# graphData <- melt(discBehaviorStorage,
-#                   id.vars = c("household_code", "panel_year", "household_income", "storable"),
-#                   measure.vars = patterns("*Adj"))
-# graphData[, "household_income" := factor(household_income,
-#                                          levels = c(8, 10, 11, 13, 15, 16, 17, 18, 19, 21, 23, 26, 27),
-#                                          labels = c(11, 13.5, 17.5, 22.5, 27.5, 32.5, 37.5, 42.5, 47.5, 55, 65, 85, 100),
-#                                          ordered = TRUE)]
-# ggplot(na.omit(graphData[storable == 0]), aes(x = value, y = as.factor(household_income))) +
-#   stat_density_ridges(quantile_lines = TRUE, quantiles = 2) +
-#   scale_x_continuous(limits = c(0, 1)) +
-#   facet_wrap(vars(variable), scales = "fixed") +
-#   labs(title = "Most Households Use One or Fewer Discounts",
-#        x = "Share of Purchases", y = "Household Income",
-#        caption = paste0("Source: Author calulations from Nielsen Consumer Panel. \n",
-#                         "Note: Demographic adjustments control for household size, \n",
-#                         "age, and presence of children.")) +
-#   theme_fivethirtyeight() +
-#   theme(axis.title = element_text(), plot.caption = element_text(hjust = 0)) +
-#   scale_color_grey()

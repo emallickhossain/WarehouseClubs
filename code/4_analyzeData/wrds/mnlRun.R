@@ -43,8 +43,11 @@ tp <- merge(tp, panel, by = c("household_code", "panel_year"))
 tp[, c("brand_descr", "rolls", "sheets") := tstrsplit(brandRollSheet, "_", fixed = TRUE)]
 tp[, "rolls" := as.integer(rolls)]
 tp[, "sheets" := as.integer(sheets)]
+tp[, "sheetsPP" := sheets / (adults + nChildren)]
 tp[, "days" := sheets / (57 * 2)]
+tp[, "daysPP" := sheetsPP / (57 * 2)]
 tp[, "lDays" := log(days)]
+tp[, "lDaysPP" := log(daysPP)]
 
 # Assessing how different prices are for cases where there are duplicate
 # brand-roll-size combinations. Usually, the prices seem to be the same
@@ -58,16 +61,16 @@ tp <- tp[, .(price = mean(stdPrice),
          by = .(household_code, panel_year, trip_code_uc, brandRollSheet, age,
                 dma_cd, household_income_coarse, adults, nChildren, married,
                 brand_descr, rolls, sheets, days, projection_factor, college,
-                lawInd, lDays, type_of_residence)]
+                lawInd, lDays, lDaysPP, type_of_residence)]
 tp[, "unitPrice" := price / days]
 
 # Generating unit price interactions
 tp[, "unitReg"      := unitPrice * lawInd]
 
 # Generating size interactions
-tp[, "large"       := (rolls > 12)]
+tp[, "large"       := as.integer(rolls > 12)]
 tp[, "largeHome"   := large * (type_of_residence == "Single-Family")]
-tp[, "small"       := (rolls < 12)]
+tp[, "small"       := as.integer(rolls < 12)]
 tp[, "smallHome"   := small * (type_of_residence == "Single-Family")]
 
 # Coding package sizes and brands
@@ -88,21 +91,42 @@ r <- foreach(i = 2016) %:%
     # Creating mlogit data for analysis
     tpSub <- tp[panel_year == i]
     tpML <- mlogit.data(tpSub, choice = "choice", shape = "long",
-                        alt.var = "brandRollSheet", chid.var = "trip_code_uc")
-    reg1 <- mlogit(choice ~ price + unitPrice + lDays + large + small + brand_descr + 0,
+                        id.var = "household_code", alt.var = "brandRollSheet",
+                        chid.var = "trip_code_uc", opposite = c("price", "unitPrice"))
+    reg1 <- mlogit(choice ~ price + unitPrice + lDaysPP + large + small + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
     reg2 <- mlogit(choice ~ price +
                      unitPrice + unitReg +
-                     lDays + large + small + brand_descr + 0,
+                     lDaysPP + large + small + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
     reg3 <- mlogit(choice ~ price +
                      unitPrice + unitReg +
-                     lDays + large + largeHome + small + smallHome + brand_descr + 0,
+                     lDaysPP + large + largeHome + small + smallHome + brand_descr + 0,
                    data = tpML[tpML$household_income_coarse == incBin, ])
-    stargazer(reg1, reg2, reg3, type = "text")
-    print(lrtest(reg1, reg2, reg3))
+    reg4 <- mlogit(choice ~ price +
+                     unitPrice + unitReg +
+                     lDaysPP + large + largeHome + small + smallHome + brand_descr + 0,
+                   data = tpML[tpML$household_income_coarse == incBin, ],
+                   rpar = c(unitPrice = "ln"),
+                   R = 25, halton = NA, panel = TRUE)
+    reg5 <- mlogit(choice ~ price +
+                     unitPrice + unitReg +
+                     lDaysPP + large + largeHome + small + smallHome + brand_descr + 0,
+                   data = tpML[tpML$household_income_coarse == incBin, ],
+                   rpar = c(unitPrice = "ln", lDaysPP = "n"),
+                   R = 25, halton = NA, panel = TRUE)
+    reg6 <- mlogit(choice ~ price +
+                     unitPrice + unitReg +
+                     lDaysPP + large + largeHome + small + smallHome + brand_descr + 0,
+                   data = tpML[tpML$household_income_coarse == incBin, ],
+                   rpar = c(unitPrice = "ln", lDaysPP = "n", large = "n", small = "n"),
+                   R = 25, halton = NA, panel = TRUE)
+    stargazer(reg1, reg2, reg3, reg4, reg5, reg6, type = "text")
+    print(lrtest(reg1, reg2, reg3, reg4, reg5, reg6))
     save(reg3, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit",
-                             incBin, i, ".rda"), compress = TRUE)
+                             incBin, i, "reg3.rda"), compress = TRUE)
+    save(reg6, file = paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit",
+                             incBin, i, "reg6.rda"), compress = TRUE)
   }
 
 ################################################################################
@@ -111,7 +135,7 @@ r <- foreach(i = 2016) %:%
 fullElast <- NULL
 fullCoefs <- NULL
 for (i in c("<25k", "25-50k", "50-100k", ">100k")) {
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit", i, "2016.rda"))
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit", i, "2016reg3.rda"))
   margs <- effects(reg3, covariate = "price", type = "rr")
   ownElast <- as.data.table(diag(margs), keep.rownames = TRUE)
   ownElast[, "household_income_coarse" := i]
@@ -164,7 +188,7 @@ ggsave(filename = "./figures/elasticity2016.pdf", height = 4, width = 6)
 ################################################################################
 # Load parameters
 getCoefs <- function(income) {
-  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/newModel2016OnlyV4/mlogit", income, "2016.rda"))
+  load(paste0("/home/upenn/hossaine/Nielsen/mlogit/MNLOnly/mlogit", income, "2016reg3.rda"))
   return(reg3)
 }
 r <- map(c("<25k", "25-50k", "50-100k", ">100k"), getCoefs)
@@ -184,11 +208,17 @@ actualSheets <- actualShares[, .(Data = sum(sheets * actualShare)), by = Income]
 
 # Function to compute predicted probabilities. Key feature is it changes
 # any non-significant coefficients to 0
+# Switching price and unit price coefficients to be negative. They were flipped
+# for the mlogit estimation
 getProbs <- function(reg, X, beta = NULL) {
   if (is.null(beta)) {
-    beta <- as.data.table(summary(reg)$CoefTable)
+    beta <- as.data.table(summary(reg)$CoefTable, keep.rownames = TRUE)
   }
+  beta[rn == "price", "Estimate" := -Estimate] # Flipping sign
+  beta[rn == "unitPrice", "Estimate" := -Estimate] # Flipping sign
   beta[`Pr(>|z|)` > 0.05, "Estimate" := 0]
+  X[, "price"] <- -X[, "price"] # Flipping price sign
+  X[, "unitPrice"] <- -X[, "unitPrice"] # Flipping unit price sign
   XB <- X %*% beta$Estimate
   XDT <- as.data.table(X, keep.rownames = TRUE)[, .(rn, unitPrice)]
   eXB <- exp(XB)
@@ -238,7 +268,7 @@ comp[abs(diff) > 0.01]
 # Add regulations
 getAllRegs <- function(X) {
   allRegs <- model.matrix(X)
-  allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
+  allRegs[, "unitReg"] <- -allRegs[, "unitPrice"] # Flipping sign
   getProbs(X, allRegs)[["probs"]]
 }
 allRegs <- rbindlist(lapply(r, getAllRegs), use.names = TRUE, idcol = "Income")
@@ -256,7 +286,7 @@ allRegsSheets <- allRegs[, .(allRegs = sum(predictedShare * sheets)), by = Incom
 
 getAllRegsUnitPrice <- function(X) {
   allRegs <- model.matrix(X)
-  allRegs[, "unitReg"] <- allRegs[, "unitPrice"]
+  allRegs[, "unitReg"] <- -allRegs[, "unitPrice"]
   getProbs(X, allRegs)[["unitPrice"]]
 }
 allRegsUnitPrice <- lapply(r, getAllRegsUnitPrice)
@@ -314,7 +344,7 @@ NSUnitPrice <- lapply(r, getNSUnitPrice)
 # All regs and no storage
 getNSAR <- function(X) {
   mat <- model.matrix(X)
-  mat[, "unitReg"] <- mat[, "unitPrice"]
+  mat[, "unitReg"] <- -mat[, "unitPrice"]
   betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
   betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
   betaNew[grepl("large*", rn), "Pr(>|z|)"] <- richBeta[grepl("large*", rn), "Pr(>|z|)"]
@@ -330,7 +360,7 @@ noStorageAllRegsSheets <- noStorageAllRegs[, .(noStorageAllRegs = sum(predictedS
 
 getNSARUnitPrice <- function(X) {
   mat <- model.matrix(X)
-  mat[, "unitReg"] <- mat[, "unitPrice"]
+  mat[, "unitReg"] <- -mat[, "unitPrice"]
   betaNew <- as.data.table(summary(X)$CoefTable, keep.rownames = TRUE)
   betaNew[grepl("large*", rn), "Estimate"] <- richBeta[grepl("large*", rn), "Estimate"]
   betaNew[grepl("large*", rn), "Pr(>|z|)"] <- richBeta[grepl("large*", rn), "Pr(>|z|)"]

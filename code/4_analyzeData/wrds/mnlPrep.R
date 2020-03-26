@@ -13,7 +13,6 @@ library(stringr)
 library(stargazer)
 library(ggplot2)
 library(ggthemes)
-library(ggridges)
 library(lfe)
 yrs <- 2016
 threads <- 8

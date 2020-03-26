@@ -11,7 +11,7 @@ discBehaviorFood <- fread("/scratch/upenn/hossaine/discBehaviorFood.csv", nThrea
 panel <- fread("/scratch/upenn/hossaine/fullPanel.csv", nThread = threads,
                select = c("panel_year", "household_code", "projection_factor",
                           "household_income", "household_size", "age", "child",
-                          "dma_cd", "household_income_coarse", "married",
+                          "fips", "household_income_coarse", "married",
                           "carShare", "law", "zip_code", "college", "men", "women",
                           "nChildren", "type_of_residence"),
                key = c("household_code", "panel_year"))
@@ -30,20 +30,24 @@ discBehaviorFood <- merge(discBehaviorFood, panel, by = c("household_code", "pan
 # Running regression
 reg1 <- felm(data = discBehaviorFood[food == 0],
              formula = bulk ~ type_of_residence |
-               household_code + panel_year + dma_cd | 0 | household_code,
+               household_code + panel_year + fips | 0 | household_code,
              weights = discBehaviorFood[food == 0]$projection_factor)
 reg2 <- felm(data = discBehaviorFood[food == 0],
              formula = bulk ~ type_of_residence + married + age + adults +
                nChildren + household_income + carShare + college |
-               household_code + panel_year + dma_cd | 0 | household_code,
+               household_code + panel_year + fips | 0 | household_code,
              weights = discBehaviorFood[food == 0]$projection_factor)
 reg3 <- felm(data = discBehaviorFood[food == 0],
              formula = bulk ~ type_of_residence + married + age + adults +
                nChildren + household_income + leadIncome + carShare + college |
-               household_code + panel_year + dma_cd | 0 | household_code,
+               household_code + panel_year + fips | 0 | household_code,
              weights = discBehaviorFood[food == 0]$projection_factor)
+
+means1 <- round(discBehaviorFood[food == 0, weighted.mean(bulk, w = projection_factor)], 2)
+
 stargazer(reg1, reg2, reg3, type = "text",
-          add.lines = list(c("Market FE's", "Y", "Y", "Y"),
+          add.lines = list(c("Avg Bulk", rep(means1, 3)),
+                           c("Market FE's", "Y", "Y", "Y"),
                            c("Year FE's",   "Y", "Y", "Y"),
                            c("Demographics", "N", "Y", "Y"),
                            c("Future Income", "N", "N", "Y")),
