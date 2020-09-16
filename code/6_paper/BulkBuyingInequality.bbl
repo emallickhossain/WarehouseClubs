@@ -1,0 +1,174 @@
+
+
+% Bibstyle aea.bst version 2009.05.20
+
+\begin{thebibliography}{xx}
+
+\harvarditem[Aguiar \harvardand\ Hurst]{Mark Aguiar \harvardand\ Erik
+  Hurst}{2005}{aguiar2005}
+{\bf Aguiar, Mark, and Erik Hurst.} 2005. ``Consumption versus expenditure.''
+  {\em Journal of Political Economy}, 113(5):~919--948.
+
+\harvarditem[Aguiar \harvardand\ Hurst]{Mark Aguiar \harvardand\ Erik
+  Hurst}{2007}{aguiar2007aer}
+{\bf Aguiar, Mark, and Erik Hurst.} 2007. ``Life-cycle prices and production.''
+  {\em American Economic Review}, 97(5):~1533--1559.
+
+\harvarditem[Allcott et~al.]{Hunt Allcott, Rebecca Diamond, Jean-Pierre
+  Dub{\'e}, Jessie Handbury, Ilya Rahkovsky \harvardand\ Molly
+  Schnell}{2019}{handbury2019}
+{\bf Allcott, Hunt, Rebecca Diamond, Jean-Pierre Dub{\'e}, Jessie Handbury,
+  Ilya Rahkovsky, and Molly Schnell.} 2019. ``Food deserts and the causes of
+  nutritional inequality.'' {\em The Quarterly Journal of Economics},
+  134(4):~1793--1844.
+
+\harvarditem[Bauner \harvardand\ Wang]{Christoph Bauner \harvardand\ Emily
+  Wang}{2019}{bauner2019}
+{\bf Bauner, Christoph, and Emily Wang.} 2019. ``The Effect of Competition on
+  Pricing and Product Positioning: Evidence from Wholesale Club Entry.'' {\em
+  International Journal of Industrial Organization}.
+
+\harvarditem[BLS]{BLS}{2019}{bls2017}
+{\bf BLS.} 2019. ``Consumer Expenditures in 2017.'' Bureau of Labor Statistics
+  1080.
+
+\harvarditem[Bogomolova \harvardand\ Jarratt]{Svetlana Bogomolova \harvardand\
+  Ian Jarratt}{2016}{bogomolova2016}
+{\bf Bogomolova, Svetlana, and Ian Jarratt.} 2016. ``Unit pricing in
+  supermarkets: Review of past evidence from academic and industry studies.''
+  {\em Available at SSRN 2853977}.
+
+\harvarditem[Chetty, Looney \harvardand\ Kroft]{Raj Chetty, Adam Looney
+  \harvardand\ Kory Kroft}{2009}{chetty2009}
+{\bf Chetty, Raj, Adam Looney, and Kory Kroft.} 2009. ``Salience and taxation:
+  Theory and evidence.'' {\em American Economic Review}, 99(4):~1145--77.
+
+\harvarditem[Chung \harvardand\ Myers~Jr]{Chanjin Chung \harvardand\ Samuel~L
+  Myers~Jr}{1999}{chung1999}
+{\bf Chung, Chanjin, and Samuel~L Myers~Jr.} 1999. ``Do the poor pay more for
+  food? An analysis of grocery store availability and food price disparities.''
+  {\em Journal of Consumer Affairs}, 33(2):~276--296.
+
+\harvarditem[Cohen]{Andrew Cohen}{2008}{cohen2008}
+{\bf Cohen, Andrew.} 2008. ``Package size and price discrimination in the paper
+  towel market.'' {\em International Journal of Industrial Organization},
+  26(2):~502--516.
+
+\harvarditem[Coibion, Gorodnichenko \harvardand\ Koustas]{Olivier Coibion,
+  Yuriy Gorodnichenko \harvardand\ Dmitri Koustas}{2017}{coibion2017}
+{\bf Coibion, Olivier, Yuriy Gorodnichenko, and Dmitri Koustas.} 2017.
+  ``Consumption inequality and the frequency of purchases.'' National Bureau of
+  Economic Research Working Paper No. 23357.
+
+\harvarditem[Croissant]{Yves Croissant}{2020}{mlogit}
+{\bf Croissant, Yves.} 2020. ``mlogit: Multinomial Logit Models.'' R package
+  version 1.1-0.
+
+\harvarditem[DellaVigna \harvardand\ Gentzkow]{Stefano DellaVigna \harvardand\
+  Matthew Gentzkow}{2019}{dellavigna2019}
+{\bf DellaVigna, Stefano, and Matthew Gentzkow.} 2019. ``Uniform pricing in us
+  retail chains.'' {\em The Quarterly Journal of Economics},
+  134(4):~2011--2084.
+
+\harvarditem[{Federal Highway Administration}]{{Federal Highway
+  Administration}}{2017}{nhts2017}
+{\bf {Federal Highway Administration}.} 2017. ``2017 National Household Travel
+  Survey.'' U.S. Department of Transportation.
+
+\harvarditem[{General Accounting Office}]{{General Accounting
+  Office}}{1975}{gao1975}
+{\bf {General Accounting Office}.} 1975. ``Food Labeling: Goals, Shortcomings,
+  and Proposed Changes.'' General Accounting Office.
+
+\harvarditem[Griffith et~al.]{Rachel Griffith, Ephraim Leibtag, Andrew
+  Leicester \harvardand\ Aviv Nevo}{2009}{nevo2009}
+{\bf Griffith, Rachel, Ephraim Leibtag, Andrew Leicester, and Aviv Nevo.} 2009.
+  ``Consumer shopping behavior: how much do consumers save?'' {\em Journal of
+  Economic Perspectives}, 23(2):~99--120.
+
+\harvarditem[Hendel \harvardand\ Nevo]{Igal Hendel \harvardand\ Aviv
+  Nevo}{2006}{hendel2006a}
+{\bf Hendel, Igal, and Aviv Nevo.} 2006. ``Measuring the implications of sales
+  and consumer inventory behavior.'' {\em Econometrica}, 74(6):~1637--1673.
+
+\harvarditem[Hensher \harvardand\ Greene]{David~A Hensher \harvardand\
+  William~H Greene}{2003}{hensher2003}
+{\bf Hensher, David~A, and William~H Greene.} 2003. ``The mixed logit model:
+  the state of practice.'' {\em Transportation}, 30(2):~133--176.
+
+\harvarditem[Jaffe]{Chuck Jaffe}{2007}{jaffe2007}
+{\bf Jaffe, Chuck.} 2007. ``On a roll.'' {\em MarketWatch}.
+
+\harvarditem[Jarmin, Klimek \harvardand\ Miranda]{Ronald~S Jarmin, Shawn~D
+  Klimek \harvardand\ Javier Miranda}{2009}{jarmin2009}
+{\bf Jarmin, Ronald~S, Shawn~D Klimek, and Javier Miranda.} 2009. ``The role of
+  retail chains: National, regional and industry results.'' In {\em Producer
+  dynamics: New evidence from micro data}. 237--262. University of Chicago
+  Press.
+
+\harvarditem[Kunreuther]{Howard Kunreuther}{1973}{kunreuther1973}
+{\bf Kunreuther, Howard.} 1973. ``Why the poor may pay more for food:
+  theoretical and empirical evidence.'' {\em The Journal of Business},
+  46(3):~368--383.
+
+\harvarditem[Mitchell, Lennard \harvardand\ McGoldrick]{Vincent-Wayne Mitchell,
+  David Lennard \harvardand\ Peter McGoldrick}{2003}{mitchell2003}
+{\bf Mitchell, Vincent-Wayne, David Lennard, and Peter McGoldrick.} 2003.
+  ``Consumer awareness, understanding and usage of unit pricing.'' {\em British
+  Journal of Management}, 14(2):~173--187.
+
+\harvarditem[Miyazaki, Sprott \harvardand\ Manning]{Anthony~D Miyazaki, David~E
+  Sprott \harvardand\ Kenneth~C Manning}{2000}{miyazaki2000}
+{\bf Miyazaki, Anthony~D, David~E Sprott, and Kenneth~C Manning.} 2000. ``Unit
+  prices on retail shelf labels: an assessment of information prominence.''
+  {\em Journal of Retailing}, 76(1):~93--112.
+
+\harvarditem[{NIST}]{{NIST}}{2019}{nist130}
+{\bf {NIST}.} 2019. ``Uniform Laws and Regulations in the Areas of Legal
+  Metrology and Fuel Quality (Handbook 130).''
+
+\harvarditem[Orhun \harvardand\ Palazzolo]{A~Ye{\c{s}}im Orhun \harvardand\
+  Mike Palazzolo}{2019}{orhun2018}
+{\bf Orhun, A~Ye{\c{s}}im, and Mike Palazzolo.} 2019. ``Frugality Is Hard to
+  Afford.'' {\em Journal of Marketing Research}, 56(1):~1--17.
+
+\harvarditem[Revelt \harvardand\ Train]{David Revelt \harvardand\ Kenneth
+  Train}{1998}{revelt1998}
+{\bf Revelt, David, and Kenneth Train.} 1998. ``Mixed logit with repeated
+  choices: households' choices of appliance efficiency level.'' {\em Review of
+  Economics and Statistics}, 80(4):~647--657.
+
+\harvarditem[Rose]{Veronica Rose}{2000}{rose2000}
+{\bf Rose, Veronica.} 2000. ``Unit Pricing and Electronic Shelf Labels.''
+  Connecticut Office of Legislative Research 2000-R-1044.
+
+\harvarditem[Sprott, Manning \harvardand\ Miyazaki]{David~E Sprott, Kenneth~C
+  Manning \harvardand\ Anthony~D Miyazaki}{2003}{sprott2003}
+{\bf Sprott, David~E, Kenneth~C Manning, and Anthony~D Miyazaki.} 2003.
+  ``Grocery price setting and quantity surcharges.'' {\em Journal of
+  Marketing}, 67(3):~34--46.
+
+\harvarditem[Statista]{Statista}{2019}{statista2019}
+{\bf Statista.} 2019. ``U.S. Population: Do you use toilet paper?''
+
+\harvarditem[Stephens~Jr]{Melvin Stephens~Jr}{2003}{stephens2003}
+{\bf Stephens~Jr, Melvin.} 2003. ``" 3rd of tha Month": Do Social Security
+  Recipients Smooth Consumption Between Checks?'' {\em American Economic
+  Review}, 93(1):~406--422.
+
+\harvarditem[Talukdar]{Debabrata Talukdar}{2008}{talukdar2008}
+{\bf Talukdar, Debabrata.} 2008. ``Cost of being poor: retail price and
+  consumer price search differences across inner-city and suburban
+  neighborhoods.'' {\em Journal of Consumer Research}, 35(3):~457--471.
+
+\harvarditem[{USDA}]{{USDA}}{2019}{snap2019}
+{\bf {USDA}.} 2019. ``Supplemental Nutrition Assistance Program Participation
+  and Costs.''
+
+\harvarditem[Zou \harvardand\ Hastie]{Hui Zou \harvardand\ Trevor
+  Hastie}{2005}{zou2005}
+{\bf Zou, Hui, and Trevor Hastie.} 2005. ``Regularization and variable
+  selection via the elastic net.'' {\em Journal of the Royal Statistical
+  Society: Series B (Statistical Methodology)}, 67(2):~301--320.
+
+\end{thebibliography}

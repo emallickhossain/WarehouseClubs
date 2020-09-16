@@ -1,6 +1,7 @@
 \begin{table}[!htbp] \centering
   \caption{Over-the-Month Changes in Bulk Buying}
   \label{tab:discountingBehaviorLiquidity}
+    \resizebox*{!}{0.87\textheight}{
 \begin{tabular}{@{\extracolsep{5pt}}lccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
@@ -28,13 +29,13 @@
   &  & (0.001) & (0.001) \\
   Week 4 : 50-100k &  & 0.005$^{***}$ & 0.005$^{***}$ \\
   &  & (0.001) & (0.001) \\
-  >100k &  & 0.025$^{***}$ & 0.012$^{***}$ \\
+  $>$100k &  & 0.025$^{***}$ & 0.012$^{***}$ \\
   &  & (0.001) & (0.001) \\
-  Week 2 : >100k &  & 0.001 & 0.001 \\
+  Week 2 : $>$100k &  & 0.001 & 0.001 \\
   &  & (0.001) & (0.001) \\
-  Week 3 : >100k &  & 0.006$^{***}$ & 0.006$^{***}$ \\
+  Week 3 : $>$100k &  & 0.006$^{***}$ & 0.006$^{***}$ \\
   &  & (0.001) & (0.001) \\
-  Week 4 : >100k &  & 0.007$^{***}$ & 0.007$^{***}$ \\
+  Week 4 : $>$100k &  & 0.007$^{***}$ & 0.007$^{***}$ \\
   &  & (0.001) & (0.001) \\
  \hline \\[-1.8ex]
 Mean Bulk & 0.46 & 0.46 & 0.46 \\
@@ -44,7 +45,12 @@ Observations & 2,854,905 & 2,854,905 & 2,854,905 \\
 Adjusted R$^{2}$ & 0.402 & 0.402 & 0.404 \\
 \hline
 \hline \\[-1.8ex]
-\textit{Note:}  & \multicolumn{3}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01} \\
 \end{tabular}
-\caption*{Notes: Using 2004--2017 Nielsen Consumer Panel data, this table displays the regression coefficients from estimating Equation {eq:discountingBehaviorLiquidity} which regresses a household's weekly share of bulk purchases of non-food products on the week of the month, income, and other household characteristics and includes a households fixed effect.}
+}
+\begin{tablenotes}
+Table displays the regression coefficients from estimating Equation \ref{eq:discountingBehaviorLiquidity} which regresses a household's weekly share of bulk purchases of non-food products on the week of the month, income, and other household characteristics and includes a households fixed effect. $^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01
+\end{tablenotes}
+\begin{tablenotes}[Source]
+Nielsen Consumer Panel (2004--2017)
+\end{tablenotes}
 \end{table}

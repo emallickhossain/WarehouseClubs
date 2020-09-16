@@ -1,11 +1,11 @@
 \begin{table}[!htbp] \centering
-  \caption{Bulk Buying Within ZIP Codes, Store Types, or Retail Chains by Income}
+  \caption{Bulk Buying Within Zip Codes or Retail Chains by Income}
   \label{tab:discountingBehaviorFEAll}
-\begin{tabular}{@{\extracolsep{5pt}}lccccc}
+    \resizebox*{!}{0.83\textheight}{
+\begin{tabular}{lccccc}
 \\[-1.8ex]\hline
 \hline \\[-1.8ex]
- & \multicolumn{2}{c}{ZIP Code} & \multicolumn{3}{c}{Channel/Retailer Type} \\
-\\[-1.8ex] & (1) & (2) & (3) & (4) & (5)\\
+ & \multicolumn{2}{c}{Zip Code} & \multicolumn{3}{c}{Store/Retailer Type} \\
 \hline \\[-1.8ex]
  8-10k & 0.003 & 0.006 & 0.006$^{***}$ & 0.006$^{***}$ & 0.006$^{***}$ \\
   & (0.003) & (0.004) & (0.002) & (0.002) & (0.002) \\
@@ -33,7 +33,7 @@
   & (0.002) & (0.003) & (0.002) & (0.002) & (0.002) \\
   70-100k & 0.087$^{***}$ & 0.081$^{***}$ & 0.063$^{***}$ & 0.025$^{***}$ & 0.025$^{***}$ \\
   & (0.002) & (0.003) & (0.002) & (0.002) & (0.001) \\
-  >100k & 0.105$^{***}$ & 0.096$^{***}$ & 0.074$^{***}$ & 0.025$^{***}$ & 0.025$^{***}$ \\
+  $>$100k & 0.105$^{***}$ & 0.096$^{***}$ & 0.074$^{***}$ & 0.025$^{***}$ & 0.025$^{***}$ \\
   & (0.002) & (0.003) & (0.002) & (0.002) & (0.002) \\
  \hline \\[-1.8ex]
 Demographics & Y & Y & Y & Y & Y \\
@@ -44,7 +44,12 @@ Observations & 731,762 & 731,762 & 3,799,404 & 3,799,404 & 3,799,404 \\
 Adjusted R$^{2}$ & 0.093 & 0.270 & 0.013 & 0.223 & 0.241 \\
 \hline
 \hline \\[-1.8ex]
-\textit{Note:}  & \multicolumn{5}{l}{$^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01}
 \end{tabular}
-\caption*{Notes: Using 2004--2017 Nielsen Consumer Panel data, this table displays the regression coefficients from estimating Equation {eq:discountingBehaviorFE} which regresses a household's annual share of bulk purchases of non-food products on household characteristics (household composition, age, marital status, and education) and includes a DMA and year fixed effect (Columns 1, 3, 5). Columns 2, 4, and 6 also include a ZIP code-year, store type-year, or retail chain-year fixed effect.}
+}
+\begin{tablenotes}
+Table displays the regression coefficients from estimating Equation \ref{eq:discountingBehaviorFE} which regresses a household's annual share of bulk purchases of non-food products on household characteristics (household composition, age, marital status, and education) and includes a DMA and year fixed effect (Columns 1 and 3). Columns 2, 4, and 5 also include a zip code-year, store type-year, or retail chain-year fixed effect. $^{*}$p$<$0.1; $^{**}$p$<$0.05; $^{***}$p$<$0.01
+\end{tablenotes}
+\begin{tablenotes}[Source]
+Nielsen Consumer Panel (2004--2017)
+\end{tablenotes}
 \end{table}
